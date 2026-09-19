@@ -9,9 +9,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
+import okhttp3.Cookie
+import okhttp3.CookieJar
 import okhttp3.FormBody
+import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
+import org.jsoup.Jsoup
 import ru.nya.nyeios.data.model.AuthSession
 import ru.nya.nyeios.data.model.WeekSchedule
 import ru.nya.nyeios.data.parser.ScheduleParser
@@ -23,6 +29,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
@@ -43,10 +50,11 @@ class EiosRepository(private val context: Context) {
                 EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
             )
         } catch (e: Exception) {
-            // Fallback for devices with keystore issues
             context.getSharedPreferences("nyeios_secure_prefs_fallback", Context.MODE_PRIVATE)
         }
     }
+
+    private val cookieStore = ConcurrentHashMap<String, MutableList<Cookie>>()
 
     private val _authSession = MutableStateFlow(loadAuthSession())
     val authSession: StateFlow<AuthSession> = _authSession.asStateFlow()
@@ -56,8 +64,6 @@ class EiosRepository(private val context: Context) {
     }
 
     private fun createOkHttpClient(): OkHttpClient {
-        // We configure a trust manager to ensure connection succeeds even if eios.gukolomna.ru
-        // misses the intermediate CA certificate in TLS handshake.
         val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
             override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
             override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
@@ -73,6 +79,39 @@ class EiosRepository(private val context: Context) {
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(15, TimeUnit.SECONDS)
             .followRedirects(true)
+            .followSslRedirects(true)
+            .cookieJar(object : CookieJar {
+                override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
+                    val hostKey = url.host
+                    val existing = cookieStore.getOrPut(hostKey) { mutableListOf() }
+                    for (c in cookies) {
+                        existing.removeAll { it.name == c.name }
+                        existing.add(c)
+                    }
+                }
+
+                override fun loadForRequest(url: HttpUrl): List<Cookie> {
+                    val result = mutableListOf<Cookie>()
+                    val hostKey = url.host
+                    cookieStore[hostKey]?.let { result.addAll(it) }
+
+                    // Also include parent domain cookies (e.g. gukolomna.ru)
+                    val parts = hostKey.split(".")
+                    if (parts.size >= 2) {
+                        val rootDomain = parts.takeLast(2).joinToString(".")
+                        if (rootDomain != hostKey) {
+                            cookieStore[rootDomain]?.let { parentCookies ->
+                                for (pc in parentCookies) {
+                                    if (result.none { it.name == pc.name }) {
+                                        result.add(pc)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    return result
+                }
+            })
             .build()
     }
 
@@ -80,6 +119,30 @@ class EiosRepository(private val context: Context) {
         val username = securePrefs.getString("user_login", "") ?: ""
         val cookies = securePrefs.getString("user_cookies", "") ?: ""
         val isLoggedIn = cookies.contains("BITRIX_SM_UIDH") || cookies.contains("BITRIX_SM_LOGIN")
+
+        // Prepopulate cookieStore from saved cookies
+        if (cookies.isNotEmpty()) {
+            val host = "eios.gukolomna.ru"
+            val list = cookieStore.getOrPut(host) { mutableListOf() }
+            for (part in cookies.split(";")) {
+                val pair = part.trim().split("=", limit = 2)
+                if (pair.size == 2) {
+                    try {
+                        val c = Cookie.Builder()
+                            .name(pair[0].trim())
+                            .value(pair[1].trim())
+                            .domain("gukolomna.ru")
+                            .path("/")
+                            .build()
+                        list.removeAll { it.name == c.name }
+                        list.add(c)
+                    } catch (e: Exception) {
+                        // ignore malformed
+                    }
+                }
+            }
+        }
+
         return AuthSession(
             username = username,
             cookies = cookies,
@@ -94,35 +157,47 @@ class EiosRepository(private val context: Context) {
             val formBody = FormBody.Builder()
                 .add("AUTH_FORM", "Y")
                 .add("TYPE", "AUTH")
-                .add("backurl", "/eios/")
+                .add("backurl", "/index.php")
                 .add("USER_LOGIN", username)
                 .add("USER_PASSWORD", pass)
                 .add("USER_REMEMBER", "Y")
-                .add("Login", "Войти")
                 .build()
 
             val request = Request.Builder()
                 .url(loginUrl)
                 .header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) NyEIOS/0.0.1")
-                .header("Content-Type", "application/x-www-form-urlencoded")
                 .post(formBody)
                 .build()
 
+            // We make the call with client that handles cookies automatically,
+            // and we also inspect ALL responses in the redirect chain (both final and priorResponse)
             val response = okHttpClient.newCall(request).execute()
-            val cookieHeaders = response.headers("Set-Cookie")
-            val cookiesMap = mutableMapOf<String, String>()
 
-            for (h in cookieHeaders) {
-                val pair = h.split(";").firstOrNull()?.split("=", limit = 2)
-                if (pair != null && pair.size == 2) {
-                    cookiesMap[pair[0].trim()] = pair[1].trim()
+            // Collect all Set-Cookie headers from the entire chain
+            val collectedCookies = mutableMapOf<String, String>()
+            var chainResponse: Response? = response
+            while (chainResponse != null) {
+                for (h in chainResponse.headers("Set-Cookie")) {
+                    val pair = h.split(";").firstOrNull()?.split("=", limit = 2)
+                    if (pair != null && pair.size == 2) {
+                        collectedCookies[pair[0].trim()] = pair[1].trim()
+                    }
                 }
+                chainResponse = chainResponse.priorResponse
             }
 
-            val cookieStr = cookiesMap.entries.joinToString("; ") { "${it.key}=${it.value}" }
-            val hasSession = cookiesMap.containsKey("BITRIX_SM_UIDH") || cookiesMap.containsKey("BITRIX_SM_LOGIN")
+            // Also check cookies in CookieJar
+            val httpUrl = "https://eios.gukolomna.ru/".toHttpUrl()
+            val jarCookies = okHttpClient.cookieJar.loadForRequest(httpUrl)
+            for (c in jarCookies) {
+                collectedCookies[c.name] = c.value
+            }
+
+            val hasSession = collectedCookies.containsKey("BITRIX_SM_UIDH") ||
+                    collectedCookies.containsKey("BITRIX_SM_LOGIN")
 
             if (hasSession) {
+                val cookieStr = collectedCookies.entries.joinToString("; ") { "${it.key}=${it.value}" }
                 securePrefs.edit()
                     .putString("user_login", username)
                     .putString("user_password", pass)
@@ -138,7 +213,20 @@ class EiosRepository(private val context: Context) {
                 _authSession.value = newSession
                 Result.success("Успешный вход")
             } else {
-                Result.failure(Exception("Неверный логин или пароль портала ЭИОС"))
+                // Parse HTML response for specific Bitrix error text if present
+                val html = response.body?.string().orEmpty()
+                val doc = Jsoup.parse(html)
+                val errorEl = doc.selectFirst(".errortext") ?: doc.selectFirst(".error")
+                val detailedError = errorEl?.text()?.trim()
+
+                val errorMsg = when {
+                    !detailedError.isNullOrEmpty() -> detailedError
+                    html.contains("Неверный логин или пароль", ignoreCase = true) -> "Неверный логин или пароль"
+                    html.contains("Пользователь заблокирован", ignoreCase = true) -> "Пользователь заблокирован"
+                    else -> "Неверный логин или пароль портала ЭИОС"
+                }
+
+                Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
             Result.failure(Exception("Сетевая ошибка при авторизации: ${e.localizedMessage ?: e.message}"))
@@ -152,6 +240,7 @@ class EiosRepository(private val context: Context) {
             .remove("user_cookies")
             .apply()
 
+        cookieStore.clear()
         _authSession.value = AuthSession()
     }
 
@@ -184,7 +273,6 @@ class EiosRepository(private val context: Context) {
         // 2. Fetch from network
         val session = _authSession.value
         val cookies = session.cookies.ifEmpty {
-            // Check if credentials exist in prefs to auto-login
             val u = securePrefs.getString("user_login", "") ?: ""
             val p = securePrefs.getString("user_password", "") ?: ""
             if (u.isNotEmpty() && p.isNotEmpty()) {
@@ -207,7 +295,6 @@ class EiosRepository(private val context: Context) {
         try {
             val response = okHttpClient.newCall(reqBuilder.build()).execute()
             if (!response.isSuccessful) {
-                // Return cache if available on failure
                 if (cacheFile.exists()) {
                     val cached = gson.fromJson(cacheFile.readText(), WeekSchedule::class.java)
                     if (cached != null) return@withContext Result.success(cached.copy(isCached = true))
@@ -219,7 +306,6 @@ class EiosRepository(private val context: Context) {
             val schedule = ScheduleParser.parse(html, offsetWeeks, startD, endD)
 
             if (schedule != null) {
-                // Save to cache
                 try {
                     cacheFile.writeText(gson.toJson(schedule))
                 } catch (e: Exception) {
