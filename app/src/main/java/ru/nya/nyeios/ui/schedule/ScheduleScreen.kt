@@ -117,7 +117,7 @@ fun ScheduleScreen(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Image(
-                            painter = painterResource(id = R.mipmap.ic_launcher_round),
+                            painter = painterResource(id = R.drawable.app_logo),
                             contentDescription = "NyEIOS",
                             modifier = Modifier
                                 .size(36.dp)
