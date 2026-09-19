@@ -41,20 +41,30 @@ class MainActivity : ComponentActivity() {
                     val isLoggingIn by viewModel.isLoggingIn.collectAsState()
                     val loginError by viewModel.loginError.collectAsState()
 
-                    // Joke paywall modal on app open
-                    var showPaywall by rememberSaveable { mutableStateOf(true) }
+                    // Joke paywall: triggers on the first interaction with any button
+                    var hasShownPaywall by rememberSaveable { mutableStateOf(false) }
+                    var showPaywall by rememberSaveable { mutableStateOf(false) }
+
+                    fun handleFirstClick(action: () -> Unit) {
+                        if (!hasShownPaywall) {
+                            hasShownPaywall = true
+                            showPaywall = true
+                        } else {
+                            action()
+                        }
+                    }
 
                     ScheduleScreen(
                         uiState = uiState,
                         weekOffset = weekOffset,
                         selectedDayIndex = selectedDayIndex,
                         authSession = authSession,
-                        onPrevWeek = { viewModel.prevWeek() },
-                        onNextWeek = { viewModel.nextWeek() },
-                        onCurrentWeek = { viewModel.currentWeek() },
-                        onSelectDay = { viewModel.selectDay(it) },
-                        onRefresh = { viewModel.refresh() },
-                        onOpenLogin = { viewModel.showLoginSheet() }
+                        onPrevWeek = { handleFirstClick { viewModel.prevWeek() } },
+                        onNextWeek = { handleFirstClick { viewModel.nextWeek() } },
+                        onCurrentWeek = { handleFirstClick { viewModel.currentWeek() } },
+                        onSelectDay = { dayIdx -> handleFirstClick { viewModel.selectDay(dayIdx) } },
+                        onRefresh = { handleFirstClick { viewModel.refresh() } },
+                        onOpenLogin = { handleFirstClick { viewModel.showLoginSheet() } }
                     )
 
                     if (showPaywall) {
