@@ -42,6 +42,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -56,6 +57,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ru.nya.nyeios.R
@@ -250,32 +252,60 @@ fun ScheduleScreen(
                         ) {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Warning,
-                                    contentDescription = null,
-                                    tint = ExamRed,
-                                    modifier = Modifier.size(48.dp)
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .size(64.dp)
+                                        .clip(CircleShape)
+                                        .background(ExamRedBg),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Warning,
+                                        contentDescription = null,
+                                        tint = ExamRed,
+                                        modifier = Modifier.size(32.dp)
+                                    )
+                                }
+
                                 Text(
                                     text = uiState.message,
                                     color = TextPrimary,
                                     fontSize = 15.sp,
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = FontWeight.Medium,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    lineHeight = 22.sp,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp)
                                 )
-                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Button(
+
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    OutlinedButton(
                                         onClick = onRefresh,
-                                        colors = ButtonDefaults.buttonColors(containerColor = LectureBlue)
+                                        shape = RoundedCornerShape(12.dp),
+                                        border = BorderStroke(1.dp, ObsidianBorder),
+                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
+                                        modifier = Modifier.height(44.dp)
                                     ) {
-                                        Text("Повторить")
+                                        Text("Повторить", fontWeight = FontWeight.SemiBold)
                                     }
+
                                     Button(
                                         onClick = onOpenLogin,
-                                        colors = ButtonDefaults.buttonColors(containerColor = ObsidianCard)
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = LectureBlue,
+                                            contentColor = Color.White
+                                        ),
+                                        modifier = Modifier.height(44.dp)
                                     ) {
-                                        Text("Войти в аккаунт")
+                                        Text("Войти в аккаунт", fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
