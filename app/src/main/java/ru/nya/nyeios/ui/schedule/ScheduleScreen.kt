@@ -90,113 +90,23 @@ import ru.nya.nyeios.ui.theme.TextSecondary
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleScreen(
     uiState: ScheduleUiState,
     weekOffset: Int,
     selectedDayIndex: Int,
-    authSession: AuthSession,
     onPrevWeek: () -> Unit,
     onNextWeek: () -> Unit,
     onCurrentWeek: () -> Unit,
     onSelectDay: (Int) -> Unit,
     onRefresh: () -> Unit,
-    onOpenLogin: () -> Unit
+    onOpenLogin: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Scaffold(
-        containerColor = ObsidianBg,
-        topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = ObsidianBg
-                ),
-                title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.app_logo),
-                            contentDescription = "NyEIOS",
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                        )
-                        Column {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Text(
-                                    text = "NyEIOS",
-                                    fontWeight = FontWeight.Black,
-                                    fontSize = 20.sp,
-                                    color = TextPrimary
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(LectureBlue.copy(alpha = 0.15f))
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                                ) {
-                                    Text(
-                                        text = "23ан-о-41",
-                                        color = LectureBlue,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-                        }
-                    }
-                },
-                actions = {
-                    // Profile button
-                    IconButton(onClick = onOpenLogin) {
-                        Icon(
-                            imageVector = Icons.Default.AccountCircle,
-                            contentDescription = "Профиль",
-                            tint = if (authSession.isLoggedIn) PracticeGreen else TextMuted
-                        )
-                    }
-
-                    // Refresh button
-                    IconButton(onClick = onRefresh) {
-                        val isRefreshing = (uiState as? ScheduleUiState.Success)?.isRefreshing == true ||
-                                uiState is ScheduleUiState.Loading
-
-                        val rotation = if (isRefreshing) {
-                            val infiniteTransition = rememberInfiniteTransition(label = "spin")
-                            val rot by infiniteTransition.animateFloat(
-                                initialValue = 0f,
-                                targetValue = 360f,
-                                animationSpec = infiniteRepeatable(
-                                    animation = tween(1000),
-                                    repeatMode = RepeatMode.Restart
-                                ),
-                                label = "rotation"
-                            )
-                            rot
-                        } else 0f
-
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Обновить",
-                            tint = if (isRefreshing) LectureBlue else TextSecondary,
-                            modifier = Modifier.rotate(rotation)
-                        )
-                    }
-                }
-            )
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            // Week Navigator Bar
+    Column(
+        modifier = modifier.fillMaxSize()
+    ) {
+        // Week Navigator Bar
             WeekNavigator(
                 weekOffset = weekOffset,
                 uiState = uiState,
@@ -364,7 +274,6 @@ fun ScheduleScreen(
             }
         }
     }
-}
 
 @Composable
 fun WeekNavigator(

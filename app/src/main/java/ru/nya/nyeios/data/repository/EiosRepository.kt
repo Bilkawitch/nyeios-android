@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,9 +20,16 @@ import okhttp3.Request
 import okhttp3.Response
 import org.jsoup.Jsoup
 import ru.nya.nyeios.data.model.AuthSession
+import ru.nya.nyeios.data.model.CurriculumTerm
+import ru.nya.nyeios.data.model.FeedPost
+import ru.nya.nyeios.data.model.UserProfile
 import ru.nya.nyeios.data.model.WeekSchedule
+import ru.nya.nyeios.data.parser.CurriculumParser
+import ru.nya.nyeios.data.parser.FeedParser
+import ru.nya.nyeios.data.parser.ProfileParser
 import ru.nya.nyeios.data.parser.ScheduleParser
 import java.io.File
+import java.io.FileOutputStream
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import java.time.DayOfWeek
@@ -59,8 +67,25 @@ class EiosRepository(private val context: Context) {
     private val _authSession = MutableStateFlow(loadAuthSession())
     val authSession: StateFlow<AuthSession> = _authSession.asStateFlow()
 
-    private val okHttpClient: OkHttpClient by lazy {
+    private val _userProfile = MutableStateFlow(loadUserProfile())
+    val userProfile: StateFlow<UserProfile> = _userProfile.asStateFlow()
+
+    val okHttpClient: OkHttpClient by lazy {
         createOkHttpClient()
+    }
+
+    fun getActiveCookieString(): String = getActiveCookies()
+    fun isUserLoggedIn(): Boolean = _authSession.value.isLoggedIn
+
+    companion object {
+        @Volatile
+        private var INSTANCE: EiosRepository? = null
+
+        fun getInstance(context: Context): EiosRepository {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: EiosRepository(context.applicationContext).also { INSTANCE = it }
+            }
+        }
     }
 
     private fun createOkHttpClient(): OkHttpClient {
@@ -151,13 +176,60 @@ class EiosRepository(private val context: Context) {
         )
     }
 
+    private fun loadUserProfile(): UserProfile {
+        val name = securePrefs.getString("profile_name", "") ?: ""
+        val userId = securePrefs.getString("profile_user_id", "") ?: ""
+        val currid = securePrefs.getString("profile_currid", "") ?: ""
+        return UserProfile(name = name, userId = userId, currid = currid)
+    }
+
+    private fun updateProfileIfFound(html: String) {
+        val parsed = ProfileParser.parse(html)
+        var updated = false
+        var current = _userProfile.value
+
+        if (parsed.name.isNotEmpty() && parsed.name != current.name) {
+            current = current.copy(name = parsed.name)
+            updated = true
+        }
+        if (parsed.userId.isNotEmpty() && parsed.userId != current.userId) {
+            current = current.copy(userId = parsed.userId)
+            updated = true
+        }
+        if (parsed.currid.isNotEmpty() && parsed.currid != current.currid) {
+            current = current.copy(currid = parsed.currid)
+            updated = true
+        }
+
+        if (updated) {
+            securePrefs.edit()
+                .putString("profile_name", current.name)
+                .putString("profile_user_id", current.userId)
+                .putString("profile_currid", current.currid)
+                .apply()
+            _userProfile.value = current
+        }
+    }
+
+    private fun getActiveCookies(): String {
+        val session = _authSession.value
+        return session.cookies.ifEmpty {
+            val u = securePrefs.getString("user_login", "") ?: ""
+            val p = securePrefs.getString("user_password", "") ?: ""
+            if (u.isNotEmpty() && p.isNotEmpty()) {
+                // If credentials are saved, we can return stored cookies
+                securePrefs.getString("user_cookies", "") ?: ""
+            } else ""
+        }
+    }
+
     suspend fun login(username: String, pass: String): Result<String> = withContext(Dispatchers.IO) {
         try {
             val loginUrl = "https://eios.gukolomna.ru/index.php?login=yes"
             val formBody = FormBody.Builder()
                 .add("AUTH_FORM", "Y")
                 .add("TYPE", "AUTH")
-                .add("backurl", "/index.php")
+                .add("backurl", "/eios/")
                 .add("USER_LOGIN", username)
                 .add("USER_PASSWORD", pass)
                 .add("USER_REMEMBER", "Y")
@@ -165,12 +237,10 @@ class EiosRepository(private val context: Context) {
 
             val request = Request.Builder()
                 .url(loginUrl)
-                .header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) NyEIOS/0.0.1")
+                .header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) NyEIOS/0.0.4")
                 .post(formBody)
                 .build()
 
-            // We make the call with client that handles cookies automatically,
-            // and we also inspect ALL responses in the redirect chain (both final and priorResponse)
             val response = okHttpClient.newCall(request).execute()
 
             // Collect all Set-Cookie headers from the entire chain
@@ -196,6 +266,7 @@ class EiosRepository(private val context: Context) {
             val hasSession = collectedCookies.containsKey("BITRIX_SM_UIDH") ||
                     collectedCookies.containsKey("BITRIX_SM_LOGIN")
 
+            val html = response.body?.string().orEmpty()
             if (hasSession) {
                 val cookieStr = collectedCookies.entries.joinToString("; ") { "${it.key}=${it.value}" }
                 securePrefs.edit()
@@ -211,10 +282,10 @@ class EiosRepository(private val context: Context) {
                     authSource = "saved"
                 )
                 _authSession.value = newSession
+
+                updateProfileIfFound(html)
                 Result.success("Успешный вход")
             } else {
-                // Parse HTML response for specific Bitrix error text if present
-                val html = response.body?.string().orEmpty()
                 val doc = Jsoup.parse(html)
                 val errorEl = doc.selectFirst(".errortext") ?: doc.selectFirst(".error")
                 val detailedError = errorEl?.text()?.trim()
@@ -238,10 +309,14 @@ class EiosRepository(private val context: Context) {
             .remove("user_login")
             .remove("user_password")
             .remove("user_cookies")
+            .remove("profile_name")
+            .remove("profile_user_id")
+            .remove("profile_currid")
             .apply()
 
         cookieStore.clear()
         _authSession.value = AuthSession()
+        _userProfile.value = UserProfile()
     }
 
     fun getWeekDates(offsetWeeks: Int): Pair<String, String> {
@@ -271,22 +346,11 @@ class EiosRepository(private val context: Context) {
         }
 
         // 2. Fetch from network
-        val session = _authSession.value
-        val cookies = session.cookies.ifEmpty {
-            val u = securePrefs.getString("user_login", "") ?: ""
-            val p = securePrefs.getString("user_password", "") ?: ""
-            if (u.isNotEmpty() && p.isNotEmpty()) {
-                val loginRes = login(u, p)
-                if (loginRes.isSuccess) {
-                    _authSession.value.cookies
-                } else ""
-            } else ""
-        }
-
+        val cookies = getActiveCookies()
         val url = "https://eios.gukolomna.ru/eios/contacts/timetable/?startDate=$startD&endDate=$endD"
         val reqBuilder = Request.Builder()
             .url(url)
-            .header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) NyEIOS/0.0.1")
+            .header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) NyEIOS/0.0.4")
 
         if (cookies.isNotEmpty()) {
             reqBuilder.header("Cookie", cookies)
@@ -303,8 +367,9 @@ class EiosRepository(private val context: Context) {
             }
 
             val html = response.body?.string() ?: ""
-            val schedule = ScheduleParser.parse(html, offsetWeeks, startD, endD)
+            updateProfileIfFound(html)
 
+            val schedule = ScheduleParser.parse(html, offsetWeeks, startD, endD)
             if (schedule != null) {
                 try {
                     cacheFile.writeText(gson.toJson(schedule))
@@ -325,6 +390,209 @@ class EiosRepository(private val context: Context) {
                 if (cached != null) return@withContext Result.success(cached.copy(isCached = true))
             }
             Result.failure(Exception("Сетевая ошибка: ${e.localizedMessage ?: e.message}"))
+        }
+    }
+
+    suspend fun getFeed(forceNetwork: Boolean = false): Result<List<FeedPost>> = withContext(Dispatchers.IO) {
+        val cacheFile = File(context.cacheDir, "feed_cache.json")
+        val listType = object : TypeToken<List<FeedPost>>() {}.type
+
+        // 1. Check local cache
+        if (!forceNetwork && cacheFile.exists()) {
+            try {
+                val json = cacheFile.readText()
+                val cached: List<FeedPost>? = gson.fromJson(json, listType)
+                if (!cached.isNullOrEmpty()) {
+                    return@withContext Result.success(cached)
+                }
+            } catch (e: Exception) {
+                // Ignore cache parse error
+            }
+        }
+
+        // 2. Fetch from network
+        val cookies = getActiveCookies()
+        val userId = _userProfile.value.userId
+        val url = if (userId.isNotEmpty()) {
+            "https://eios.gukolomna.ru/eios/contacts/personal/user/$userId/"
+        } else {
+            "https://eios.gukolomna.ru/eios/"
+        }
+
+        val reqBuilder = Request.Builder()
+            .url(url)
+            .header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) NyEIOS/0.0.4")
+
+        if (cookies.isNotEmpty()) {
+            reqBuilder.header("Cookie", cookies)
+        }
+
+        try {
+            val response = okHttpClient.newCall(reqBuilder.build()).execute()
+            if (!response.isSuccessful) {
+                if (cacheFile.exists()) {
+                    val cached: List<FeedPost>? = gson.fromJson(cacheFile.readText(), listType)
+                    if (!cached.isNullOrEmpty()) return@withContext Result.success(cached)
+                }
+                return@withContext Result.failure(Exception("Ошибка сервера ленты: HTTP ${response.code}"))
+            }
+
+            val html = response.body?.string() ?: ""
+            updateProfileIfFound(html)
+
+            val posts = FeedParser.parse(html)
+            if (posts.isNotEmpty()) {
+                try {
+                    cacheFile.writeText(gson.toJson(posts))
+                } catch (e: Exception) {
+                    // Ignore cache write error
+                }
+                Result.success(posts)
+            } else {
+                if (cacheFile.exists()) {
+                    val cached: List<FeedPost>? = gson.fromJson(cacheFile.readText(), listType)
+                    if (!cached.isNullOrEmpty()) return@withContext Result.success(cached)
+                }
+                Result.success(emptyList())
+            }
+        } catch (e: Exception) {
+            if (cacheFile.exists()) {
+                val cached: List<FeedPost>? = gson.fromJson(cacheFile.readText(), listType)
+                if (!cached.isNullOrEmpty()) return@withContext Result.success(cached)
+            }
+            Result.failure(Exception("Сетевая ошибка при загрузке ленты: ${e.localizedMessage ?: e.message}"))
+        }
+    }
+
+    suspend fun getCurriculum(forceNetwork: Boolean = false): Result<List<CurriculumTerm>> = withContext(Dispatchers.IO) {
+        val cacheFile = File(context.cacheDir, "curriculum_cache.json")
+        val listType = object : TypeToken<List<CurriculumTerm>>() {}.type
+
+        // 1. Check local cache
+        if (!forceNetwork && cacheFile.exists()) {
+            try {
+                val json = cacheFile.readText()
+                val cached: List<CurriculumTerm>? = gson.fromJson(json, listType)
+                if (!cached.isNullOrEmpty()) {
+                    return@withContext Result.success(cached)
+                }
+            } catch (e: Exception) {
+                // Ignore cache parse error
+            }
+        }
+
+        // 2. Fetch from network
+        val cookies = getActiveCookies()
+        val currid = _userProfile.value.currid
+        val userId = _userProfile.value.userId
+
+        val urlBuilder = StringBuilder("https://eios.gukolomna.ru/eios/contacts/curriculum/")
+        val params = mutableListOf<String>()
+        if (currid.isNotEmpty()) params.add("currid=$currid")
+        if (userId.isNotEmpty()) params.add("user_id=$userId")
+        if (params.isNotEmpty()) {
+            urlBuilder.append("?").append(params.joinToString("&"))
+        }
+
+        val reqBuilder = Request.Builder()
+            .url(urlBuilder.toString())
+            .header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) NyEIOS/0.0.4")
+
+        if (cookies.isNotEmpty()) {
+            reqBuilder.header("Cookie", cookies)
+        }
+
+        try {
+            val response = okHttpClient.newCall(reqBuilder.build()).execute()
+            if (!response.isSuccessful) {
+                if (cacheFile.exists()) {
+                    val cached: List<CurriculumTerm>? = gson.fromJson(cacheFile.readText(), listType)
+                    if (!cached.isNullOrEmpty()) return@withContext Result.success(cached)
+                }
+                return@withContext Result.failure(Exception("Ошибка сервера БРС: HTTP ${response.code}"))
+            }
+
+            val html = response.body?.string() ?: ""
+            updateProfileIfFound(html)
+
+            val terms = CurriculumParser.parse(html)
+            if (terms.isNotEmpty()) {
+                try {
+                    cacheFile.writeText(gson.toJson(terms))
+                } catch (e: Exception) {
+                    // Ignore cache write error
+                }
+                Result.success(terms)
+            } else {
+                if (cacheFile.exists()) {
+                    val cached: List<CurriculumTerm>? = gson.fromJson(cacheFile.readText(), listType)
+                    if (!cached.isNullOrEmpty()) return@withContext Result.success(cached)
+                }
+                Result.failure(Exception("Не удалось загрузить успеваемость. Проверьте авторизацию."))
+            }
+        } catch (e: Exception) {
+            if (cacheFile.exists()) {
+                val cached: List<CurriculumTerm>? = gson.fromJson(cacheFile.readText(), listType)
+                if (!cached.isNullOrEmpty()) return@withContext Result.success(cached)
+            }
+            Result.failure(Exception("Сетевая ошибка успеваемости: ${e.localizedMessage ?: e.message}"))
+        }
+    }
+
+    suspend fun downloadAttachment(
+        fileUrl: String,
+        targetFile: File,
+        onProgress: ((bytesRead: Long, totalBytes: Long) -> Unit)? = null
+    ): Result<File> = withContext(Dispatchers.IO) {
+        val cookies = getActiveCookies()
+        val reqBuilder = Request.Builder()
+            .url(fileUrl)
+            .header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) NyEIOS/0.0.4")
+
+        if (cookies.isNotEmpty()) {
+            reqBuilder.header("Cookie", cookies)
+        }
+
+        try {
+            val response = okHttpClient.newCall(reqBuilder.build()).execute()
+            if (!response.isSuccessful) {
+                return@withContext Result.failure(Exception("Ошибка загрузки файла: HTTP ${response.code}"))
+            }
+
+            val finalUrl = response.request.url.toString()
+            if (finalUrl.contains("login=yes") || response.header("X-Bitrix-Ajax-Status") == "Authorize") {
+                return@withContext Result.failure(Exception("Для скачивания требуется авторизация в ЭИОС"))
+            }
+
+            val body = response.body ?: return@withContext Result.failure(Exception("Пустой ответ сервера"))
+            val totalBytes = body.contentLength()
+
+            val tempFile = File(targetFile.parentFile, "${targetFile.name}.tmp")
+            if (tempFile.exists()) tempFile.delete()
+
+            body.byteStream().use { input ->
+                FileOutputStream(tempFile).use { output ->
+                    val buffer = ByteArray(8192)
+                    var bytesRead = 0L
+                    var read: Int
+                    while (input.read(buffer).also { read = it } != -1) {
+                        output.write(buffer, 0, read)
+                        bytesRead += read
+                        onProgress?.invoke(bytesRead, totalBytes)
+                    }
+                    output.flush()
+                }
+            }
+
+            if (targetFile.exists()) targetFile.delete()
+            if (!tempFile.renameTo(targetFile)) {
+                tempFile.copyTo(targetFile, overwrite = true)
+                tempFile.delete()
+            }
+
+            Result.success(targetFile)
+        } catch (e: Exception) {
+            Result.failure(Exception("Не удалось скачать файл: ${e.localizedMessage ?: e.message}"))
         }
     }
 }
