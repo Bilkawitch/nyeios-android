@@ -13,7 +13,7 @@ import ru.nya.nyeios.data.repository.EiosRepository
 
 class CurriculumViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository = EiosRepository(application.applicationContext)
+    private val repository = EiosRepository.getInstance(application.applicationContext)
 
     private val _uiState = MutableStateFlow<CurriculumUiState>(CurriculumUiState.Loading)
     val uiState: StateFlow<CurriculumUiState> = _uiState.asStateFlow()

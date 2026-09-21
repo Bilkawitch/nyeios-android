@@ -17,10 +17,12 @@ import java.time.LocalDate
 
 class ScheduleViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository = EiosRepository(application.applicationContext)
+    private val repository = EiosRepository.getInstance(application.applicationContext)
 
     private val _uiState = MutableStateFlow<ScheduleUiState>(ScheduleUiState.Loading)
     val uiState: StateFlow<ScheduleUiState> = _uiState.asStateFlow()
+
+    val lastSyncTime: StateFlow<Long> = repository.lastSyncTime
 
     private val _weekOffset = MutableStateFlow(0)
     val weekOffset: StateFlow<Int> = _weekOffset.asStateFlow()

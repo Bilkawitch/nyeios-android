@@ -153,7 +153,7 @@ class InternalDownloadManager private constructor(private val context: Context) 
                 val cookies = repository.getActiveCookieString()
                 val reqBuilder = Request.Builder()
                     .url(url)
-                    .header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) NyEIOS/0.0.4")
+                    .header("User-Agent", EiosRepository.BROWSER_USER_AGENT)
 
                 if (cookies.isNotEmpty()) {
                     reqBuilder.header("Cookie", cookies)

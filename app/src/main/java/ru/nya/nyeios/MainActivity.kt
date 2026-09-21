@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.DynamicFeed
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.SignalCellularAlt
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,6 +47,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -77,6 +79,11 @@ import ru.nya.nyeios.ui.theme.PracticeGreen
 import ru.nya.nyeios.ui.theme.TextMuted
 import ru.nya.nyeios.ui.theme.TextPrimary
 import ru.nya.nyeios.ui.theme.TextSecondary
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
 
@@ -108,6 +115,7 @@ class MainActivity : ComponentActivity() {
                     val isLoginSheetVisible by scheduleViewModel.isLoginSheetVisible.collectAsState()
                     val isLoggingIn by scheduleViewModel.isLoggingIn.collectAsState()
                     val loginError by scheduleViewModel.loginError.collectAsState()
+                    val lastSyncTime by scheduleViewModel.lastSyncTime.collectAsState()
 
                     val isRefreshing = when (currentTab) {
                         0 -> (scheduleUiState as? ScheduleUiState.Success)?.isRefreshing == true || scheduleUiState is ScheduleUiState.Loading
@@ -164,6 +172,33 @@ class MainActivity : ComponentActivity() {
                                                             color = LectureBlue,
                                                             fontSize = 11.sp,
                                                             fontWeight = FontWeight.Bold
+                                                        )
+                                                    }
+                                                }
+                                            }
+
+                                            if (lastSyncTime > 0L) {
+                                                val syncText = remember(lastSyncTime) { formatSyncTime(lastSyncTime) }
+                                                if (syncText.isNotEmpty()) {
+                                                    val isRecent = remember(lastSyncTime) {
+                                                        System.currentTimeMillis() - lastSyncTime < 30 * 60 * 1000L
+                                                    }
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                                                        modifier = Modifier.padding(top = 1.dp)
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.SignalCellularAlt,
+                                                            contentDescription = "Синхронизация",
+                                                            tint = if (isRecent) PracticeGreen else TextMuted,
+                                                            modifier = Modifier.size(11.dp)
+                                                        )
+                                                        Text(
+                                                            text = syncText,
+                                                            color = TextMuted,
+                                                            fontSize = 10.sp,
+                                                            fontWeight = FontWeight.Normal
                                                         )
                                                     }
                                                 }
@@ -365,5 +400,26 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+}
+
+private fun formatSyncTime(timestamp: Long): String {
+    if (timestamp <= 0L) return ""
+    return try {
+        val syncDate = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalDate()
+        val today = LocalDate.now()
+        val timeFmt = DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
+        val timeStr = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).format(timeFmt)
+
+        when {
+            syncDate == today -> timeStr
+            syncDate == today.minusDays(1) -> "вчера $timeStr"
+            else -> {
+                val dateFmt = DateTimeFormatter.ofPattern("dd.MM HH:mm", Locale.getDefault())
+                Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).format(dateFmt)
+            }
+        }
+    } catch (e: Exception) {
+        ""
     }
 }

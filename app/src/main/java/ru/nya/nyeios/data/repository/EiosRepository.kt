@@ -70,6 +70,19 @@ class EiosRepository(private val context: Context) {
     private val _userProfile = MutableStateFlow(loadUserProfile())
     val userProfile: StateFlow<UserProfile> = _userProfile.asStateFlow()
 
+    private val _lastSyncTime = MutableStateFlow(securePrefs.getLong("last_sync_timestamp", 0L))
+    val lastSyncTime: StateFlow<Long> = _lastSyncTime.asStateFlow()
+
+    fun updateLastSyncTime() {
+        val now = System.currentTimeMillis()
+        _lastSyncTime.value = now
+        try {
+            securePrefs.edit().putLong("last_sync_timestamp", now).apply()
+        } catch (e: Exception) {
+            // Ignore pref save failure
+        }
+    }
+
     val okHttpClient: OkHttpClient by lazy {
         createOkHttpClient()
     }
@@ -78,6 +91,8 @@ class EiosRepository(private val context: Context) {
     fun isUserLoggedIn(): Boolean = _authSession.value.isLoggedIn
 
     companion object {
+        const val BROWSER_USER_AGENT = "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36"
+
         @Volatile
         private var INSTANCE: EiosRepository? = null
 
@@ -105,6 +120,22 @@ class EiosRepository(private val context: Context) {
             .readTimeout(15, TimeUnit.SECONDS)
             .followRedirects(true)
             .followSslRedirects(true)
+            .addInterceptor { chain ->
+                val original = chain.request()
+                val builder = original.newBuilder()
+                builder.header("User-Agent", BROWSER_USER_AGENT)
+                if (original.header("Accept") == null) {
+                    builder.header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")
+                }
+                if (original.header("Accept-Language") == null) {
+                    builder.header("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7")
+                }
+                builder.header("Sec-CH-UA", "\"Chromium\";v=\"128\", \"Not;A=Brand\";v=\"24\", \"Google Chrome\";v=\"128\"")
+                builder.header("Sec-CH-UA-Mobile", "?1")
+                builder.header("Sec-CH-UA-Platform", "\"Android\"")
+                builder.header("Upgrade-Insecure-Requests", "1")
+                chain.proceed(builder.build())
+            }
             .cookieJar(object : CookieJar {
                 override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
                     val hostKey = url.host
@@ -237,7 +268,7 @@ class EiosRepository(private val context: Context) {
 
             val request = Request.Builder()
                 .url(loginUrl)
-                .header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) NyEIOS/0.0.4")
+                .header("User-Agent", BROWSER_USER_AGENT)
                 .post(formBody)
                 .build()
 
@@ -284,6 +315,7 @@ class EiosRepository(private val context: Context) {
                 _authSession.value = newSession
 
                 updateProfileIfFound(html)
+                updateLastSyncTime()
                 Result.success("Успешный вход")
             } else {
                 val doc = Jsoup.parse(html)
@@ -350,7 +382,7 @@ class EiosRepository(private val context: Context) {
         val url = "https://eios.gukolomna.ru/eios/contacts/timetable/?startDate=$startD&endDate=$endD"
         val reqBuilder = Request.Builder()
             .url(url)
-            .header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) NyEIOS/0.0.4")
+            .header("User-Agent", BROWSER_USER_AGENT)
 
         if (cookies.isNotEmpty()) {
             reqBuilder.header("Cookie", cookies)
@@ -376,6 +408,7 @@ class EiosRepository(private val context: Context) {
                 } catch (e: Exception) {
                     // Ignore cache write error
                 }
+                updateLastSyncTime()
                 Result.success(schedule)
             } else {
                 if (cacheFile.exists()) {
@@ -421,7 +454,7 @@ class EiosRepository(private val context: Context) {
 
         val reqBuilder = Request.Builder()
             .url(url)
-            .header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) NyEIOS/0.0.4")
+            .header("User-Agent", BROWSER_USER_AGENT)
 
         if (cookies.isNotEmpty()) {
             reqBuilder.header("Cookie", cookies)
@@ -447,6 +480,7 @@ class EiosRepository(private val context: Context) {
                 } catch (e: Exception) {
                     // Ignore cache write error
                 }
+                updateLastSyncTime()
                 Result.success(posts)
             } else {
                 if (cacheFile.exists()) {
@@ -496,7 +530,7 @@ class EiosRepository(private val context: Context) {
 
         val reqBuilder = Request.Builder()
             .url(urlBuilder.toString())
-            .header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) NyEIOS/0.0.4")
+            .header("User-Agent", BROWSER_USER_AGENT)
 
         if (cookies.isNotEmpty()) {
             reqBuilder.header("Cookie", cookies)
@@ -522,6 +556,7 @@ class EiosRepository(private val context: Context) {
                 } catch (e: Exception) {
                     // Ignore cache write error
                 }
+                updateLastSyncTime()
                 Result.success(terms)
             } else {
                 if (cacheFile.exists()) {
@@ -547,7 +582,7 @@ class EiosRepository(private val context: Context) {
         val cookies = getActiveCookies()
         val reqBuilder = Request.Builder()
             .url(fileUrl)
-            .header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) NyEIOS/0.0.4")
+            .header("User-Agent", BROWSER_USER_AGENT)
 
         if (cookies.isNotEmpty()) {
             reqBuilder.header("Cookie", cookies)
