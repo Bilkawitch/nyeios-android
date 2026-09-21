@@ -31,8 +31,15 @@ class FeedViewModel(application: Application) : AndroidViewModel(application) {
     private val _isDownloadsSheetVisible = MutableStateFlow(false)
     val isDownloadsSheetVisible: StateFlow<Boolean> = _isDownloadsSheetVisible.asStateFlow()
 
+    private var feedJob: kotlinx.coroutines.Job? = null
+
     init {
-        loadFeed(forceNetwork = false)
+        loadCachedOnly()
+    }
+
+    private fun loadCachedOnly() {
+        val cached = repository.getCachedFeed()
+        _uiState.value = FeedUiState.Success(cached ?: emptyList())
     }
 
     fun showDownloadsSheet() {
@@ -89,12 +96,38 @@ class FeedViewModel(application: Application) : AndroidViewModel(application) {
         downloadManager.clearAllDownloads()
     }
 
+    val feedSyncProgress: StateFlow<ru.nya.nyeios.data.model.FeedSyncProgress> = repository.feedSyncProgress
+
+    private val _showSyncConfirmationDialog = MutableStateFlow(false)
+    val showSyncConfirmationDialog: StateFlow<Boolean> = _showSyncConfirmationDialog.asStateFlow()
+
+    fun requestSyncFeed() {
+        _showSyncConfirmationDialog.value = true
+    }
+
+    fun dismissSyncConfirmationDialog() {
+        _showSyncConfirmationDialog.value = false
+    }
+
+    fun confirmSyncFeed() {
+        _showSyncConfirmationDialog.value = false
+        refresh()
+    }
+
+    fun cancelSyncFeed() {
+        feedJob?.cancel()
+        repository.cancelFeedSync()
+    }
+
+    fun isUserLoggedIn(): Boolean = repository.isUserLoggedIn()
+
     fun loadFeed(forceNetwork: Boolean = false) {
-        viewModelScope.launch {
+        feedJob?.cancel()
+        feedJob = viewModelScope.launch {
             val currentPosts = (_uiState.value as? FeedUiState.Success)?.posts
             if (forceNetwork && currentPosts != null) {
                 _uiState.value = FeedUiState.Success(currentPosts, isRefreshing = true)
-            } else if (!forceNetwork) {
+            } else if (!forceNetwork && currentPosts == null) {
                 _uiState.value = FeedUiState.Loading
             }
 

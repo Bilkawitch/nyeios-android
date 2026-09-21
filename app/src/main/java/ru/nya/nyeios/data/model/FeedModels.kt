@@ -27,3 +27,27 @@ sealed interface FeedUiState {
         val cachedPosts: List<FeedPost>? = null
     ) : FeedUiState
 }
+
+enum class FeedSyncStage {
+    IDLE,
+    CONNECTING,        // Подключение к серверу
+    SERVER_PROCESSING, // Сервер генерирует страницу ленты
+    DOWNLOADING,       // Скачивание потока байт
+    PARSING,           // Разбор HTML и вложений
+    COMPLETED,
+    ERROR
+}
+
+data class FeedSyncProgress(
+    val isSyncing: Boolean = false,
+    val stage: FeedSyncStage = FeedSyncStage.IDLE,
+    val elapsedSeconds: Int = 0,
+    val bytesDownloaded: Long = 0L,
+    val totalBytes: Long = -1L,
+    val speedBps: Long = 0L,
+    val statusText: String = "",
+    val subStatusText: String = "",
+    val etaSeconds: Int? = null,
+    val isReceivingPackets: Boolean = false,
+    val errorMessage: String? = null
+)

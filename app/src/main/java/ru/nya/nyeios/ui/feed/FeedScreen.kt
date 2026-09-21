@@ -2,6 +2,11 @@ package ru.nya.nyeios.ui.feed
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,6 +31,8 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.FileDownload
@@ -34,7 +41,9 @@ import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -54,10 +63,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import ru.nya.nyeios.data.model.FeedSyncProgress
+import ru.nya.nyeios.data.model.FeedSyncStage
 import ru.nya.nyeios.data.download.DownloadState
 import ru.nya.nyeios.data.download.DownloadedFile
 import ru.nya.nyeios.data.download.InternalDownloadManager
@@ -98,9 +112,71 @@ fun FeedScreen(
     val downloadStates by (feedViewModel?.downloadStates ?: downloadManager.downloadStates).collectAsState()
     val downloadedFiles by (feedViewModel?.downloadedFiles ?: downloadManager.downloadedFiles).collectAsState()
 
+    val syncProgress by (feedViewModel?.feedSyncProgress ?: remember { MutableStateFlow(FeedSyncProgress()).asStateFlow() }).collectAsState()
+    val showSyncDialog by (feedViewModel?.showSyncConfirmationDialog ?: remember { MutableStateFlow(false).asStateFlow() }).collectAsState()
+    val isUserLoggedIn = feedViewModel?.isUserLoggedIn() ?: false
+
     var localDownloadsSheetVisible by remember { mutableStateOf(false) }
     val isDownloadsSheetVisible = feedViewModel?.isDownloadsSheetVisible?.collectAsState()?.value
         ?: localDownloadsSheetVisible
+
+    if (showSyncDialog) {
+        AlertDialog(
+            onDismissRequest = { feedViewModel?.dismissSyncConfirmationDialog() },
+            containerColor = ObsidianSurface,
+            titleContentColor = TextPrimary,
+            textContentColor = TextSecondary,
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.CloudSync,
+                    contentDescription = null,
+                    tint = PracticeGreen,
+                    modifier = Modifier.size(28.dp)
+                )
+            },
+            title = {
+                Text("Синхронизация Живой ленты", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "Сервер университета формирует Живую ленту монолитным документом (~7.5 МБ). В зависимости от нагрузки генерация может занять от 20 секунд до нескольких минут.",
+                        fontSize = 14.sp,
+                        lineHeight = 20.sp,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = "• Во время загрузки разделы «Расписание» и «БРС» будут работать из сохранённого кэша.\n• В приложении отображается живой таймер и объём скачанных данных.\n• Вы сможете отменить загрузку в любой момент.",
+                        fontSize = 12.sp,
+                        lineHeight = 17.sp,
+                        color = TextMuted
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { feedViewModel?.confirmSyncFeed() },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PracticeGreen,
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("Начать загрузку", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { feedViewModel?.dismissSyncConfirmationDialog() },
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, ObsidianBorder),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary)
+                ) {
+                    Text("Отмена")
+                }
+            }
+        )
+    }
 
     fun openSheet() {
         if (feedViewModel != null) {
@@ -169,19 +245,26 @@ fun FeedScreen(
         when (uiState) {
             is FeedUiState.Loading -> {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().padding(24.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        CircularProgressIndicator(color = LectureBlue)
-                        Text(
-                            text = "Загрузка объявлений ленты...",
-                            color = TextMuted,
-                            fontSize = 14.sp
+                    if (syncProgress.isSyncing) {
+                        FeedSyncProgressCard(
+                            progress = syncProgress,
+                            onCancel = { feedViewModel?.cancelSyncFeed() }
                         )
+                    } else {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            CircularProgressIndicator(color = LectureBlue)
+                            Text(
+                                text = "Загрузка сохранённой ленты...",
+                                color = TextMuted,
+                                fontSize = 14.sp
+                            )
+                        }
                     }
                 }
             }
@@ -193,60 +276,69 @@ fun FeedScreen(
                         .padding(24.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(64.dp)
-                                .clip(CircleShape)
-                                .background(ExamRedBg),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Warning,
-                                contentDescription = null,
-                                tint = ExamRed,
-                                modifier = Modifier.size(32.dp)
-                            )
-                        }
-
-                        Text(
-                            text = uiState.message,
-                            color = TextPrimary,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Medium,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            lineHeight = 22.sp,
-                            modifier = Modifier.padding(horizontal = 16.dp)
+                    if (syncProgress.isSyncing) {
+                        FeedSyncProgressCard(
+                            progress = syncProgress,
+                            onCancel = { feedViewModel?.cancelSyncFeed() }
                         )
-
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                    } else {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            OutlinedButton(
-                                onClick = onRefresh,
-                                shape = RoundedCornerShape(12.dp),
-                                border = BorderStroke(1.dp, ObsidianBorder),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
-                                modifier = Modifier.height(44.dp)
+                            Box(
+                                modifier = Modifier
+                                    .size(64.dp)
+                                    .clip(CircleShape)
+                                    .background(ExamRedBg),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Text("Повторить", fontWeight = FontWeight.SemiBold)
+                                Icon(
+                                    imageVector = Icons.Default.Warning,
+                                    contentDescription = null,
+                                    tint = ExamRed,
+                                    modifier = Modifier.size(32.dp)
+                                )
                             }
 
-                            Button(
-                                onClick = onOpenLogin,
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = LectureBlue,
-                                    contentColor = Color.White
-                                ),
-                                modifier = Modifier.height(44.dp)
+                            Text(
+                                text = uiState.message,
+                                color = TextPrimary,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Medium,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                lineHeight = 22.sp,
+                                modifier = Modifier.padding(horizontal = 16.dp)
+                            )
+
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("Войти в аккаунт", fontWeight = FontWeight.Bold)
+                                OutlinedButton(
+                                    onClick = { feedViewModel?.requestSyncFeed() ?: onRefresh() },
+                                    shape = RoundedCornerShape(12.dp),
+                                    border = BorderStroke(1.dp, PracticeGreen.copy(alpha = 0.5f)),
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = PracticeGreen),
+                                    modifier = Modifier.height(44.dp)
+                                ) {
+                                    Text("Повторить", fontWeight = FontWeight.SemiBold)
+                                }
+
+                                if (!isUserLoggedIn) {
+                                    Button(
+                                        onClick = onOpenLogin,
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = LectureBlue,
+                                            contentColor = Color.White
+                                        ),
+                                        modifier = Modifier.height(44.dp)
+                                    ) {
+                                        Text("Войти в аккаунт", fontWeight = FontWeight.Bold)
+                                    }
+                                }
                             }
                         }
                     }
@@ -258,26 +350,69 @@ fun FeedScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(32.dp),
+                            .padding(24.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text(text = "📢", fontSize = 40.sp)
-                            Text(
-                                text = "Нет новых объявлений",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp,
-                                color = TextPrimary
+                        if (syncProgress.isSyncing) {
+                            FeedSyncProgressCard(
+                                progress = syncProgress,
+                                onCancel = { feedViewModel?.cancelSyncFeed() }
                             )
-                            Text(
-                                text = "Сохранённые посты в ленте пока отсутствуют. Попробуйте обновить.",
-                                color = TextMuted,
-                                fontSize = 14.sp,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                            )
+                        } else {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text(text = "📢", fontSize = 44.sp)
+                                Text(
+                                    text = "Нет сохранённых объявлений",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp,
+                                    color = TextPrimary
+                                )
+                                Text(
+                                    text = "Живая лента сохраняется локально после разовой синхронизации с eios.gukolomna.ru.",
+                                    color = TextMuted,
+                                    fontSize = 13.sp,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    lineHeight = 18.sp,
+                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                )
+
+                                Spacer(Modifier.height(4.dp))
+
+                                if (!isUserLoggedIn) {
+                                    Button(
+                                        onClick = onOpenLogin,
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = LectureBlue,
+                                            contentColor = Color.White
+                                        ),
+                                        modifier = Modifier.height(44.dp)
+                                    ) {
+                                        Text("Войти в аккаунт", fontWeight = FontWeight.Bold)
+                                    }
+                                } else {
+                                    Button(
+                                        onClick = { feedViewModel?.requestSyncFeed() ?: onRefresh() },
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = PracticeGreen,
+                                            contentColor = Color.White
+                                        ),
+                                        modifier = Modifier.height(44.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.CloudDownload,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("Загрузить ленту с сервера", fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
                         }
                     }
                 } else {
@@ -286,7 +421,86 @@ fun FeedScreen(
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        // Downloads Banner
+                        // 1. Live Sync Progress or Sync Bar
+                        if (syncProgress.isSyncing) {
+                            item {
+                                FeedSyncProgressCard(
+                                    progress = syncProgress,
+                                    onCancel = { feedViewModel?.cancelSyncFeed() }
+                                )
+                            }
+                        } else {
+                            item {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(ObsidianCard)
+                                        .border(1.dp, ObsidianBorder, RoundedCornerShape(12.dp))
+                                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(34.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(PracticeGreenBg),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.CloudSync,
+                                                contentDescription = null,
+                                                tint = PracticeGreen,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                        Column {
+                                            Text(
+                                                text = "Живая лента ЭИОС",
+                                                color = TextPrimary,
+                                                fontSize = 13.sp,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                            Text(
+                                                text = "Сохранено объявлений: ${uiState.posts.size}",
+                                                color = TextSecondary,
+                                                fontSize = 11.sp
+                                            )
+                                        }
+                                    }
+
+                                    OutlinedButton(
+                                        onClick = {
+                                            if (!isUserLoggedIn) {
+                                                onOpenLogin()
+                                            } else {
+                                                feedViewModel?.requestSyncFeed() ?: onRefresh()
+                                            }
+                                        },
+                                        shape = RoundedCornerShape(8.dp),
+                                        border = BorderStroke(1.dp, PracticeGreen.copy(alpha = 0.5f)),
+                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = PracticeGreen),
+                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                        modifier = Modifier.height(32.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Refresh,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("Обновить", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+
+                        // 2. Downloads Banner
                         item {
                             val totalBytes = remember(downloadedFiles) { downloadedFiles.sumOf { it.sizeBytes } }
                             val activeCount = remember(downloadStates) {
@@ -857,5 +1071,189 @@ fun FeedAttachmentItem(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun FeedSyncProgressCard(
+    progress: FeedSyncProgress,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val pulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 1.0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseAlpha"
+    )
+
+    val formattedTime = remember(progress.elapsedSeconds) {
+        val m = progress.elapsedSeconds / 60
+        val s = progress.elapsedSeconds % 60
+        String.format(java.util.Locale.US, "%02d:%02d", m, s)
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(ObsidianCard)
+            .border(1.dp, PracticeGreen.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        // Top Header Row: Status Icon + Title + Pulsing Beacon + Monospace Timer Badge
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(PracticeGreen.copy(alpha = pulseAlpha))
+                )
+                Text(
+                    text = "Синхронизация ленты",
+                    color = TextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(PracticeGreenBg)
+                    .border(1.dp, PracticeGreen.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+                    .padding(horizontal = 8.dp, vertical = 3.dp)
+            ) {
+                Text(
+                    text = formattedTime,
+                    color = PracticeGreen,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    fontFamily = FontFamily.Monospace
+                )
+            }
+        }
+
+        // Primary Status Message
+        Text(
+            text = progress.statusText.ifEmpty { "Подключение к eios.gukolomna.ru..." },
+            color = TextPrimary,
+            fontWeight = FontWeight.Medium,
+            fontSize = 13.sp,
+            lineHeight = 18.sp
+        )
+
+        // Sub Status (Speed, packet indicator, elapsed explanation)
+        if (progress.subStatusText.isNotEmpty()) {
+            Text(
+                text = progress.subStatusText,
+                color = if (progress.isReceivingPackets) PracticeGreen else TextSecondary,
+                fontSize = 11.sp,
+                fontWeight = if (progress.isReceivingPackets) FontWeight.SemiBold else FontWeight.Normal
+            )
+        }
+
+        // Progress Bar
+        val isDownloading = progress.stage == FeedSyncStage.DOWNLOADING && progress.bytesDownloaded > 0
+        if (isDownloading) {
+            val total = progress.totalBytes.coerceAtLeast(1L)
+            val frac = (progress.bytesDownloaded.toFloat() / total).coerceIn(0.01f, 1f)
+            val percent = (frac * 100).toInt().coerceIn(1, 99)
+
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                LinearProgressIndicator(
+                    progress = { frac },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(7.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    color = PracticeGreen,
+                    trackColor = ObsidianBorder
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "$percent%",
+                        color = PracticeGreen,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "${formatBytesLocal(progress.bytesDownloaded)} / ~7.5 МБ",
+                        color = TextMuted,
+                        fontSize = 11.sp
+                    )
+                }
+            }
+        } else {
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(3.dp)),
+                color = PracticeGreen,
+                trackColor = ObsidianBorder
+            )
+        }
+
+        // Footer: Note & Cancel Button
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Таймаут: 25 мин • Фоновый режим",
+                color = TextMuted,
+                fontSize = 11.sp
+            )
+
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .clickable { onCancel() }
+                    .background(ExamRedBg)
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = null,
+                    tint = ExamRed,
+                    modifier = Modifier.size(13.dp)
+                )
+                Text(
+                    text = "Отменить",
+                    color = ExamRed,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
+private fun formatBytesLocal(bytes: Long): String {
+    return when {
+        bytes >= 1024 * 1024 -> String.format(java.util.Locale.US, "%.1f МБ", bytes / (1024.0 * 1024.0))
+        bytes >= 1024 -> String.format(java.util.Locale.US, "%d КБ", bytes / 1024)
+        bytes > 0 -> "$bytes Б"
+        else -> "0 Б"
     }
 }

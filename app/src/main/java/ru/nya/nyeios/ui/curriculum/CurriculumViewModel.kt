@@ -21,12 +21,30 @@ class CurriculumViewModel(application: Application) : AndroidViewModel(applicati
     private val _selectedTermNum = MutableStateFlow<Int?>(null)
     val selectedTermNum: StateFlow<Int?> = _selectedTermNum.asStateFlow()
 
+    private var curriculumJob: kotlinx.coroutines.Job? = null
+
     init {
-        loadCurriculum(forceNetwork = false)
+        loadCachedOnly()
+    }
+
+    private fun loadCachedOnly() {
+        val cached = repository.getCachedCurriculum()
+        if (cached != null) {
+            val chosenTermNum = cached.firstOrNull { it.isCurrent }?.termNum
+                ?: cached.firstOrNull()?.termNum
+                ?: 0
+            _selectedTermNum.value = chosenTermNum
+            _uiState.value = CurriculumUiState.Success(
+                terms = cached,
+                selectedTermNum = chosenTermNum,
+                isRefreshing = false
+            )
+        }
     }
 
     fun loadCurriculum(forceNetwork: Boolean = false) {
-        viewModelScope.launch {
+        curriculumJob?.cancel()
+        curriculumJob = viewModelScope.launch {
             val currentTerms = (_uiState.value as? CurriculumUiState.Success)?.terms
             if (forceNetwork && currentTerms != null) {
                 _uiState.value = CurriculumUiState.Success(

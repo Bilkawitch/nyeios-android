@@ -137,8 +137,10 @@ object ScheduleParser {
             }
         }
 
+        val todayDayMonth = today.format(DateTimeFormatter.ofPattern("dd.MM", Locale.getDefault()))
+
         val parsedDays = rawDays.map { dayTitle ->
-            val parts = dayTitle.split(" ", limit = 2)
+            val parts = dayTitle.split(Regex("""[\s\-,]+""")).filter { it.isNotBlank() }
             val dayName = when (parts.firstOrNull()?.lowercase(Locale.ROOT)) {
                 "понедельник" -> "Пн"
                 "вторник" -> "Вт"
@@ -150,15 +152,14 @@ object ScheduleParser {
                 else -> parts.firstOrNull()?.take(2)?.replaceFirstChar { it.uppercase() } ?: ""
             }
 
-            val datePart = parts.getOrNull(1)?.trim().orEmpty()
-            val isToday = if (datePart.isNotEmpty()) {
-                todayStr.startsWith(datePart)
-            } else false
+            val dateMatch = Regex("""(\d{1,2}\.\d{1,2})""").find(dayTitle)
+            val cleanDate = dateMatch?.value.orEmpty()
+            val isToday = cleanDate.isNotEmpty() && cleanDate == todayDayMonth
 
             DaySchedule(
                 dayTitle = dayTitle,
                 dayName = dayName,
-                dateString = datePart,
+                dateString = cleanDate,
                 isToday = isToday,
                 lessons = dayLessonsMap[dayTitle] ?: emptyList()
             )

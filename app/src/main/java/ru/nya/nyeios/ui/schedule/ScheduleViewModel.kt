@@ -42,6 +42,8 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     private val _loginError = MutableStateFlow<String?>(null)
     val loginError: StateFlow<String?> = _loginError.asStateFlow()
 
+    private var scheduleJob: kotlinx.coroutines.Job? = null
+
     init {
         loadSchedule(0, forceNetwork = false)
     }
@@ -52,8 +54,9 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun loadSchedule(offset: Int, forceNetwork: Boolean = false) {
+        scheduleJob?.cancel()
         _weekOffset.value = offset
-        viewModelScope.launch {
+        scheduleJob = viewModelScope.launch {
             val currentSchedule = (_uiState.value as? ScheduleUiState.Success)?.schedule
             if (forceNetwork && currentSchedule != null) {
                 _uiState.value = ScheduleUiState.Success(currentSchedule, isRefreshing = true)
@@ -63,6 +66,12 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
 
             val result = repository.getSchedule(offset, forceNetwork)
             result.onSuccess { schedule ->
+                if (offset == 0) {
+                    val todayIndex = schedule.days.indexOfFirst { it.isToday }
+                    if (todayIndex >= 0) {
+                        _selectedDayIndex.value = todayIndex
+                    }
+                }
                 _uiState.value = ScheduleUiState.Success(schedule, isRefreshing = false)
             }.onFailure { error ->
                 _uiState.value = ScheduleUiState.Error(

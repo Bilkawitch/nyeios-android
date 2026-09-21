@@ -13,6 +13,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,6 +33,7 @@ import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.SignalCellularAlt
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,9 +46,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -64,6 +68,7 @@ import ru.nya.nyeios.data.model.CurriculumUiState
 import ru.nya.nyeios.data.model.FeedUiState
 import ru.nya.nyeios.data.model.ScheduleUiState
 import ru.nya.nyeios.ui.auth.LoginBottomSheet
+import ru.nya.nyeios.ui.debug.NetworkLogsBottomSheet
 import ru.nya.nyeios.ui.curriculum.CurriculumScreen
 import ru.nya.nyeios.ui.curriculum.CurriculumViewModel
 import ru.nya.nyeios.ui.feed.FeedScreen
@@ -109,6 +114,7 @@ class MainActivity : ComponentActivity() {
                     val selectedDayIndex by scheduleViewModel.selectedDayIndex.collectAsState()
 
                     val feedUiState by feedViewModel.uiState.collectAsState()
+                    val feedSyncProgress by feedViewModel.feedSyncProgress.collectAsState()
                     val curriculumUiState by curriculumViewModel.uiState.collectAsState()
 
                     val authSession by scheduleViewModel.authSession.collectAsState()
@@ -116,12 +122,20 @@ class MainActivity : ComponentActivity() {
                     val isLoggingIn by scheduleViewModel.isLoggingIn.collectAsState()
                     val loginError by scheduleViewModel.loginError.collectAsState()
                     val lastSyncTime by scheduleViewModel.lastSyncTime.collectAsState()
+                    var isNetworkLogsSheetVisible by rememberSaveable { mutableStateOf(false) }
 
                     val isRefreshing = when (currentTab) {
                         0 -> (scheduleUiState as? ScheduleUiState.Success)?.isRefreshing == true || scheduleUiState is ScheduleUiState.Loading
-                        1 -> (feedUiState as? FeedUiState.Success)?.isRefreshing == true || feedUiState is FeedUiState.Loading
+                        1 -> feedSyncProgress.isSyncing || (feedUiState as? FeedUiState.Success)?.isRefreshing == true || feedUiState is FeedUiState.Loading
                         2 -> (curriculumUiState as? CurriculumUiState.Success)?.isRefreshing == true || curriculumUiState is CurriculumUiState.Loading
                         else -> false
+                    }
+
+                    LaunchedEffect(currentTab) {
+                        when (currentTab) {
+                            1 -> if (feedUiState !is FeedUiState.Success) feedViewModel.loadFeed(forceNetwork = false)
+                            2 -> if (curriculumUiState !is CurriculumUiState.Success) curriculumViewModel.loadCurriculum(forceNetwork = false)
+                        }
                     }
 
                     Scaffold(
@@ -134,7 +148,11 @@ class MainActivity : ComponentActivity() {
                                 title = {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .clickable { isNetworkLogsSheetVisible = true }
+                                            .padding(vertical = 4.dp, horizontal = 2.dp)
                                     ) {
                                         Image(
                                             painter = painterResource(id = R.drawable.app_logo),
@@ -188,18 +206,32 @@ class MainActivity : ComponentActivity() {
                                                         horizontalArrangement = Arrangement.spacedBy(3.dp),
                                                         modifier = Modifier.padding(top = 1.dp)
                                                     ) {
-                                                        Icon(
-                                                            imageVector = Icons.Default.SignalCellularAlt,
-                                                            contentDescription = "Синхронизация",
-                                                            tint = if (isRecent) PracticeGreen else TextMuted,
-                                                            modifier = Modifier.size(11.dp)
-                                                        )
-                                                        Text(
-                                                            text = syncText,
-                                                            color = TextMuted,
-                                                            fontSize = 10.sp,
-                                                            fontWeight = FontWeight.Normal
-                                                        )
+                                                        if (feedSyncProgress.isSyncing) {
+                                                            CircularProgressIndicator(
+                                                                modifier = Modifier.size(10.dp),
+                                                                color = PracticeGreen,
+                                                                strokeWidth = 1.5.dp
+                                                            )
+                                                            Text(
+                                                                text = "Синхр. ленты...",
+                                                                color = PracticeGreen,
+                                                                fontSize = 10.sp,
+                                                                fontWeight = FontWeight.Medium
+                                                            )
+                                                        } else {
+                                                            Icon(
+                                                                imageVector = Icons.Default.SignalCellularAlt,
+                                                                contentDescription = "Синхронизация",
+                                                                tint = if (isRecent) PracticeGreen else TextMuted,
+                                                                modifier = Modifier.size(11.dp)
+                                                            )
+                                                            Text(
+                                                                text = syncText,
+                                                                color = TextMuted,
+                                                                fontSize = 10.sp,
+                                                                fontWeight = FontWeight.Normal
+                                                            )
+                                                        }
                                                     }
                                                 }
                                             }
@@ -244,9 +276,17 @@ class MainActivity : ComponentActivity() {
                                     // Refresh button
                                     IconButton(
                                         onClick = {
+                                            if (feedSyncProgress.isSyncing) {
+                                                android.widget.Toast.makeText(
+                                                    this@MainActivity,
+                                                    "Идёт синхронизация Живой ленты. Расписание и успеваемость работают из кэша.",
+                                                    android.widget.Toast.LENGTH_SHORT
+                                                ).show()
+                                                return@IconButton
+                                            }
                                             when (currentTab) {
                                                 0 -> scheduleViewModel.refresh()
-                                                1 -> feedViewModel.refresh()
+                                                1 -> feedViewModel.requestSyncFeed()
                                                 2 -> curriculumViewModel.refresh()
                                             }
                                         }
@@ -394,6 +434,12 @@ class MainActivity : ComponentActivity() {
                                     curriculumViewModel.refresh()
                                 },
                                 onDismiss = { scheduleViewModel.hideLoginSheet() }
+                            )
+                        }
+
+                        if (isNetworkLogsSheetVisible) {
+                            NetworkLogsBottomSheet(
+                                onDismiss = { isNetworkLogsSheetVisible = false }
                             )
                         }
                     }

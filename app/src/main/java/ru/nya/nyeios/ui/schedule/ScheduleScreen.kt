@@ -3,6 +3,7 @@ package ru.nya.nyeios.ui.schedule
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -49,6 +51,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,6 +59,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import kotlinx.coroutines.delay
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -256,13 +260,26 @@ fun ScheduleScreen(
                                 }
                             }
                         } else {
+                            val todayDayMonth = remember {
+                                try {
+                                    java.time.LocalDate.now(LessonTimeUtils.moscowZone).format(java.time.format.DateTimeFormatter.ofPattern("dd.MM"))
+                                } catch (e: Exception) {
+                                    ""
+                                }
+                            }
+                            val isDayToday = currentDay.isToday || (
+                                uiState.schedule.offsetWeeks == 0 &&
+                                todayDayMonth.isNotEmpty() &&
+                                (currentDay.dateString.contains(todayDayMonth) || currentDay.dayTitle.contains(todayDayMonth))
+                            )
+
                             LazyColumn(
                                 modifier = Modifier.fillMaxSize(),
                                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 items(currentDay.lessons) { lesson ->
-                                    LessonCard(lesson = lesson, isToday = currentDay.isToday)
+                                    LessonCard(lesson = lesson, isToday = isDayToday)
                                 }
                                 item {
                                     Spacer(modifier = Modifier.height(20.dp))
@@ -400,9 +417,10 @@ fun DaySelectorRow(
                             )
                         }
                     }
-                    if (day.dateString.isNotEmpty()) {
+                    val cleanDayDate = Regex("""(\d{1,2}\.\d{1,2})""").find(day.dateString.ifEmpty { day.dayTitle })?.value ?: day.dateString.take(5)
+                    if (cleanDayDate.isNotEmpty()) {
                         Text(
-                            text = day.dateString.take(5), // e.g. "15.09"
+                            text = cleanDayDate, // e.g. "15.09"
                             fontSize = 10.sp,
                             color = if (isSelected) Color.White.copy(alpha = 0.85f) else TextMuted
                         )
@@ -418,10 +436,24 @@ fun LessonCard(
     lesson: LessonItem,
     isToday: Boolean
 ) {
-    val isOngoing = remember(lesson.time, isToday) {
-        if (!isToday) return@remember false
-        checkIfOngoing(lesson.time)
+    val progressInfo by produceState<LessonProgressInfo?>(
+        initialValue = LessonTimeUtils.computeLessonProgress(lesson.time, isToday),
+        key1 = lesson.time,
+        key2 = isToday
+    ) {
+        while (true) {
+            value = LessonTimeUtils.computeLessonProgress(lesson.time, isToday)
+            delay(1000L)
+        }
     }
+
+    val isOngoing = progressInfo?.isOngoing == true
+
+    val animatedProgress by animateFloatAsState(
+        targetValue = progressInfo?.progress ?: 0f,
+        animationSpec = tween(durationMillis = 500),
+        label = "lesson_progress"
+    )
 
     val (badgeColor, badgeBg) = when (lesson.type) {
         LessonType.LECTURE -> Pair(LectureBlue, LectureBlueBg)
@@ -572,22 +604,90 @@ fun LessonCard(
                     )
                 }
             }
+
+            // Real-time loading bar for lesson
+            val currentProgress = progressInfo
+            if (currentProgress != null) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    // Time stats: Elapsed & Remaining / Status
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "Прошло:",
+                                fontSize = 11.sp,
+                                color = TextMuted,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = currentProgress.elapsedText,
+                                fontSize = 11.sp,
+                                color = if (currentProgress.progress > 0f) PracticeGreen else TextMuted,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            if (currentProgress.isOngoing) {
+                                Text(
+                                    text = "Осталось:",
+                                    fontSize = 11.sp,
+                                    color = TextMuted,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                            Text(
+                                text = currentProgress.remainingText,
+                                fontSize = 11.sp,
+                                color = when {
+                                    currentProgress.isOngoing -> TextPrimary
+                                    currentProgress.isUpcoming -> LectureBlue
+                                    currentProgress.isFinished -> PracticeGreen
+                                    else -> TextSecondary
+                                },
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    // Loading / Progress Bar
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(ObsidianBg)
+                            .border(0.5.dp, ObsidianBorder, RoundedCornerShape(3.dp))
+                    ) {
+                        if (animatedProgress > 0f) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(animatedProgress.coerceIn(0f, 1f))
+                                    .fillMaxHeight()
+                                    .clip(RoundedCornerShape(3.dp))
+                                    .background(PracticeGreen)
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
 private fun checkIfOngoing(timeRangeStr: String): Boolean {
-    // Expected format: "1 пара 08:30 - 10:00" or "08:30 - 10:00"
-    val match = Regex("""(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})""").find(timeRangeStr) ?: return false
-    val (startStr, endStr) = match.destructured
-    val formatter = DateTimeFormatter.ofPattern("HH:mm")
-
-    return try {
-        val now = LocalTime.now()
-        val start = LocalTime.parse(startStr, formatter)
-        val end = LocalTime.parse(endStr, formatter)
-        now.isAfter(start) && now.isBefore(end)
-    } catch (e: Exception) {
-        false
-    }
+    return LessonTimeUtils.checkIfOngoing(timeRangeStr)
 }
