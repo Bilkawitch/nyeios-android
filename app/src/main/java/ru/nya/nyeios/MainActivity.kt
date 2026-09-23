@@ -82,13 +82,19 @@ import ru.nya.nyeios.ui.theme.ObsidianBorder
 import ru.nya.nyeios.ui.theme.ObsidianSurface
 import ru.nya.nyeios.ui.theme.PracticeGreen
 import ru.nya.nyeios.ui.theme.TextMuted
+import ru.nya.nyeios.ui.theme.ExamRed
 import ru.nya.nyeios.ui.theme.TextPrimary
 import ru.nya.nyeios.ui.theme.TextSecondary
+import ru.nya.nyeios.ui.update.UpdateBanner
+import ru.nya.nyeios.ui.update.UpdateViewModel
+import ru.nya.nyeios.data.model.UpdateUiState
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 
 class MainActivity : ComponentActivity() {
 
@@ -106,6 +112,7 @@ class MainActivity : ComponentActivity() {
                     val scheduleViewModel: ScheduleViewModel = viewModel()
                     val feedViewModel: FeedViewModel = viewModel()
                     val curriculumViewModel: CurriculumViewModel = viewModel()
+                    val updateViewModel: UpdateViewModel = viewModel()
 
                     var currentTab by rememberSaveable { mutableIntStateOf(0) }
 
@@ -123,6 +130,13 @@ class MainActivity : ComponentActivity() {
                     val loginError by scheduleViewModel.loginError.collectAsState()
                     val lastSyncTime by scheduleViewModel.lastSyncTime.collectAsState()
                     var isNetworkLogsSheetVisible by rememberSaveable { mutableStateOf(false) }
+
+                    val updateUiState by updateViewModel.uiState.collectAsState()
+                    val hasPendingUpdate = updateUiState is UpdateUiState.Dismissed
+
+                    LaunchedEffect(Unit) {
+                        updateViewModel.checkForUpdate()
+                    }
 
                     val isRefreshing = when (currentTab) {
                         0 -> (scheduleUiState as? ScheduleUiState.Success)?.isRefreshing == true || scheduleUiState is ScheduleUiState.Loading
@@ -151,15 +165,46 @@ class MainActivity : ComponentActivity() {
                                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(8.dp))
-                                            .clickable { isNetworkLogsSheetVisible = true }
+                                            .clickable {
+                                                if (hasPendingUpdate) {
+                                                    updateViewModel.restoreBanner()
+                                                } else {
+                                                    isNetworkLogsSheetVisible = true
+                                                }
+                                            }
                                             .padding(vertical = 4.dp, horizontal = 2.dp)
                                     ) {
-                                        Image(
-                                            painter = painterResource(id = R.drawable.app_logo),
-                                            contentDescription = "NyEIOS",
-                                            modifier = Modifier
+                                        // Icon: pulsing red glow when update is dismissed
+                                        val pulseTransition = rememberInfiniteTransition(label = "update_pulse")
+                                        val pulseAlpha by pulseTransition.animateFloat(
+                                            initialValue = 0.15f,
+                                            targetValue = 0.65f,
+                                            animationSpec = infiniteRepeatable(
+                                                animation = tween(900),
+                                                repeatMode = RepeatMode.Reverse
+                                            ),
+                                            label = "pulse_alpha"
+                                        )
+                                        val iconModifier = if (hasPendingUpdate) {
+                                            Modifier
+                                                .size(36.dp)
+                                                .drawBehind {
+                                                    drawCircle(
+                                                        color = ExamRed.copy(alpha = pulseAlpha),
+                                                        radius = size.minDimension / 2f * 1.35f,
+                                                        center = Offset(size.width / 2f, size.height / 2f)
+                                                    )
+                                                }
+                                                .clip(CircleShape)
+                                        } else {
+                                            Modifier
                                                 .size(36.dp)
                                                 .clip(CircleShape)
+                                        }
+                                        Image(
+                                            painter = painterResource(id = R.drawable.app_logo),
+                                            contentDescription = if (hasPendingUpdate) "Доступно обновление" else "NyEIOS",
+                                            modifier = iconModifier
                                         )
                                         Column {
                                             Row(
@@ -386,6 +431,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     ) { innerPadding ->
+                        Box(modifier = Modifier.fillMaxSize()) {
                         Crossfade(
                             targetState = currentTab,
                             label = "tab_transition",
@@ -420,6 +466,15 @@ class MainActivity : ComponentActivity() {
                             }
                         }
 
+                        // Update banner — floating above content, pinned to bottom
+                        UpdateBanner(
+                            state = updateUiState,
+                            viewModel = updateViewModel,
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = innerPadding.calculateBottomPadding())
+                        )
+
                         if (isLoginSheetVisible) {
                             LoginBottomSheet(
                                 authSession = authSession,
@@ -444,6 +499,7 @@ class MainActivity : ComponentActivity() {
                                 onDismiss = { isNetworkLogsSheetVisible = false }
                             )
                         }
+                        } // end Box
                     }
                 }
             }
