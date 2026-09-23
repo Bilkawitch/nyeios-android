@@ -26,6 +26,6 @@ floor_4_map_initial.json
 floor_3.png
 floor_3_map.json
 
-# Exclude debug builds from repository
-*debug.apk
+# Exclude APK builds from repository (distributed via GitHub Releases)
+*.apk
 
