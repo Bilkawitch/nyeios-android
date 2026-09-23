@@ -1,0 +1,760 @@
+{
+  "floor": 4,
+  "width": 1005,
+  "height": 605,
+  "corridors": {
+    "horizontalY": 492,
+    "verticalX": 902,
+    "junction": {
+      "x": 902,
+      "y": 492
+    }
+  },
+  "stairs": [
+    {
+      "id": "west",
+      "name": "Западная лестница",
+      "x": 212.8,
+      "y": 461.4
+    },
+    {
+      "id": "central",
+      "name": "Центральная лестница",
+      "x": 602.5,
+      "y": 450
+    },
+    {
+      "id": "east",
+      "name": "Восточная лестница",
+      "x": 866.1,
+      "y": 443.9
+    }
+  ],
+  "rooms": [
+    {
+      "room": "401",
+      "name": "401",
+      "x": 820,
+      "y": 276,
+      "w": 62,
+      "h": 34,
+      "wing": "VERTICAL",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 882,
+        "y": 295
+      },
+      "waypoints": [],
+      "stairs": "Восточная лестница"
+    },
+    {
+      "room": "401а",
+      "name": "401а",
+      "x": 820,
+      "y": 240,
+      "w": 62,
+      "h": 36,
+      "wing": "VERTICAL",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 882,
+        "y": 263
+      },
+      "waypoints": [],
+      "stairs": "Восточная лестница"
+    },
+    {
+      "room": "402",
+      "name": "402",
+      "x": 820,
+      "y": 83,
+      "w": 102,
+      "h": 156,
+      "wing": "VERTICAL",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 882,
+        "y": 238
+      },
+      "waypoints": [],
+      "stairs": "Восточная лестница"
+    },
+    {
+      "room": "403",
+      "name": "403",
+      "x": 922,
+      "y": 274,
+      "w": 56,
+      "h": 32,
+      "wing": "VERTICAL",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 922,
+        "y": 295
+      },
+      "waypoints": [],
+      "stairs": "Восточная лестница"
+    },
+    {
+      "room": "404",
+      "name": "404",
+      "x": 922,
+      "y": 83,
+      "w": 56,
+      "h": 156,
+      "wing": "VERTICAL",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 932.8,
+        "y": 239.3
+      },
+      "waypoints": [],
+      "stairs": "Восточная лестница"
+    },
+    {
+      "room": "404а",
+      "name": "404а",
+      "x": 924,
+      "y": 257,
+      "w": 54,
+      "h": 17,
+      "wing": "VERTICAL",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 921.1,
+        "y": 266
+      },
+      "waypoints": [],
+      "stairs": "Восточная лестница"
+    },
+    {
+      "room": "405",
+      "name": "405",
+      "x": 922,
+      "y": 306,
+      "w": 56,
+      "h": 35,
+      "wing": "VERTICAL",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 922,
+        "y": 323
+      },
+      "waypoints": [],
+      "stairs": "Восточная лестница"
+    },
+    {
+      "room": "406",
+      "name": "406",
+      "x": 820,
+      "y": 341,
+      "w": 62,
+      "h": 35,
+      "wing": "VERTICAL",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 882,
+        "y": 359
+      },
+      "waypoints": [],
+      "stairs": "Восточная лестница"
+    },
+    {
+      "room": "407",
+      "name": "407",
+      "x": 922,
+      "y": 341,
+      "w": 56,
+      "h": 39,
+      "wing": "VERTICAL",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 922,
+        "y": 360
+      },
+      "waypoints": [],
+      "stairs": "Восточная лестница"
+    },
+    {
+      "room": "408",
+      "name": "408",
+      "x": 922,
+      "y": 472,
+      "w": 56,
+      "h": 38,
+      "wing": "VERTICAL",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 922,
+        "y": 491
+      },
+      "waypoints": [],
+      "stairs": "Восточная лестница"
+    },
+    {
+      "room": "409",
+      "name": "409",
+      "x": 922,
+      "y": 381,
+      "w": 56,
+      "h": 58,
+      "wing": "VERTICAL",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 922,
+        "y": 424
+      },
+      "waypoints": [],
+      "stairs": "Восточная лестница"
+    },
+    {
+      "room": "411",
+      "name": "411",
+      "x": 922,
+      "y": 440,
+      "w": 56,
+      "h": 32,
+      "wing": "VERTICAL",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 922,
+        "y": 451
+      },
+      "waypoints": [],
+      "stairs": "Восточная лестница"
+    },
+    {
+      "room": "410",
+      "name": "410",
+      "x": 888,
+      "y": 510,
+      "w": 59,
+      "h": 65,
+      "wing": "BOTTOM",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 899.5,
+        "y": 509
+      },
+      "waypoints": [],
+      "stairs": "Восточная лестница"
+    },
+    {
+      "room": "412",
+      "name": "412",
+      "x": 825,
+      "y": 510,
+      "w": 63,
+      "h": 65,
+      "wing": "BOTTOM",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 864.5,
+        "y": 508
+      },
+      "waypoints": [],
+      "stairs": "Восточная лестница"
+    },
+    {
+      "room": "414",
+      "name": "414",
+      "x": 785,
+      "y": 510,
+      "w": 40,
+      "h": 65,
+      "wing": "BOTTOM",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 804.5,
+        "y": 508
+      },
+      "waypoints": [],
+      "stairs": "Восточная лестница"
+    },
+    {
+      "room": "416",
+      "name": "416",
+      "x": 722,
+      "y": 510,
+      "w": 63,
+      "h": 65,
+      "wing": "BOTTOM",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 763,
+        "y": 508
+      },
+      "waypoints": [],
+      "stairs": "Восточная лестница"
+    },
+    {
+      "room": "418",
+      "name": "418",
+      "x": 687,
+      "y": 510,
+      "w": 35,
+      "h": 65,
+      "wing": "BOTTOM",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 705.5,
+        "y": 508
+      },
+      "waypoints": [],
+      "stairs": "Восточная лестница"
+    },
+    {
+      "room": "420",
+      "name": "420",
+      "x": 653,
+      "y": 510,
+      "w": 34,
+      "h": 65,
+      "wing": "BOTTOM",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 672.5,
+        "y": 508
+      },
+      "waypoints": [],
+      "stairs": "Восточная лестница"
+    },
+    {
+      "room": "422",
+      "name": "422",
+      "x": 579,
+      "y": 528,
+      "w": 74,
+      "h": 47,
+      "wing": "BOTTOM",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 631.5,
+        "y": 528
+      },
+      "waypoints": [],
+      "stairs": "Центральная лестница"
+    },
+    {
+      "room": "424",
+      "name": "424",
+      "x": 534,
+      "y": 528,
+      "w": 45,
+      "h": 47,
+      "wing": "BOTTOM",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 547.5,
+        "y": 528
+      },
+      "waypoints": [],
+      "stairs": "Центральная лестница"
+    },
+    {
+      "room": "426",
+      "name": "426",
+      "x": 497,
+      "y": 528,
+      "w": 37,
+      "h": 47,
+      "wing": "BOTTOM",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 508.5,
+        "y": 528
+      },
+      "waypoints": [],
+      "stairs": "Центральная лестница"
+    },
+    {
+      "room": "428",
+      "name": "428",
+      "x": 450,
+      "y": 528,
+      "w": 47,
+      "h": 47,
+      "wing": "BOTTOM",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 466,
+        "y": 528
+      },
+      "waypoints": [],
+      "stairs": "Центральная лестница"
+    },
+    {
+      "room": "430",
+      "name": "430",
+      "x": 372,
+      "y": 528,
+      "w": 78,
+      "h": 47,
+      "wing": "BOTTOM",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 392,
+        "y": 528
+      },
+      "waypoints": [],
+      "stairs": "Центральная лестница"
+    },
+    {
+      "room": "432",
+      "name": "432",
+      "x": 267,
+      "y": 503,
+      "w": 105,
+      "h": 72,
+      "wing": "BOTTOM",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 298,
+        "y": 503
+      },
+      "waypoints": [],
+      "stairs": "Западная лестница"
+    },
+    {
+      "room": "434",
+      "name": "434",
+      "x": 227,
+      "y": 503,
+      "w": 40,
+      "h": 72,
+      "wing": "BOTTOM",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 249,
+        "y": 503
+      },
+      "waypoints": [],
+      "stairs": "Западная лестница"
+    },
+    {
+      "room": "436",
+      "name": "436",
+      "x": 191,
+      "y": 503,
+      "w": 36,
+      "h": 72,
+      "wing": "BOTTOM",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 211,
+        "y": 503
+      },
+      "waypoints": [],
+      "stairs": "Западная лестница"
+    },
+    {
+      "room": "438",
+      "name": "438",
+      "x": 157,
+      "y": 503,
+      "w": 34,
+      "h": 72,
+      "wing": "BOTTOM",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 170,
+        "y": 503
+      },
+      "waypoints": [],
+      "stairs": "Западная лестница"
+    },
+    {
+      "room": "440",
+      "name": "440",
+      "x": 123,
+      "y": 503,
+      "w": 34,
+      "h": 72,
+      "wing": "BOTTOM",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 142,
+        "y": 503
+      },
+      "waypoints": [],
+      "stairs": "Западная лестница"
+    },
+    {
+      "room": "413",
+      "name": "413",
+      "x": 688,
+      "y": 417,
+      "w": 154,
+      "h": 57,
+      "wing": "TOP",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 715.7,
+        "y": 475
+      },
+      "waypoints": [],
+      "stairs": "Восточная лестница"
+    },
+    {
+      "room": "415",
+      "name": "415",
+      "x": 653,
+      "y": 415,
+      "w": 35,
+      "h": 57,
+      "wing": "TOP",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 672.6,
+        "y": 474.3
+      },
+      "waypoints": [],
+      "stairs": "Восточная лестница"
+    },
+    {
+      "room": "417а",
+      "name": "417а",
+      "x": 548,
+      "y": 407,
+      "w": 40,
+      "h": 44,
+      "wing": "TOP",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 571.8,
+        "y": 451.9
+      },
+      "waypoints": [],
+      "stairs": "Центральная лестница"
+    },
+    {
+      "room": "417",
+      "name": "417",
+      "x": 511,
+      "y": 407,
+      "w": 37,
+      "h": 45,
+      "wing": "TOP",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 531,
+        "y": 451
+      },
+      "waypoints": [],
+      "stairs": "Центральная лестница"
+    },
+    {
+      "room": "419",
+      "name": "419",
+      "x": 470,
+      "y": 407,
+      "w": 41,
+      "h": 43,
+      "wing": "TOP",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 485,
+        "y": 450
+      },
+      "waypoints": [],
+      "stairs": "Центральная лестница"
+    },
+    {
+      "room": "421",
+      "name": "421",
+      "x": 374,
+      "y": 407,
+      "w": 96,
+      "h": 44,
+      "wing": "TOP",
+      "type": "DEAN_OFFICE",
+      "door": {
+        "x": 456,
+        "y": 450
+      },
+      "waypoints": [],
+      "stairs": "Центральная лестница"
+    },
+    {
+      "room": "423",
+      "name": "423",
+      "x": 342,
+      "y": 407,
+      "w": 31,
+      "h": 57,
+      "wing": "TOP",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 361,
+        "y": 463
+      },
+      "waypoints": [],
+      "stairs": "Западная лестница"
+    },
+    {
+      "room": "425",
+      "name": "425",
+      "x": 261,
+      "y": 407,
+      "w": 81,
+      "h": 57,
+      "wing": "TOP",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 298,
+        "y": 463
+      },
+      "waypoints": [],
+      "stairs": "Западная лестница"
+    },
+    {
+      "room": "427",
+      "name": "427",
+      "x": 233,
+      "y": 407,
+      "w": 28,
+      "h": 57,
+      "wing": "TOP",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 243,
+        "y": 463
+      },
+      "waypoints": [],
+      "stairs": "Западная лестница"
+    },
+    {
+      "room": "429",
+      "name": "429",
+      "x": 16,
+      "y": 378,
+      "w": 75,
+      "h": 85,
+      "wing": "LEFT",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 92,
+        "y": 452
+      },
+      "waypoints": [
+        {
+          "x": 115,
+          "y": 452
+        },
+        {
+          "x": 115,
+          "y": 492
+        }
+      ],
+      "stairs": "Западная лестница"
+    },
+    {
+      "room": "431",
+      "name": "431",
+      "x": 92,
+      "y": 346,
+      "w": 44,
+      "h": 91,
+      "wing": "LEFT",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 115,
+        "y": 436
+      },
+      "waypoints": [
+        {
+          "x": 115,
+          "y": 492
+        },
+        {
+          "x": 142,
+          "y": 492
+        }
+      ],
+      "stairs": "Западная лестница"
+    },
+    {
+      "room": "433",
+      "name": "433",
+      "x": 16,
+      "y": 342,
+      "w": 75,
+      "h": 36,
+      "wing": "LEFT",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 92,
+        "y": 362
+      },
+      "waypoints": [
+        {
+          "x": 115,
+          "y": 362
+        },
+        {
+          "x": 115,
+          "y": 436
+        },
+        {
+          "x": 115,
+          "y": 492
+        },
+        {
+          "x": 142,
+          "y": 492
+        }
+      ],
+      "stairs": "Западная лестница"
+    },
+    {
+      "room": "442",
+      "name": "442",
+      "x": 16,
+      "y": 464,
+      "w": 75,
+      "h": 39,
+      "wing": "LEFT",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 92,
+        "y": 492
+      },
+      "waypoints": [
+        {
+          "x": 142,
+          "y": 492
+        }
+      ],
+      "stairs": "Западная лестница"
+    },
+    {
+      "room": "444",
+      "name": "444",
+      "x": 12,
+      "y": 503,
+      "w": 111,
+      "h": 72,
+      "wing": "LEFT",
+      "type": "CLASSROOM",
+      "door": {
+        "x": 32,
+        "y": 503
+      },
+      "waypoints": [
+        {
+          "x": 32,
+          "y": 492
+        },
+        {
+          "x": 92,
+          "y": 492
+        },
+        {
+          "x": 142,
+          "y": 492
+        }
+      ],
+      "stairs": "Западная лестница"
+    }
+  ]
+}

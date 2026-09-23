@@ -1,0 +1,31 @@
+*.iml
+.gradle/
+.idea/
+local.properties
+.DS_Store
+build/
+app/build/
+**/build/
+captures/
+.externalNativeBuild/
+.cxx/
+.tempmediaStorage/
+graphify-out/
+
+# AI and technical agent files
+AGENTS.md
+agents.md
+.agents/
+.gemini/
+*.log
+scratch/
+floor_4_map_initial.json
+
+# Local HTML editors and scratch map files
+*.html
+floor_3.png
+floor_3_map.json
+
+# Exclude debug builds from repository
+*debug.apk
+

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <external-files-path name="nyeios_downloads" path="Download/NyEIOS_Files" />
+    <external-files-path name="nyeios_ext_download" path="Download" />
+    <external-files-path name="nyeios_ext_files" path="." />
+    <files-path name="nyeios_internal_downloads" path="downloads" />
+    <files-path name="nyeios_internal_files" path="." />
+    <cache-path name="nyeios_cache" path="." />
+</paths>
