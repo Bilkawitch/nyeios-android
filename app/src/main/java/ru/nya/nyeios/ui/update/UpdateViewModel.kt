@@ -1,4 +1,4 @@
-﻿package ru.nya.nyeios.ui.update
+package ru.nya.nyeios.ui.update
 
 import android.app.Application
 import android.content.ActivityNotFoundException
@@ -35,6 +35,11 @@ class UpdateViewModel(application: Application) : AndroidViewModel(application) 
             val info = repo.checkForUpdate() ?: return@launch
             _uiState.value = UpdateUiState.UpdateAvailable(info)
         }
+    }
+
+    /** Вызывается при обнаружении обновления (например, из NetworkLogs). Активирует баннер. */
+    fun setUpdateAvailable(info: UpdateInfo) {
+        _uiState.value = UpdateUiState.UpdateAvailable(info)
     }
 
     /** Юзер нажал X — скрываем баннер, иконка начинает пульсировать. */

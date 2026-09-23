@@ -509,7 +509,8 @@ class MainActivity : ComponentActivity() {
 
                         if (isNetworkLogsSheetVisible) {
                             NetworkLogsBottomSheet(
-                                onDismiss = { isNetworkLogsSheetVisible = false }
+                                onDismiss = { isNetworkLogsSheetVisible = false },
+                                updateViewModel = updateViewModel
                             )
                         }
                         } // end Box

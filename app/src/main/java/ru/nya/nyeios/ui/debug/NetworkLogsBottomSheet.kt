@@ -54,10 +54,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import ru.nya.nyeios.data.net.NetworkLogEntry
 import ru.nya.nyeios.data.net.NetworkLogLevel
 import ru.nya.nyeios.data.net.NetworkLogger
 import ru.nya.nyeios.data.update.UpdateRepository
+import ru.nya.nyeios.ui.update.UpdateBanner
+import ru.nya.nyeios.ui.update.UpdateViewModel
 import ru.nya.nyeios.ui.theme.ExamRed
 import ru.nya.nyeios.ui.theme.ExamRedBg
 import ru.nya.nyeios.ui.theme.LectureBlue
@@ -78,6 +81,7 @@ import ru.nya.nyeios.ui.theme.TextSecondary
 @Composable
 fun NetworkLogsBottomSheet(
     onDismiss: () -> Unit,
+    updateViewModel: UpdateViewModel? = null,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 ) {
     val context = LocalContext.current
@@ -168,6 +172,9 @@ fun NetworkLogsBottomSheet(
                                                 message = "Доступна версия ${info.version}",
                                                 details = "APK: ${info.apkUrl}\nРазмер: ${info.apkSize / 1_048_576.0} МБ\n\nЧто нового:\n${info.changelog}"
                                             )
+                                            withContext(Dispatchers.Main) {
+                                                updateViewModel?.setUpdateAvailable(info)
+                                            }
                                         } else {
                                             NetworkLogger.logInfo(
                                                 tag = "UPDATE",
@@ -302,6 +309,15 @@ fun NetworkLogsBottomSheet(
                         LogEntryCard(entry = entry)
                     }
                 }
+            }
+
+            if (updateViewModel != null) {
+                val updateUiState by updateViewModel.uiState.collectAsState()
+                UpdateBanner(
+                    state = updateUiState,
+                    viewModel = updateViewModel,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
             }
         }
     }

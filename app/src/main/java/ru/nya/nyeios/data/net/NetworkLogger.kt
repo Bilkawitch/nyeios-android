@@ -86,8 +86,8 @@ object NetworkLogger {
         )
     }
 
-    fun logError(tag: String, message: String, error: Throwable? = null, durationMs: Long? = null) {
-        val details = buildString {
+    fun logError(tag: String, message: String, error: Throwable? = null, durationMs: Long? = null, details: String? = null) {
+        val detailsStr = buildString {
             if (durationMs != null) {
                 append("Время до ошибки: ").append(durationMs).append(" мс\n")
             }
@@ -95,12 +95,16 @@ object NetworkLogger {
                 append("Исключение: ").append(error::class.java.simpleName).append(": ").append(error.message).append("\n")
                 append("Стек:\n").append(error.stackTraceToString().take(600))
             }
+            if (!details.isNullOrEmpty()) {
+                if (isNotEmpty()) append("\n")
+                append(details)
+            }
         }
         log(
             level = NetworkLogLevel.ERROR,
             tag = tag,
             message = message,
-            details = details.trim().ifEmpty { null }
+            details = detailsStr.trim().ifEmpty { null }
         )
     }
 
