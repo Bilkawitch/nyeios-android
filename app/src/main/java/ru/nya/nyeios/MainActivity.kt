@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -18,11 +19,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CalendarToday
@@ -162,9 +165,9 @@ class MainActivity : ComponentActivity() {
                                 title = {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                                         modifier = Modifier
-                                            .clip(RoundedCornerShape(8.dp))
+                                            .clip(RoundedCornerShape(10.dp))
                                             .clickable {
                                                 if (hasPendingUpdate) {
                                                     updateViewModel.restoreBanner()
@@ -172,40 +175,60 @@ class MainActivity : ComponentActivity() {
                                                     isNetworkLogsSheetVisible = true
                                                 }
                                             }
-                                            .padding(vertical = 4.dp, horizontal = 2.dp)
+                                            .padding(vertical = 2.dp, horizontal = 4.dp)
                                     ) {
-                                        // Icon: pulsing red glow when update is dismissed
+                                        // App logo with soft pulsing gradient halo when update is available
                                         val pulseTransition = rememberInfiniteTransition(label = "update_pulse")
                                         val pulseAlpha by pulseTransition.animateFloat(
-                                            initialValue = 0.15f,
-                                            targetValue = 0.65f,
+                                            initialValue = 0.20f,
+                                            targetValue = 0.85f,
                                             animationSpec = infiniteRepeatable(
-                                                animation = tween(900),
+                                                animation = tween(1000, easing = FastOutSlowInEasing),
                                                 repeatMode = RepeatMode.Reverse
                                             ),
                                             label = "pulse_alpha"
                                         )
-                                        val iconModifier = if (hasPendingUpdate) {
-                                            Modifier
-                                                .size(36.dp)
-                                                .drawBehind {
-                                                    drawCircle(
-                                                        color = ExamRed.copy(alpha = pulseAlpha),
-                                                        radius = size.minDimension / 2f * 1.35f,
-                                                        center = Offset(size.width / 2f, size.height / 2f)
-                                                    )
-                                                }
-                                                .clip(CircleShape)
-                                        } else {
-                                            Modifier
-                                                .size(36.dp)
-                                                .clip(CircleShape)
+
+                                        Box(
+                                            modifier = Modifier.size(42.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            if (hasPendingUpdate) {
+                                                Spacer(
+                                                    modifier = Modifier
+                                                        .fillMaxSize()
+                                                        .drawBehind {
+                                                            val centerOffset = Offset(size.width / 2f, size.height / 2f)
+                                                            val iconRadius = 17.dp.toPx()
+                                                            val maxRadius = size.minDimension / 2f
+                                                            val innerStop = iconRadius / maxRadius
+
+                                                            drawCircle(
+                                                                brush = Brush.radialGradient(
+                                                                    colorStops = arrayOf(
+                                                                        0.0f to ExamRed.copy(alpha = pulseAlpha * 0.80f),
+                                                                        innerStop to ExamRed.copy(alpha = pulseAlpha * 0.80f),
+                                                                        innerStop + (1f - innerStop) * 0.40f to ExamRed.copy(alpha = pulseAlpha * 0.35f),
+                                                                        1.0f to Color.Transparent
+                                                                    ),
+                                                                    center = centerOffset,
+                                                                    radius = maxRadius
+                                                                ),
+                                                                radius = maxRadius,
+                                                                center = centerOffset
+                                                            )
+                                                        }
+                                                )
+                                            }
+
+                                            Image(
+                                                painter = painterResource(id = R.drawable.app_logo),
+                                                contentDescription = if (hasPendingUpdate) "Доступно обновление" else "NyEIOS",
+                                                modifier = Modifier
+                                                    .size(34.dp)
+                                                    .clip(CircleShape)
+                                            )
                                         }
-                                        Image(
-                                            painter = painterResource(id = R.drawable.app_logo),
-                                            contentDescription = if (hasPendingUpdate) "Доступно обновление" else "NyEIOS",
-                                            modifier = iconModifier
-                                        )
                                         Column {
                                             Row(
                                                 verticalAlignment = Alignment.CenterVertically,
