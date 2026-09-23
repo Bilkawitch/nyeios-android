@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -51,8 +52,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -91,9 +95,11 @@ import ru.nya.nyeios.ui.theme.PracticeGreenBg
 import ru.nya.nyeios.ui.theme.TextMuted
 import ru.nya.nyeios.ui.theme.TextPrimary
 import ru.nya.nyeios.ui.theme.TextSecondary
+import ru.nya.nyeios.ui.floormap.FloorMapBottomSheet
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleScreen(
     uiState: ScheduleUiState,
@@ -107,6 +113,9 @@ fun ScheduleScreen(
     onOpenLogin: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var floorMapTargetRoom by rememberSaveable { mutableStateOf<String?>(null) }
+    var floorMapFromRoom by rememberSaveable { mutableStateOf<String?>(null) }
+
     Column(
         modifier = modifier.fillMaxSize()
     ) {
@@ -273,13 +282,27 @@ fun ScheduleScreen(
                                 (currentDay.dateString.contains(todayDayMonth) || currentDay.dayTitle.contains(todayDayMonth))
                             )
 
+                            val lessons = currentDay.lessons
                             LazyColumn(
                                 modifier = Modifier.fillMaxSize(),
                                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                items(currentDay.lessons) { lesson ->
-                                    LessonCard(lesson = lesson, isToday = isDayToday)
+                                itemsIndexed(lessons) { index, lesson ->
+                                    val previousRoom = if (index > 0) {
+                                        lessons.subList(0, index).lastOrNull { it.room.isNotBlank() }?.room
+                                    } else {
+                                        null
+                                    }
+
+                                    LessonCard(
+                                        lesson = lesson,
+                                        isToday = isDayToday,
+                                        onRoomClick = { room ->
+                                            floorMapTargetRoom = room
+                                            floorMapFromRoom = previousRoom
+                                        }
+                                    )
                                 }
                                 item {
                                     Spacer(modifier = Modifier.height(20.dp))
@@ -289,6 +312,17 @@ fun ScheduleScreen(
                     }
                 }
             }
+        }
+
+        if (floorMapTargetRoom != null) {
+            FloorMapBottomSheet(
+                targetRoomQuery = floorMapTargetRoom!!,
+                fromRoomQuery = floorMapFromRoom,
+                onDismiss = {
+                    floorMapTargetRoom = null
+                    floorMapFromRoom = null
+                }
+            )
         }
     }
 
@@ -434,7 +468,8 @@ fun DaySelectorRow(
 @Composable
 fun LessonCard(
     lesson: LessonItem,
-    isToday: Boolean
+    isToday: Boolean,
+    onRoomClick: (String) -> Unit = {}
 ) {
     val progressInfo by produceState<LessonProgressInfo?>(
         initialValue = LessonTimeUtils.computeLessonProgress(lesson.time, isToday),
@@ -572,11 +607,17 @@ fun LessonCard(
                 if (lesson.room.isNotEmpty()) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(ObsidianSurface)
+                            .border(1.dp, ObsidianBorder, RoundedCornerShape(6.dp))
+                            .clickable { onRoomClick(lesson.room) }
+                            .padding(horizontal = 7.dp, vertical = 3.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.LocationOn,
-                            contentDescription = null,
+                            contentDescription = "Показать кабинет на карте",
                             tint = LectureBlue,
                             modifier = Modifier.size(15.dp)
                         )

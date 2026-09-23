@@ -1,4 +1,4 @@
-﻿*.iml
+*.iml
 .gradle/
 .idea/
 local.properties
@@ -10,3 +10,4 @@ captures/
 .externalNativeBuild/
 .cxx/
 .tempmediaStorage/
+graphify-out/
