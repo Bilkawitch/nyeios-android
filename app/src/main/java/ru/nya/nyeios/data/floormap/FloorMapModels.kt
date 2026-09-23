@@ -44,8 +44,8 @@ data class FloorRoom(
     fun getCorridorExitPoint(): Offset = doorPoint
 
     fun getCorridorPoint(): Offset {
-        val corrY = if (floor == 3) 491f else 492f
-        val corrX = 902f
+        val corrY = if (floor == 3) 491f else 535.4f
+        val corrX = if (floor == 3) 902f else 916.6f
         return accessWaypoints.lastOrNull() ?: when (wing) {
             RoomWing.VERTICAL -> Offset(corrX, doorY)
             RoomWing.LEFT -> Offset(doorX, corrY)

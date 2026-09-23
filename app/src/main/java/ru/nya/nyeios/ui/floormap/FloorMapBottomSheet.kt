@@ -710,9 +710,9 @@ private fun MultiFloorInteractiveView(
     val rooms3 = remember { FloorMapRepository.getRoomsForFloor(3) }
 
     val floorGap = 160f
-    val floor3Y = FloorMapRepository.MAP_HEIGHT_4 + floorGap // 605 + 160 = 765f
+    val floor3Y = FloorMapRepository.MAP_HEIGHT_4 + floorGap // 727 + 160 = 887f
     val combinedWidth = 1024f
-    val combinedHeight = floor3Y + FloorMapRepository.MAP_HEIGHT_3 // 765 + 603 = 1368f
+    val combinedHeight = floor3Y + FloorMapRepository.MAP_HEIGHT_3 // 887 + 603 = 1490f
 
     val infiniteTransition = rememberInfiniteTransition(label = "multi_floor_anim")
     val pulseAlpha by infiniteTransition.animateFloat(

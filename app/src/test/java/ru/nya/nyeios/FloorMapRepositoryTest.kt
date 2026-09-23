@@ -36,7 +36,7 @@ class FloorMapRepositoryTest {
         assertNotNull(room421)
         assertEquals(RoomType.DEAN_OFFICE, room421?.type)
         assertEquals(374.0f, room421?.x)
-        assertEquals(407.0f, room421?.y)
+        assertEquals(453.0f, room421?.y)
         assertEquals(96.0f, room421?.width)
         assertEquals(44.0f, room421?.height)
     }
@@ -73,10 +73,10 @@ class FloorMapRepositoryTest {
         assertEquals("412", route?.fromRoom?.room)
         assertEquals("421", route?.toRoom?.room)
         assertTrue(route!!.points.size >= 4)
-        // All corridor points between horizontal rooms should be on y = 492
+        // All corridor points between horizontal rooms should be on y = 535.4
         val corridorPoints = route.points.subList(1, route.points.size - 1)
         for (pt in corridorPoints) {
-            assertEquals(492f, pt.y, 1f)
+            assertEquals(535.4f, pt.y, 1f)
         }
     }
 
@@ -86,9 +86,9 @@ class FloorMapRepositoryTest {
         assertNotNull(route)
         assertEquals("416", route?.fromRoom?.room)
         assertEquals("407", route?.toRoom?.room)
-        // Should contain corner junction (902, 492)
-        val hasJunction = route!!.points.any { it.x == 902f && it.y == 492f }
-        assertTrue("Route should pass through junction (902, 492)", hasJunction)
+        // Should contain corner junction (916.6, 535.4)
+        val hasJunction = route!!.points.any { kotlin.math.abs(it.x - 916.6f) < 1f && kotlin.math.abs(it.y - 535.4f) < 1f }
+        assertTrue("Route should pass through junction (916.6, 535.4)", hasJunction)
     }
 
     @Test
@@ -128,17 +128,17 @@ class FloorMapRepositoryTest {
         assertEquals("436", route?.toRoom?.room)
         assertTrue(route!!.points.size >= 4)
 
-        // Starts at 444 door (32, 503)
-        assertEquals(32f, route.points.first().x, 1f)
-        assertEquals(503f, route.points.first().y, 1f)
+        // Starts at 444 door (24, 551)
+        assertEquals(24f, route.points.first().x, 1f)
+        assertEquals(551f, route.points.first().y, 1f)
 
-        // Finishes at 436 door (211, 503)
-        assertEquals(211f, route.points.last().x, 1f)
-        assertEquals(503f, route.points.last().y, 1f)
+        // Finishes at 436 door (205, 552)
+        assertEquals(205f, route.points.last().x, 1f)
+        assertEquals(552f, route.points.last().y, 1f)
 
-        // Enters main corridor at (32, 492) and travels along y = 492
-        val corridorPoints = route.points.filter { kotlin.math.abs(it.y - 492f) < 1f }
-        assertTrue("Route must travel along corridor y = 492", corridorPoints.size >= 2)
+        // Enters main corridor and travels along y = 535.4
+        val corridorPoints = route.points.filter { kotlin.math.abs(it.y - 535.4f) < 1f }
+        assertTrue("Route must travel along corridor y = 535.4", corridorPoints.size >= 2)
     }
 
     @Test
@@ -148,17 +148,17 @@ class FloorMapRepositoryTest {
         assertEquals("433", route?.fromRoom?.room)
         assertEquals("436", route?.toRoom?.room)
 
-        // Starts at 433 door (92, 362)
-        assertEquals(92f, route!!.points.first().x, 1f)
-        assertEquals(362f, route.points.first().y, 1f)
+        // Starts at 433 door (82, 408)
+        assertEquals(82f, route!!.points.first().x, 1f)
+        assertEquals(408f, route.points.first().y, 1f)
 
-        // Finishes at 436 door (211, 503)
-        assertEquals(211f, route.points.last().x, 1f)
-        assertEquals(503f, route.points.last().y, 1f)
+        // Finishes at 436 door (205, 552)
+        assertEquals(205f, route.points.last().x, 1f)
+        assertEquals(552f, route.points.last().y, 1f)
 
-        // Passes through hallway waypoint (115, 362)
-        val passesHallway = route.points.any { kotlin.math.abs(it.x - 115f) < 1f && kotlin.math.abs(it.y - 362f) < 1f }
-        assertTrue("Route from 433 must pass through 431 hallway corner at (115, 362)", passesHallway)
+        // Passes through hallway waypoint (104.9, 408)
+        val passesHallway = route.points.any { kotlin.math.abs(it.x - 104.9f) < 1f && kotlin.math.abs(it.y - 408f) < 1f }
+        assertTrue("Route from 433 must pass through waypoint at (104.9, 408)", passesHallway)
     }
 
     @Test
@@ -168,30 +168,30 @@ class FloorMapRepositoryTest {
         assertEquals("433", route?.fromRoom?.room)
         assertEquals("429", route?.toRoom?.room)
 
-        // Starts at 433 door (92, 362)
-        assertEquals(92f, route!!.points.first().x, 1f)
-        assertEquals(362f, route.points.first().y, 1f)
+        // Starts at 433 door (82, 408)
+        assertEquals(82f, route!!.points.first().x, 1f)
+        assertEquals(408f, route.points.first().y, 1f)
 
-        // Finishes at 429 door (92, 452)
-        assertEquals(92f, route.points.last().x, 1f)
-        assertEquals(452f, route.points.last().y, 1f)
+        // Finishes at 429 door (82, 500)
+        assertEquals(82f, route.points.last().x, 1f)
+        assertEquals(500f, route.points.last().y, 1f)
 
-        // All points must stay above y = 480 (never drop down to y = 492)
+        // All points must stay above y = 525 (never drop down to y = 535.4)
         for (pt in route.points) {
-            assertTrue("Point $pt should not loop down to main corridor", pt.y < 480f)
+            assertTrue("Point $pt should not loop down to main corridor", pt.y < 525f)
         }
 
-        // Must pass through west hallway x = 115
-        val hallwayPoints = route.points.filter { kotlin.math.abs(it.x - 115f) < 1f }
-        assertTrue("Must travel along west hallway x = 115", hallwayPoints.size >= 2)
+        // Must pass through west hallway x = 105.2
+        val hallwayPoints = route.points.filter { kotlin.math.abs(it.x - 105.2f) < 1f }
+        assertTrue("Must travel along west hallway x = 105.2", hallwayPoints.size >= 2)
     }
 
     @Test
-    fun `room 438 routes from door at 170 503 into corridor`() {
+    fun `room 438 routes from door at 163 550 into corridor`() {
         val route = FloorMapRepository.buildRoute("438", "421")
         assertNotNull(route)
-        assertEquals(170f, route!!.points.first().x, 1f)
-        assertEquals(503f, route.points.first().y, 1f)
+        assertEquals(163f, route!!.points.first().x, 1f)
+        assertEquals(550f, route.points.first().y, 1f)
     }
 
     @Test
@@ -264,9 +264,9 @@ class FloorMapRepositoryTest {
         assertTrue(route.fromFloorPoints.isNotEmpty())
         assertTrue(route.toFloorPoints.isNotEmpty())
 
-        // Floor 4 leg starts at 421 door (456, 450) and ends at Central stairs (602.5, 450)
-        assertEquals(456f, route.fromFloorPoints.first().x, 1f)
-        assertEquals(450f, route.fromFloorPoints.first().y, 1f)
+        // Floor 4 leg starts at 421 door (453.4, 496) and ends at Central stairs (605.1, 499)
+        assertEquals(453.4f, route.fromFloorPoints.first().x, 1f)
+        assertEquals(496f, route.fromFloorPoints.first().y, 1f)
         assertEquals(FloorMapRepository.STAIRS_4_CENTRAL.x, route.fromFloorPoints.last().x, 1f)
         assertEquals(FloorMapRepository.STAIRS_4_CENTRAL.y, route.fromFloorPoints.last().y, 1f)
 
