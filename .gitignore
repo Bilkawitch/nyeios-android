@@ -29,3 +29,10 @@ floor_3_map.json
 # Exclude APK builds from repository (distributed via GitHub Releases)
 *.apk
 
+# Impeccable workflow, product, and design documentation
+.impeccable/
+PRODUCT.md
+product.md
+DESIGN.md
+design.md
+
