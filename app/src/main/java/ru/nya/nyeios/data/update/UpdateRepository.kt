@@ -64,17 +64,27 @@ class UpdateRepository private constructor(private val context: Context) {
      * Проверяет наличие нового релиза на GitHub.
      * Возвращает [UpdateInfo] если версия новее текущей, иначе null.
      *
-     * Политика проверки:
-     * - Проверка выполняется при каждом запуске приложения с нуля (открытие после закрытия).
-     * - Защита от спама: минимальный интервал между запросами [MIN_INTERVAL_MS] (15 сек).
-     * - Лимит GitHub API: 60 запросов/час для неавторизованных IP. Отслеживается по заголовкам
-     *   `x-ratelimit-remaining` и `x-ratelimit-reset`. Пока лимит не исчерпан — проверяет всегда.
+     * Политика проверки и кэширования (ETag / Conditional Requests):
+     * - При каждом запросе отправляется заголовок `If-None-Match` с сохраненным ETag последнего ответа.
+     * - Если релизы на GitHub не менялись, сервер возвращает `HTTP 304 Not Modified`.
+     *   Такой ответ **НЕ расходует квоту rate limit (60 запросов/час)**.
+     * - Проверка выполняется при каждом холодном старте приложения.
+     * - Защита от спама: минимальный интервал [MIN_INTERVAL_MS] (15 сек).
      */
     fun checkForUpdate(forceCheck: Boolean = false): UpdateInfo? {
         val now = System.currentTimeMillis()
         val lastChecked = prefs.getLong(KEY_LAST_CHECKED, 0L)
         val resetMs = prefs.getLong(KEY_RATELIMIT_RESET_MS, 0L)
         val remaining = prefs.getInt(KEY_RATELIMIT_REMAINING, 60)
+
+        // При смене версии приложения сбрасываем закэшированное обновление
+        val savedLocalVer = prefs.getString(KEY_LAST_LOCAL_VERSION, null)
+        if (savedLocalVer != localVersion) {
+            prefs.edit()
+                .putString(KEY_LAST_LOCAL_VERSION, localVersion)
+                .remove(KEY_CACHED_UPDATE_JSON)
+                .apply()
+        }
 
         if (!forceCheck) {
             // Защита от дублирующих запросов при пересоздании активности
@@ -95,11 +105,18 @@ class UpdateRepository private constructor(private val context: Context) {
         }
 
         return try {
-            val request = Request.Builder()
+            val savedEtag = prefs.getString(KEY_LAST_ETAG, null)
+            val requestBuilder = Request.Builder()
                 .url(RELEASES_URL)
                 .header("Accept", "application/vnd.github+json")
                 .header("User-Agent", "NyEIOS-Android/$localVersion")
-                .build()
+
+            // Условный запрос (Conditional Request) через ETag
+            if (!savedEtag.isNullOrEmpty()) {
+                requestBuilder.header("If-None-Match", savedEtag)
+            }
+
+            val request = requestBuilder.build()
 
             client.newCall(request).execute().use { response ->
                 val remHeader = response.header("x-ratelimit-remaining")?.toIntOrNull()
@@ -112,6 +129,30 @@ class UpdateRepository private constructor(private val context: Context) {
                         .apply()
                 }
 
+                // 1. Условный ответ 304 Not Modified — квота rate limit НЕ расходуется
+                if (response.code == 304) {
+                    prefs.edit().putLong(KEY_LAST_CHECKED, now).apply()
+                    val remText = if (remHeader != null) " (осталось $remHeader/60 зап/ч)" else ""
+                    NetworkLogger.logInfo(
+                        tag = "UPDATE",
+                        message = "Релизы не изменились (HTTP 304 Not Modified$remText)",
+                        details = "ETag совпал. Запрос не расходует квоту GitHub API."
+                    )
+
+                    // Проверяем, было ли ранее обнаружено более новое обновление, которое ещё не установили
+                    val cachedJson = prefs.getString(KEY_CACHED_UPDATE_JSON, null)
+                    if (!cachedJson.isNullOrEmpty()) {
+                        try {
+                            val cachedInfo = gson.fromJson(cachedJson, UpdateInfo::class.java)
+                            if (cachedInfo != null && isNewer(cachedInfo.version, localVersion)) {
+                                return cachedInfo
+                            }
+                        } catch (e: Exception) { /* игнорируем ошибку парсинга кэша */ }
+                    }
+                    return null
+                }
+
+                // 2. Ошибка превышения лимита 403 Forbidden
                 if (response.code == 403 && (remHeader == 0 || response.header("x-ratelimit-remaining") == "0")) {
                     val minsLeft = if (resetHeader != null) maxOf(1, ((resetHeader * 1000L - now) / 60000).toInt()) else 60
                     NetworkLogger.logError(
@@ -131,8 +172,17 @@ class UpdateRepository private constructor(private val context: Context) {
                     return null
                 }
 
+                // 3. HTTP 200 OK — свежие данные релиза
                 val body = response.body?.string() ?: return null
-                prefs.edit().putLong(KEY_LAST_CHECKED, now).apply()
+                val newEtag = response.header("ETag")
+                prefs.edit()
+                    .putLong(KEY_LAST_CHECKED, now)
+                    .apply {
+                        if (!newEtag.isNullOrEmpty()) {
+                            putString(KEY_LAST_ETAG, newEtag)
+                        }
+                    }
+                    .apply()
 
                 val dto = gson.fromJson(body, GithubReleaseDto::class.java) ?: return null
                 val release = GithubRelease(
@@ -148,6 +198,7 @@ class UpdateRepository private constructor(private val context: Context) {
                 )
 
                 if (!isNewer(release.tagName, localVersion)) {
+                    prefs.edit().remove(KEY_CACHED_UPDATE_JSON).apply()
                     val remainingText = if (remHeader != null) " (осталось $remHeader/60 зап/ч)" else ""
                     NetworkLogger.logInfo(
                         tag = "UPDATE",
@@ -161,12 +212,17 @@ class UpdateRepository private constructor(private val context: Context) {
                     it.name.startsWith("NyEIOS-") && it.name.endsWith(".apk")
                 } ?: return null
 
-                UpdateInfo(
+                val updateInfo = UpdateInfo(
                     version = release.tagName.trimStart('v', 'V'),
                     changelog = release.body.lines().take(3).joinToString("\n").trim(),
                     apkUrl = apkAsset.browserDownloadUrl,
                     apkSize = apkAsset.size
                 )
+
+                // Сохраняем в кэш найденное обновление для обслуживания последующих 304 ответов
+                prefs.edit().putString(KEY_CACHED_UPDATE_JSON, gson.toJson(updateInfo)).apply()
+
+                updateInfo
             }
         } catch (e: Exception) {
             NetworkLogger.logError(
@@ -207,6 +263,9 @@ class UpdateRepository private constructor(private val context: Context) {
         private const val KEY_LAST_CHECKED = "last_checked_at"
         private const val KEY_RATELIMIT_REMAINING = "ratelimit_remaining"
         private const val KEY_RATELIMIT_RESET_MS = "ratelimit_reset_ms"
+        private const val KEY_LAST_ETAG = "last_etag"
+        private const val KEY_LAST_LOCAL_VERSION = "last_local_version"
+        private const val KEY_CACHED_UPDATE_JSON = "cached_update_json"
         private const val MIN_INTERVAL_MS = 15_000L // 15 seconds cooldown
 
         @Volatile private var INSTANCE: UpdateRepository? = null
