@@ -26,6 +26,8 @@ import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Dns
+import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,6 +41,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,9 +52,12 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import ru.nya.nyeios.data.net.NetworkLogEntry
 import ru.nya.nyeios.data.net.NetworkLogLevel
 import ru.nya.nyeios.data.net.NetworkLogger
+import ru.nya.nyeios.data.update.UpdateRepository
 import ru.nya.nyeios.ui.theme.ExamRed
 import ru.nya.nyeios.ui.theme.ExamRedBg
 import ru.nya.nyeios.ui.theme.LectureBlue
@@ -76,6 +82,8 @@ fun NetworkLogsBottomSheet(
 ) {
     val context = LocalContext.current
     val logs by NetworkLogger.logs.collectAsState()
+    val scope = rememberCoroutineScope()
+    var isCheckingUpdate by remember { mutableStateOf(false) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -136,12 +144,73 @@ fun NetworkLogsBottomSheet(
                     }
                 }
 
-                IconButton(onClick = onDismiss) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Закрыть",
-                        tint = TextSecondary
-                    )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    // Check for updates button
+                    IconButton(
+                        onClick = {
+                            if (!isCheckingUpdate) {
+                                isCheckingUpdate = true
+                                scope.launch(Dispatchers.IO) {
+                                    NetworkLogger.logInfo(
+                                        tag = "UPDATE",
+                                        message = "Проверка обновлений…",
+                                        details = "Запрос к GitHub Releases API"
+                                    )
+                                    try {
+                                        val repo = UpdateRepository.getInstance(context)
+                                        val info = repo.checkForUpdate(forceCheck = true)
+                                        if (info != null) {
+                                            NetworkLogger.logSuccess(
+                                                tag = "UPDATE",
+                                                message = "Доступна версия ${info.version}",
+                                                details = "APK: ${info.apkUrl}\nРазмер: ${info.apkSize / 1_048_576.0} МБ\n\nЧто нового:\n${info.changelog}"
+                                            )
+                                        } else {
+                                            NetworkLogger.logInfo(
+                                                tag = "UPDATE",
+                                                message = "Обновлений нет — установлена актуальная версия"
+                                            )
+                                        }
+                                    } catch (e: Exception) {
+                                        NetworkLogger.logError(
+                                            tag = "UPDATE",
+                                            message = "Ошибка проверки обновлений",
+                                            error = e
+                                        )
+                                    } finally {
+                                        isCheckingUpdate = false
+                                    }
+                                }
+                            }
+                        },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        if (isCheckingUpdate) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = LectureBlue
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.SystemUpdate,
+                                contentDescription = "Проверить обновления",
+                                tint = LectureBlue,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+
+                    IconButton(onClick = onDismiss) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Закрыть",
+                            tint = TextSecondary
+                        )
+                    }
                 }
             }
 
