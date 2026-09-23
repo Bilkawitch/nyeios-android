@@ -178,19 +178,21 @@ class MainActivity : ComponentActivity() {
                                                     color = TextPrimary
                                                 )
                                                 if (currentTab == 0) {
-                                                    val group = (scheduleUiState as? ScheduleUiState.Success)?.schedule?.group ?: "23ан-о-41"
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .clip(RoundedCornerShape(6.dp))
-                                                            .background(LectureBlue.copy(alpha = 0.15f))
-                                                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                                                    ) {
-                                                        Text(
-                                                            text = group,
-                                                            color = LectureBlue,
-                                                            fontSize = 11.sp,
-                                                            fontWeight = FontWeight.Bold
-                                                        )
+                                                    val group = (scheduleUiState as? ScheduleUiState.Success)?.schedule?.group
+                                                    if (group != null) {
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .clip(RoundedCornerShape(6.dp))
+                                                                .background(LectureBlue.copy(alpha = 0.15f))
+                                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                        ) {
+                                                            Text(
+                                                                text = group,
+                                                                color = LectureBlue,
+                                                                fontSize = 11.sp,
+                                                                fontWeight = FontWeight.Bold
+                                                            )
+                                                        }
                                                     }
                                                 }
                                             }

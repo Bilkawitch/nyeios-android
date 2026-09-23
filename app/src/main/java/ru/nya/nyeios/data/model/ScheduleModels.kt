@@ -29,7 +29,7 @@ data class DaySchedule(
 
 data class WeekSchedule(
     val weekTitle: String,
-    val group: String,
+    val group: String?,
     val startDate: String,
     val endDate: String,
     val offsetWeeks: Int,

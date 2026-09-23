@@ -27,7 +27,6 @@ object ScheduleParser {
         val groupSelect = doc.selectFirst("select#group-select")
         val groupName = groupSelect?.selectFirst("option[selected]")?.text()?.trim()
             ?: groupSelect?.selectFirst("option")?.text()?.trim()
-            ?: "23ан-о-41"
 
         val today = LocalDate.now()
         val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.getDefault())
