@@ -47,7 +47,7 @@
 
 ## 📦 Установка
 
-Скачайте готовый APK-файл из раздела [Releases](https://github.com/Bilkawitch/nyeios-android/releases) или возьмите `NyEIOS-0.1.0.apk` из репозитория.
+Скачайте готовый APK-файл из раздела [Releases](https://github.com/Bilkawitch/nyeios-android/releases).
 
 ---
 
