@@ -1,13 +1,30 @@
 package ru.nya.nyeios.ui.schedule
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -237,75 +254,120 @@ fun ScheduleScreen(
 
                     is ScheduleUiState.Success -> {
                         val safeDayIndex = selectedDayIndex.coerceIn(0, (uiState.schedule.days.size - 1).coerceAtLeast(0))
-                        val currentDay = uiState.schedule.days.getOrNull(safeDayIndex)
 
-                        if (currentDay == null || currentDay.lessons.isEmpty()) {
-                            // Empty state
-                            Box(
-                                modifier = Modifier
-                                .fillMaxSize()
-                                .padding(32.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                        AnimatedContent(
+                            targetState = Pair(uiState.schedule.offsetWeeks, safeDayIndex),
+                            transitionSpec = {
+                                val isForward = if (targetState.first != initialState.first) {
+                                    targetState.first > initialState.first
+                                } else {
+                                    targetState.second > initialState.second
+                                }
+                                val slideFraction = 0.28f
+                                val animDuration = 240
+                                if (isForward) {
+                                    (slideInHorizontally(
+                                        animationSpec = tween(animDuration, easing = FastOutSlowInEasing),
+                                        initialOffsetX = { fullWidth -> (fullWidth * slideFraction).toInt() }
+                                    ) + fadeIn(
+                                        animationSpec = tween(animDuration, easing = LinearEasing)
+                                    )).togetherWith(
+                                        slideOutHorizontally(
+                                            animationSpec = tween(animDuration, easing = FastOutSlowInEasing),
+                                            targetOffsetX = { fullWidth -> -(fullWidth * slideFraction).toInt() }
+                                        ) + fadeOut(
+                                            animationSpec = tween((animDuration * 0.75f).toInt(), easing = LinearEasing)
+                                        )
+                                    )
+                                } else {
+                                    (slideInHorizontally(
+                                        animationSpec = tween(animDuration, easing = FastOutSlowInEasing),
+                                        initialOffsetX = { fullWidth -> -(fullWidth * slideFraction).toInt() }
+                                    ) + fadeIn(
+                                        animationSpec = tween(animDuration, easing = LinearEasing)
+                                    )).togetherWith(
+                                        slideOutHorizontally(
+                                            animationSpec = tween(animDuration, easing = FastOutSlowInEasing),
+                                            targetOffsetX = { fullWidth -> (fullWidth * slideFraction).toInt() }
+                                        ) + fadeOut(
+                                            animationSpec = tween((animDuration * 0.75f).toInt(), easing = LinearEasing)
+                                        )
+                                    )
+                                }.using(SizeTransform(clip = false))
+                            },
+                            label = "day_schedule_transition",
+                            modifier = Modifier.fillMaxSize()
+                        ) { (_, dayIdx) ->
+                            val currentDay = uiState.schedule.days.getOrNull(dayIdx)
+
+                            if (currentDay == null || currentDay.lessons.isEmpty()) {
+                                // Empty state
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(32.dp),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        text = "✨",
-                                        fontSize = 40.sp
-                                    )
-                                    Text(
-                                        text = "Пар нет!",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 18.sp,
-                                        color = TextPrimary
-                                    )
-                                    Text(
-                                        text = "На этот день занятия не запланированы. Можно отдыхать!",
-                                        color = TextMuted,
-                                        fontSize = 14.sp
-                                    )
-                                }
-                            }
-                        } else {
-                            val todayDayMonth = remember {
-                                try {
-                                    java.time.LocalDate.now(LessonTimeUtils.moscowZone).format(java.time.format.DateTimeFormatter.ofPattern("dd.MM"))
-                                } catch (e: Exception) {
-                                    ""
-                                }
-                            }
-                            val isDayToday = currentDay.isToday || (
-                                uiState.schedule.offsetWeeks == 0 &&
-                                todayDayMonth.isNotEmpty() &&
-                                (currentDay.dateString.contains(todayDayMonth) || currentDay.dayTitle.contains(todayDayMonth))
-                            )
-
-                            val lessons = currentDay.lessons
-                            LazyColumn(
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                itemsIndexed(lessons) { index, lesson ->
-                                    val previousRoom = if (index > 0) {
-                                        lessons.subList(0, index).lastOrNull { it.room.isNotBlank() }?.room
-                                    } else {
-                                        null
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text(
+                                            text = "✨",
+                                            fontSize = 40.sp
+                                        )
+                                        Text(
+                                            text = "Пар нет!",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 18.sp,
+                                            color = TextPrimary
+                                        )
+                                        Text(
+                                            text = "На этот день занятия не запланированы. Можно отдыхать!",
+                                            color = TextMuted,
+                                            fontSize = 14.sp
+                                        )
                                     }
-
-                                    LessonCard(
-                                        lesson = lesson,
-                                        isToday = isDayToday,
-                                        onRoomClick = { room ->
-                                            floorMapTargetRoom = room
-                                            floorMapFromRoom = previousRoom
-                                        }
-                                    )
                                 }
-                                item {
-                                    Spacer(modifier = Modifier.height(20.dp))
+                            } else {
+                                val todayDayMonth = remember {
+                                    try {
+                                        java.time.LocalDate.now(LessonTimeUtils.moscowZone).format(java.time.format.DateTimeFormatter.ofPattern("dd.MM"))
+                                    } catch (e: Exception) {
+                                        ""
+                                    }
+                                }
+                                val isDayToday = currentDay.isToday || (
+                                    uiState.schedule.offsetWeeks == 0 &&
+                                    todayDayMonth.isNotEmpty() &&
+                                    (currentDay.dateString.contains(todayDayMonth) || currentDay.dayTitle.contains(todayDayMonth))
+                                )
+
+                                val lessons = currentDay.lessons
+                                LazyColumn(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    itemsIndexed(lessons) { index, lesson ->
+                                        val previousRoom = if (index > 0) {
+                                            lessons.subList(0, index).lastOrNull { it.room.isNotBlank() }?.room
+                                        } else {
+                                            null
+                                        }
+
+                                        LessonCard(
+                                            lesson = lesson,
+                                            isToday = isDayToday,
+                                            onRoomClick = { room ->
+                                                floorMapTargetRoom = room
+                                                floorMapFromRoom = previousRoom
+                                            }
+                                        )
+                                    }
+                                    item {
+                                        Spacer(modifier = Modifier.height(20.dp))
+                                    }
                                 }
                             }
                         }
@@ -406,58 +468,139 @@ fun DaySelectorRow(
     selectedIndex: Int,
     onSelectDay: (Int) -> Unit
 ) {
-    Row(
+    if (days.isEmpty()) return
+
+    val tabSpacing = 6.dp
+    val dayCount = days.size
+    val safeSelectedIndex = selectedIndex.coerceIn(0, dayCount - 1)
+    val density = LocalDensity.current
+    var rowHeightDp by remember { mutableStateOf(52.dp) }
+
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
+            .padding(horizontal = 16.dp, vertical = 6.dp)
     ) {
-        days.forEachIndexed { index, day ->
-            val isSelected = index == selectedIndex
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(if (isSelected) LectureBlue else ObsidianCard)
-                    .border(
-                        1.dp,
-                        if (isSelected) LectureBlue else ObsidianBorder,
-                        RoundedCornerShape(12.dp)
-                    )
-                    .clickable { onSelectDay(index) }
-                    .padding(vertical = 10.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
+        val tabWidth = (maxWidth - tabSpacing * (dayCount - 1)) / dayCount
+        val indicatorOffset by animateDpAsState(
+            targetValue = (tabWidth + tabSpacing) * safeSelectedIndex,
+            animationSpec = spring(
+                dampingRatio = 0.82f,
+                stiffness = 380f
+            ),
+            label = "day_tab_indicator_offset"
+        )
+
+        // 1. Inactive background slots
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(tabSpacing)
+        ) {
+            days.forEach { _ ->
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(rowHeightDp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(ObsidianCard)
+                        .border(1.dp, ObsidianBorder, RoundedCornerShape(12.dp))
+                )
+            }
+        }
+
+        // 2. Sliding active indicator pill
+        Box(
+            modifier = Modifier
+                .offset(x = indicatorOffset)
+                .width(tabWidth)
+                .height(rowHeightDp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(LectureBlue)
+                .border(1.dp, LectureBlue, RoundedCornerShape(12.dp))
+        )
+
+        // 3. Foreground interactive tabs with smooth cross-fading colors and tactile scale pop
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .onSizeChanged { size ->
+                    if (size.height > 0) {
+                        rowHeightDp = with(density) { size.height.toDp() }
+                    }
+                },
+            horizontalArrangement = Arrangement.spacedBy(tabSpacing)
+        ) {
+            days.forEachIndexed { index, day ->
+                val isSelected = index == safeSelectedIndex
+                val textColor by animateColorAsState(
+                    targetValue = if (isSelected) Color.White else TextPrimary,
+                    animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+                    label = "tab_text_color"
+                )
+                val dateColor by animateColorAsState(
+                    targetValue = if (isSelected) Color.White.copy(alpha = 0.85f) else TextMuted,
+                    animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+                    label = "tab_date_color"
+                )
+                val dotColor by animateColorAsState(
+                    targetValue = if (isSelected) Color.White else LiveBadgeColor,
+                    animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+                    label = "tab_dot_color"
+                )
+                val tabScale by animateFloatAsState(
+                    targetValue = if (isSelected) 1.0f else 0.96f,
+                    animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f),
+                    label = "tab_scale"
+                )
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .graphicsLayer {
+                            scaleX = tabScale
+                            scaleY = tabScale
+                        }
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            onSelectDay(index)
+                        }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        Text(
-                            text = day.dayName,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            fontSize = 13.sp,
-                            color = if (isSelected) Color.White else TextPrimary
-                        )
-                        if (day.isToday) {
-                            Box(
-                                modifier = Modifier
-                                    .size(6.dp)
-                                    .clip(CircleShape)
-                                    .background(if (isSelected) Color.White else LiveBadgeColor)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = day.dayName,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                fontSize = 13.sp,
+                                color = textColor
+                            )
+                            if (day.isToday) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .clip(CircleShape)
+                                        .background(dotColor)
+                                )
+                            }
+                        }
+                        val cleanDayDate = Regex("""(\d{1,2}\.\d{1,2})""").find(day.dateString.ifEmpty { day.dayTitle })?.value ?: day.dateString.take(5)
+                        if (cleanDayDate.isNotEmpty()) {
+                            Text(
+                                text = cleanDayDate,
+                                fontSize = 10.sp,
+                                color = dateColor
                             )
                         }
-                    }
-                    val cleanDayDate = Regex("""(\d{1,2}\.\d{1,2})""").find(day.dateString.ifEmpty { day.dayTitle })?.value ?: day.dateString.take(5)
-                    if (cleanDayDate.isNotEmpty()) {
-                        Text(
-                            text = cleanDayDate, // e.g. "15.09"
-                            fontSize = 10.sp,
-                            color = if (isSelected) Color.White.copy(alpha = 0.85f) else TextMuted
-                        )
                     }
                 }
             }
