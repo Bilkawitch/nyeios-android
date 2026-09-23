@@ -223,6 +223,19 @@ class MainActivity : ComponentActivity() {
                                                     color = TextPrimary
                                                 )
                                                 if (currentTab == 0) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .clip(RoundedCornerShape(6.dp))
+                                                            .background(ObsidianBorder.copy(alpha = 0.7f))
+                                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                    ) {
+                                                        Text(
+                                                            text = "v${BuildConfig.VERSION_NAME}",
+                                                            color = TextSecondary,
+                                                            fontSize = 11.sp,
+                                                            fontWeight = FontWeight.SemiBold
+                                                        )
+                                                    }
                                                     val group = (scheduleUiState as? ScheduleUiState.Success)?.schedule?.group
                                                     if (group != null) {
                                                         Box(

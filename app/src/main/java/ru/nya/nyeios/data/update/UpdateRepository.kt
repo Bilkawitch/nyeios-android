@@ -7,6 +7,7 @@ import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import ru.nya.nyeios.BuildConfig
 import ru.nya.nyeios.data.model.GithubAsset
 import ru.nya.nyeios.data.model.GithubRelease
 import ru.nya.nyeios.data.model.UpdateInfo
@@ -17,18 +18,7 @@ class UpdateRepository private constructor(private val context: Context) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences("nyeios_update_prefs", Context.MODE_PRIVATE)
 
-    private val localVersion: String by lazy {
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.packageManager
-                    .getPackageInfo(context.packageName, android.content.pm.PackageManager.PackageInfoFlags.of(0))
-                    .versionName ?: "0.0.0"
-            } else {
-                @Suppress("DEPRECATION")
-                context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "0.0.0"
-            }
-        } catch (e: Exception) { "0.0.0" }
-    }
+    private val localVersion: String = BuildConfig.VERSION_NAME
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
