@@ -129,6 +129,7 @@ fun FeedScreen(
             containerColor = ObsidianSurface,
             titleContentColor = TextPrimary,
             textContentColor = TextSecondary,
+            shape = RoundedCornerShape(0.dp),
             icon = {
                 Icon(
                     imageVector = Icons.Default.CloudSync,
@@ -163,7 +164,7 @@ fun FeedScreen(
                         containerColor = PracticeGreen,
                         contentColor = Color.White
                     ),
-                    shape = RoundedCornerShape(10.dp)
+                    shape = RoundedCornerShape(0.dp)
                 ) {
                     Text("Начать загрузку", fontWeight = FontWeight.Bold)
                 }
@@ -171,7 +172,7 @@ fun FeedScreen(
             dismissButton = {
                 OutlinedButton(
                     onClick = { feedViewModel?.dismissSyncConfirmationDialog() },
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(0.dp),
                     border = BorderStroke(1.dp, ObsidianBorder),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary)
                 ) {
@@ -321,7 +322,7 @@ fun FeedScreen(
                             ) {
                                 OutlinedButton(
                                     onClick = { feedViewModel?.requestSyncFeed() ?: onRefresh() },
-                                    shape = RoundedCornerShape(12.dp),
+                                    shape = RoundedCornerShape(0.dp),
                                     border = BorderStroke(1.dp, PracticeGreen.copy(alpha = 0.5f)),
                                     colors = ButtonDefaults.outlinedButtonColors(contentColor = PracticeGreen),
                                     modifier = Modifier.height(44.dp)
@@ -332,7 +333,7 @@ fun FeedScreen(
                                 if (!isUserLoggedIn) {
                                     Button(
                                         onClick = onOpenLogin,
-                                        shape = RoundedCornerShape(12.dp),
+                                        shape = RoundedCornerShape(0.dp),
                                         colors = ButtonDefaults.buttonColors(
                                             containerColor = LectureBlue,
                                             contentColor = Color.White
@@ -387,7 +388,7 @@ fun FeedScreen(
                                 if (!isUserLoggedIn) {
                                     Button(
                                         onClick = onOpenLogin,
-                                        shape = RoundedCornerShape(12.dp),
+                                        shape = RoundedCornerShape(0.dp),
                                         colors = ButtonDefaults.buttonColors(
                                             containerColor = LectureBlue,
                                             contentColor = Color.White
@@ -399,7 +400,7 @@ fun FeedScreen(
                                 } else {
                                     Button(
                                         onClick = { feedViewModel?.requestSyncFeed() ?: onRefresh() },
-                                        shape = RoundedCornerShape(12.dp),
+                                        shape = RoundedCornerShape(0.dp),
                                         colors = ButtonDefaults.buttonColors(
                                             containerColor = PracticeGreen,
                                             contentColor = Color.White
@@ -437,9 +438,8 @@ fun FeedScreen(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(ObsidianCard)
-                                        .border(1.dp, ObsidianBorder, RoundedCornerShape(12.dp))
+                                        .background(ru.nya.nyeios.ui.theme.NierPanelAlt)
+                                        .border(1.dp, ru.nya.nyeios.ui.theme.NierBorderLight)
                                         .padding(horizontal = 14.dp, vertical = 10.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
@@ -450,54 +450,69 @@ fun FeedScreen(
                                     ) {
                                         Box(
                                             modifier = Modifier
-                                                .size(34.dp)
-                                                .clip(RoundedCornerShape(8.dp))
-                                                .background(PracticeGreenBg),
+                                                .size(32.dp)
+                                                .background(ru.nya.nyeios.ui.theme.NierGreen.copy(alpha = 0.15f))
+                                                .border(1.dp, ru.nya.nyeios.ui.theme.NierGreen),
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.CloudSync,
                                                 contentDescription = null,
-                                                tint = PracticeGreen,
-                                                modifier = Modifier.size(18.dp)
+                                                tint = ru.nya.nyeios.ui.theme.NierGreen,
+                                                modifier = Modifier.size(16.dp)
                                             )
                                         }
                                         Column {
                                             Text(
-                                                text = "Живая лента ЭИОС",
-                                                color = TextPrimary,
+                                                text = "ЖИВАЯ ЛЕНТА ЭИОС",
+                                                color = ru.nya.nyeios.ui.theme.NierDark,
                                                 fontSize = 13.sp,
-                                                fontWeight = FontWeight.SemiBold
+                                                fontWeight = FontWeight.Bold,
+                                                fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                                letterSpacing = 0.5.sp
                                             )
                                             Text(
                                                 text = "Сохранено объявлений: ${uiState.posts.size}",
-                                                color = TextSecondary,
-                                                fontSize = 11.sp
+                                                color = ru.nya.nyeios.ui.theme.NierDim,
+                                                fontSize = 11.sp,
+                                                fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily
                                             )
                                         }
                                     }
 
-                                    OutlinedButton(
-                                        onClick = {
-                                            if (!isUserLoggedIn) {
-                                                onOpenLogin()
-                                            } else {
-                                                feedViewModel?.requestSyncFeed() ?: onRefresh()
+                                    Box(
+                                        modifier = Modifier
+                                            .border(1.dp, ru.nya.nyeios.ui.theme.NierGreen)
+                                            .background(Color.Transparent)
+                                            .clickable {
+                                                if (!isUserLoggedIn) {
+                                                    onOpenLogin()
+                                                } else {
+                                                    feedViewModel?.requestSyncFeed() ?: onRefresh()
+                                                }
                                             }
-                                        },
-                                        shape = RoundedCornerShape(8.dp),
-                                        border = BorderStroke(1.dp, PracticeGreen.copy(alpha = 0.5f)),
-                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = PracticeGreen),
-                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                                        modifier = Modifier.height(32.dp)
+                                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                                        contentAlignment = Alignment.Center
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Refresh,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(14.dp)
-                                        )
-                                        Spacer(Modifier.width(4.dp))
-                                        Text("Обновить", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Refresh,
+                                                contentDescription = null,
+                                                tint = ru.nya.nyeios.ui.theme.NierGreen,
+                                                modifier = Modifier.size(13.dp)
+                                            )
+                                            Text(
+                                                text = "ОБНОВИТЬ",
+                                                color = ru.nya.nyeios.ui.theme.NierGreen,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                                letterSpacing = 0.5.sp
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -513,9 +528,8 @@ fun FeedScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(ObsidianCard)
-                                    .border(1.dp, if (activeCount > 0) LectureBlue.copy(alpha = 0.5f) else ObsidianBorder, RoundedCornerShape(12.dp))
+                                    .background(ru.nya.nyeios.ui.theme.NierPanelAlt)
+                                    .border(1.dp, if (activeCount > 0) ru.nya.nyeios.ui.theme.NierBlue else ru.nya.nyeios.ui.theme.NierBorderLight)
                                     .clickable { openSheet() }
                                     .padding(horizontal = 14.dp, vertical = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -527,56 +541,70 @@ fun FeedScreen(
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .size(34.dp)
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(LectureBlueBg),
+                                            .size(32.dp)
+                                            .background(ru.nya.nyeios.ui.theme.NierBlue.copy(alpha = 0.15f))
+                                            .border(1.dp, ru.nya.nyeios.ui.theme.NierBlue),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
                                             imageVector = if (activeCount > 0) Icons.Default.Download else Icons.Default.FolderOpen,
                                             contentDescription = null,
-                                            tint = LectureBlue,
-                                            modifier = Modifier.size(18.dp)
+                                            tint = ru.nya.nyeios.ui.theme.NierBlue,
+                                            modifier = Modifier.size(16.dp)
                                         )
                                     }
 
                                     Column {
                                         Text(
-                                            text = "Менеджер загрузок",
-                                            color = TextPrimary,
+                                            text = "МЕНЕДЖЕР ЗАГРУЗОК",
+                                            color = ru.nya.nyeios.ui.theme.NierDark,
                                             fontSize = 13.sp,
-                                            fontWeight = FontWeight.SemiBold
+                                            fontWeight = FontWeight.Bold,
+                                            fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                            letterSpacing = 0.5.sp
                                         )
                                         Text(
                                             text = if (activeCount > 0) {
                                                 "Скачивается файлов: $activeCount"
                                             } else if (downloadedFiles.isNotEmpty()) {
-                                                "Сохранено: ${downloadedFiles.size} • ${downloadManager.formatFileSize(totalBytes)}"
+                                                "Сохранено: ${downloadedFiles.size} // ${downloadManager.formatFileSize(totalBytes)}"
                                             } else {
                                                 "Локальное хранилище файлов ЭИОС"
                                             },
-                                            color = if (activeCount > 0) LectureBlue else TextSecondary,
-                                            fontSize = 11.sp
+                                            color = if (activeCount > 0) ru.nya.nyeios.ui.theme.NierBlue else ru.nya.nyeios.ui.theme.NierDim,
+                                            fontSize = 11.sp,
+                                            fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily
                                         )
                                     }
                                 }
 
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                Box(
+                                    modifier = Modifier
+                                        .border(1.dp, ru.nya.nyeios.ui.theme.NierBlue)
+                                        .background(Color.Transparent)
+                                        .clickable { openSheet() }
+                                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        text = "Открыть",
-                                        color = LectureBlue,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                                        contentDescription = null,
-                                        tint = LectureBlue,
-                                        modifier = Modifier.size(14.dp)
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Text(
+                                            text = "ОТКРЫТЬ",
+                                            color = ru.nya.nyeios.ui.theme.NierBlue,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                            letterSpacing = 0.5.sp
+                                        )
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                                            contentDescription = null,
+                                            tint = ru.nya.nyeios.ui.theme.NierBlue,
+                                            modifier = Modifier.size(13.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
