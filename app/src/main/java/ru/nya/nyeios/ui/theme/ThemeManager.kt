@@ -15,6 +15,11 @@ enum class NierThemeMode(val id: String, val title: String, val description: Str
         id = "night",
         title = "YoRHa Night",
         description = "Инвертированная темная палитра: глубокий темный фон и теплые бежевые акценты"
+    ),
+    BLACK(
+        id = "black",
+        title = "YoRHa Black",
+        description = "AMOLED-палитра: 100% черный фон с контрастными элементами темного цвета палитры YoRHa"
     )
 }
 
@@ -28,7 +33,11 @@ object ThemeManager {
     fun init(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val saved = prefs.getString(KEY_THEME, NierThemeMode.REGULAR.id)
-        currentTheme = if (saved == NierThemeMode.NIGHT.id) NierThemeMode.NIGHT else NierThemeMode.REGULAR
+        currentTheme = when (saved) {
+            NierThemeMode.NIGHT.id -> NierThemeMode.NIGHT
+            NierThemeMode.BLACK.id -> NierThemeMode.BLACK
+            else -> NierThemeMode.REGULAR
+        }
     }
 
     fun setTheme(context: Context, mode: NierThemeMode) {

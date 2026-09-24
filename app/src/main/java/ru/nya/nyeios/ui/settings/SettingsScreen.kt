@@ -513,31 +513,20 @@ private fun ThemeSettingsContent() {
                     isSelected = currentTheme == NierThemeMode.NIGHT,
                     onClick = { ThemeManager.setTheme(context, NierThemeMode.NIGHT) }
                 )
-            }
-        }
 
-        // Info box
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(NierPanelAlt)
-                .border(1.dp, NierBorderLight, RoundedCornerShape(0.dp))
-                .padding(14.dp)
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    text = "◆ СИСТЕМА ОФОРМЛЕНИЯ YORHA ◆",
-                    color = NierDark,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = RajdhaniFamily,
-                    letterSpacing = 1.sp
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(NierBorderLight)
                 )
-                Text(
-                    text = "При переключении на YoRHa Night основные цвета интерфейса инвертируются, обеспечивая комфортное использование в темноте при сохранении аутентичной эстетики интерфейса андроидов.",
-                    color = NierDim,
-                    fontSize = 11.sp,
-                    lineHeight = 15.sp
+
+                // Theme 3: YoRHa Black (AMOLED)
+                ThemeItemRow(
+                    title = "YoRHa Black (AMOLED)",
+                    subtitle = "100% черный фон для OLED-экранов с контрастными элементами темного цвета палитры YoRHa",
+                    isSelected = currentTheme == NierThemeMode.BLACK,
+                    onClick = { ThemeManager.setTheme(context, NierThemeMode.BLACK) }
                 )
             }
         }

@@ -50,28 +50,136 @@ object NierPaletteNight {
     val magenta = Color(0xFFF06292)      // Floor navigation accent tuned for dark background
 }
 
+object NierPaletteBlack {
+    // Pure AMOLED Black: 100% black backgrounds, contrast elements in current palette dark charcoal (#3A342B)
+    val bg = Color(0xFF000000)          // 100% pure black OLED canvas
+    val panel = Color(0xFF000000)       // Pure black tab bar & navigation bar
+    val panelAlt = Color(0xFF0A0A08)    // Pure black cards with subtle separation
+    val surface = Color(0xFF000000)      // Pure black recessed surface
+    val dark = Color(0xFFCAC6A8)         // Text in warm sand for high contrast readability
+    val darkSecondary = Color(0xFFAFA990)// Secondary sand text
+    val border = Color(0xFF3A342B)       // Contrast borders using the dark military charcoal from current palette!
+    val borderLight = Color(0xFF2C2720)  // Subtle dark charcoal dividers
+    val selection = Color(0xFF3A342B)    // Contrast selection block using dark charcoal from current palette
+    val selectionText = Color(0xFFCAC6A8)// Sand text on dark charcoal selection
+    val highlight = Color(0xFF4D4438)    // Contrast highlight
+    val dim = Color(0xFF756E5D)          // Muted labels
+    val blue = Color(0xFF64B5F6)         // Lecture accent
+    val green = Color(0xFF66BB6A)        // Practice accent
+    val amber = Color(0xFFFFB74D)        // Lab accent
+    val red = Color(0xFFEF5350)          // Exam accent
+    val purple = Color(0xFFBA68C8)       // Discipline accent
+    val magenta = Color(0xFFF06292)      // Floor navigation accent
+}
+
 // Dynamic properties reflecting active theme
-val NierBg: Color get() = if (ThemeManager.currentTheme == NierThemeMode.NIGHT) NierPaletteNight.bg else NierPaletteRegular.bg
-val NierPanel: Color get() = if (ThemeManager.currentTheme == NierThemeMode.NIGHT) NierPaletteNight.panel else NierPaletteRegular.panel
-val NierPanelAlt: Color get() = if (ThemeManager.currentTheme == NierThemeMode.NIGHT) NierPaletteNight.panelAlt else NierPaletteRegular.panelAlt
-val NierSurface: Color get() = if (ThemeManager.currentTheme == NierThemeMode.NIGHT) NierPaletteNight.surface else NierPaletteRegular.surface
+val NierBg: Color get() = when (ThemeManager.currentTheme) {
+    NierThemeMode.REGULAR -> NierPaletteRegular.bg
+    NierThemeMode.NIGHT -> NierPaletteNight.bg
+    NierThemeMode.BLACK -> NierPaletteBlack.bg
+}
 
-val NierDark: Color get() = if (ThemeManager.currentTheme == NierThemeMode.NIGHT) NierPaletteNight.dark else NierPaletteRegular.dark
-val NierDarkSecondary: Color get() = if (ThemeManager.currentTheme == NierThemeMode.NIGHT) NierPaletteNight.darkSecondary else NierPaletteRegular.darkSecondary
-val NierBorder: Color get() = if (ThemeManager.currentTheme == NierThemeMode.NIGHT) NierPaletteNight.border else NierPaletteRegular.border
-val NierBorderLight: Color get() = if (ThemeManager.currentTheme == NierThemeMode.NIGHT) NierPaletteNight.borderLight else NierPaletteRegular.borderLight
+val NierPanel: Color get() = when (ThemeManager.currentTheme) {
+    NierThemeMode.REGULAR -> NierPaletteRegular.panel
+    NierThemeMode.NIGHT -> NierPaletteNight.panel
+    NierThemeMode.BLACK -> NierPaletteBlack.panel
+}
 
-val NierSelection: Color get() = if (ThemeManager.currentTheme == NierThemeMode.NIGHT) NierPaletteNight.selection else NierPaletteRegular.selection
-val NierSelectionText: Color get() = if (ThemeManager.currentTheme == NierThemeMode.NIGHT) NierPaletteNight.selectionText else NierPaletteRegular.selectionText
-val NierHighlight: Color get() = if (ThemeManager.currentTheme == NierThemeMode.NIGHT) NierPaletteNight.highlight else NierPaletteRegular.highlight
-val NierDim: Color get() = if (ThemeManager.currentTheme == NierThemeMode.NIGHT) NierPaletteNight.dim else NierPaletteRegular.dim
+val NierPanelAlt: Color get() = when (ThemeManager.currentTheme) {
+    NierThemeMode.REGULAR -> NierPaletteRegular.panelAlt
+    NierThemeMode.NIGHT -> NierPaletteNight.panelAlt
+    NierThemeMode.BLACK -> NierPaletteBlack.panelAlt
+}
 
-val NierBlue: Color get() = if (ThemeManager.currentTheme == NierThemeMode.NIGHT) NierPaletteNight.blue else NierPaletteRegular.blue
-val NierGreen: Color get() = if (ThemeManager.currentTheme == NierThemeMode.NIGHT) NierPaletteNight.green else NierPaletteRegular.green
-val NierAmber: Color get() = if (ThemeManager.currentTheme == NierThemeMode.NIGHT) NierPaletteNight.amber else NierPaletteRegular.amber
-val NierRed: Color get() = if (ThemeManager.currentTheme == NierThemeMode.NIGHT) NierPaletteNight.red else NierPaletteRegular.red
-val NierPurple: Color get() = if (ThemeManager.currentTheme == NierThemeMode.NIGHT) NierPaletteNight.purple else NierPaletteRegular.purple
-val NierMagenta: Color get() = if (ThemeManager.currentTheme == NierThemeMode.NIGHT) NierPaletteNight.magenta else NierPaletteRegular.magenta
+val NierSurface: Color get() = when (ThemeManager.currentTheme) {
+    NierThemeMode.REGULAR -> NierPaletteRegular.surface
+    NierThemeMode.NIGHT -> NierPaletteNight.surface
+    NierThemeMode.BLACK -> NierPaletteBlack.surface
+}
+
+val NierDark: Color get() = when (ThemeManager.currentTheme) {
+    NierThemeMode.REGULAR -> NierPaletteRegular.dark
+    NierThemeMode.NIGHT -> NierPaletteNight.dark
+    NierThemeMode.BLACK -> NierPaletteBlack.dark
+}
+
+val NierDarkSecondary: Color get() = when (ThemeManager.currentTheme) {
+    NierThemeMode.REGULAR -> NierPaletteRegular.darkSecondary
+    NierThemeMode.NIGHT -> NierPaletteNight.darkSecondary
+    NierThemeMode.BLACK -> NierPaletteBlack.darkSecondary
+}
+
+val NierBorder: Color get() = when (ThemeManager.currentTheme) {
+    NierThemeMode.REGULAR -> NierPaletteRegular.border
+    NierThemeMode.NIGHT -> NierPaletteNight.border
+    NierThemeMode.BLACK -> NierPaletteBlack.border
+}
+
+val NierBorderLight: Color get() = when (ThemeManager.currentTheme) {
+    NierThemeMode.REGULAR -> NierPaletteRegular.borderLight
+    NierThemeMode.NIGHT -> NierPaletteNight.borderLight
+    NierThemeMode.BLACK -> NierPaletteBlack.borderLight
+}
+
+val NierSelection: Color get() = when (ThemeManager.currentTheme) {
+    NierThemeMode.REGULAR -> NierPaletteRegular.selection
+    NierThemeMode.NIGHT -> NierPaletteNight.selection
+    NierThemeMode.BLACK -> NierPaletteBlack.selection
+}
+
+val NierSelectionText: Color get() = when (ThemeManager.currentTheme) {
+    NierThemeMode.REGULAR -> NierPaletteRegular.selectionText
+    NierThemeMode.NIGHT -> NierPaletteNight.selectionText
+    NierThemeMode.BLACK -> NierPaletteBlack.selectionText
+}
+
+val NierHighlight: Color get() = when (ThemeManager.currentTheme) {
+    NierThemeMode.REGULAR -> NierPaletteRegular.highlight
+    NierThemeMode.NIGHT -> NierPaletteNight.highlight
+    NierThemeMode.BLACK -> NierPaletteBlack.highlight
+}
+
+val NierDim: Color get() = when (ThemeManager.currentTheme) {
+    NierThemeMode.REGULAR -> NierPaletteRegular.dim
+    NierThemeMode.NIGHT -> NierPaletteNight.dim
+    NierThemeMode.BLACK -> NierPaletteBlack.dim
+}
+
+val NierBlue: Color get() = when (ThemeManager.currentTheme) {
+    NierThemeMode.REGULAR -> NierPaletteRegular.blue
+    NierThemeMode.NIGHT -> NierPaletteNight.blue
+    NierThemeMode.BLACK -> NierPaletteBlack.blue
+}
+
+val NierGreen: Color get() = when (ThemeManager.currentTheme) {
+    NierThemeMode.REGULAR -> NierPaletteRegular.green
+    NierThemeMode.NIGHT -> NierPaletteNight.green
+    NierThemeMode.BLACK -> NierPaletteBlack.green
+}
+
+val NierAmber: Color get() = when (ThemeManager.currentTheme) {
+    NierThemeMode.REGULAR -> NierPaletteRegular.amber
+    NierThemeMode.NIGHT -> NierPaletteNight.amber
+    NierThemeMode.BLACK -> NierPaletteBlack.amber
+}
+
+val NierRed: Color get() = when (ThemeManager.currentTheme) {
+    NierThemeMode.REGULAR -> NierPaletteRegular.red
+    NierThemeMode.NIGHT -> NierPaletteNight.red
+    NierThemeMode.BLACK -> NierPaletteBlack.red
+}
+
+val NierPurple: Color get() = when (ThemeManager.currentTheme) {
+    NierThemeMode.REGULAR -> NierPaletteRegular.purple
+    NierThemeMode.NIGHT -> NierPaletteNight.purple
+    NierThemeMode.BLACK -> NierPaletteBlack.purple
+}
+
+val NierMagenta: Color get() = when (ThemeManager.currentTheme) {
+    NierThemeMode.REGULAR -> NierPaletteRegular.magenta
+    NierThemeMode.NIGHT -> NierPaletteNight.magenta
+    NierThemeMode.BLACK -> NierPaletteBlack.magenta
+}
 
 // Compatibility Mappings
 val ObsidianBg: Color get() = NierBg
