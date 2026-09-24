@@ -93,6 +93,13 @@ class UpdateRepositoryTest {
     }
 
     @Test
+    fun `version 0_2_1 is newer than 0_2_0`() {
+        val vNew = AppVersion.parse("0.2.1")
+        val vOld = AppVersion.parse("0.2.0")
+        assertTrue("0.2.1 should be newer than 0.2.0", vNew > vOld)
+    }
+
+    @Test
     fun `github rate limit isLow is true when remaining is less than 30`() {
         val stateLow = ru.nya.nyeios.data.update.GithubRateLimitState(remaining = 29, resetTimeMs = 1000L)
         assertTrue("Rate limit with 29 should be low", stateLow.isLow)
