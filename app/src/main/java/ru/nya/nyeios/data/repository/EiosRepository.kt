@@ -33,6 +33,7 @@ import ru.nya.nyeios.data.model.UserProfile
 import ru.nya.nyeios.data.model.WeekSchedule
 import ru.nya.nyeios.data.net.NetworkLogger
 import ru.nya.nyeios.data.net.NetworkLogLevel
+import ru.nya.nyeios.data.net.NetworkMetricsTracker
 import ru.nya.nyeios.data.parser.CurriculumParser
 import ru.nya.nyeios.data.parser.FeedParser
 import ru.nya.nyeios.data.parser.ProfileParser
@@ -206,6 +207,14 @@ class EiosRepository(private val context: Context) {
                     durationMs = tookMs,
                     details = details.trim().ifEmpty { null }
                 )
+
+                if (finalReq.method.equals("GET", ignoreCase = true) && finalReq.url.host.contains("gukolomna.ru")) {
+                    try {
+                        NetworkMetricsTracker.getInstance(context).recordEiosGet(tookMs, finalReq.url.toString())
+                    } catch (_: Exception) {
+                        // Ignore metric recording failures
+                    }
+                }
 
                 response
             }

@@ -46,6 +46,12 @@ data class AppVersion(val parts: List<VersionPart>) : Comparable<AppVersion> {
     }
 }
 
+data class GithubRateLimitState(
+    val remaining: Int?,
+    val resetTimeMs: Long?,
+    val isLow: Boolean = remaining != null && remaining < 30
+)
+
 class UpdateRepository private constructor(private val context: Context) {
 
     private val prefs: SharedPreferences =
@@ -256,6 +262,23 @@ class UpdateRepository private constructor(private val context: Context) {
             )
             null
         }
+    }
+
+    /**
+     * Возвращает сохраненную информацию о лимитах GitHub API (с последнего реального запроса).
+     * Не выполняет никаких сетевых запросов.
+     */
+    fun getSavedRateLimit(): GithubRateLimitState {
+        if (!prefs.contains(KEY_RATELIMIT_REMAINING)) {
+            return GithubRateLimitState(remaining = null, resetTimeMs = null, isLow = false)
+        }
+        val rem = prefs.getInt(KEY_RATELIMIT_REMAINING, 60)
+        val reset = prefs.getLong(KEY_RATELIMIT_RESET_MS, 0L)
+        return GithubRateLimitState(
+            remaining = rem,
+            resetTimeMs = if (reset > 0) reset else null,
+            isLow = rem < 30
+        )
     }
 
     /**

@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.DynamicFeed
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SignalCellularAlt
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -81,6 +82,8 @@ import ru.nya.nyeios.ui.feed.FeedScreen
 import ru.nya.nyeios.ui.feed.FeedViewModel
 import ru.nya.nyeios.ui.schedule.ScheduleScreen
 import ru.nya.nyeios.ui.schedule.ScheduleViewModel
+import ru.nya.nyeios.ui.settings.SettingsScreen
+import ru.nya.nyeios.ui.settings.SettingsViewModel
 import ru.nya.nyeios.ui.theme.LectureBlue
 import ru.nya.nyeios.ui.theme.NyEIOSTheme
 import ru.nya.nyeios.ui.theme.ObsidianBg
@@ -119,6 +122,7 @@ class MainActivity : ComponentActivity() {
                     val feedViewModel: FeedViewModel = viewModel()
                     val curriculumViewModel: CurriculumViewModel = viewModel()
                     val updateViewModel: UpdateViewModel = viewModel()
+                    val settingsViewModel: SettingsViewModel = viewModel()
 
                     val context = LocalContext.current
                     val currentAppVersion = remember(context) { AppVersionProvider.getVersionName(context) }
@@ -132,6 +136,7 @@ class MainActivity : ComponentActivity() {
                     val feedUiState by feedViewModel.uiState.collectAsState()
                     val feedSyncProgress by feedViewModel.feedSyncProgress.collectAsState()
                     val curriculumUiState by curriculumViewModel.uiState.collectAsState()
+                    val settingsUiState by settingsViewModel.uiState.collectAsState()
 
                     val authSession by scheduleViewModel.authSession.collectAsState()
                     val isLoginSheetVisible by scheduleViewModel.isLoginSheetVisible.collectAsState()
@@ -151,6 +156,7 @@ class MainActivity : ComponentActivity() {
                         0 -> (scheduleUiState as? ScheduleUiState.Success)?.isRefreshing == true || scheduleUiState is ScheduleUiState.Loading
                         1 -> feedSyncProgress.isSyncing || (feedUiState as? FeedUiState.Success)?.isRefreshing == true || feedUiState is FeedUiState.Loading
                         2 -> (curriculumUiState as? CurriculumUiState.Success)?.isRefreshing == true || curriculumUiState is CurriculumUiState.Loading
+                        3 -> settingsUiState.isMeasuringPing || settingsUiState.isFetchingIp
                         else -> false
                     }
 
@@ -240,6 +246,7 @@ class MainActivity : ComponentActivity() {
                                                             0 -> "NyEIOS"
                                                             1 -> "Живая лента"
                                                             2 -> "Успеваемость"
+                                                            3 -> "Настройки"
                                                             else -> "NyEIOS"
                                                         },
                                                         fontWeight = FontWeight.Bold,
@@ -379,6 +386,7 @@ class MainActivity : ComponentActivity() {
                                                     0 -> scheduleViewModel.refresh()
                                                     1 -> feedViewModel.requestSyncFeed()
                                                     2 -> curriculumViewModel.refresh()
+                                                    3 -> settingsViewModel.refreshDiagnostics()
                                                 }
                                             }
                                         ) {
@@ -429,7 +437,8 @@ class MainActivity : ComponentActivity() {
                                     val tabs = listOf(
                                         Triple(0, Icons.Default.CalendarToday, "Расписание"),
                                         Triple(1, Icons.Default.DynamicFeed, "Лента"),
-                                        Triple(2, Icons.Default.School, "БРС")
+                                        Triple(2, Icons.Default.School, "БРС"),
+                                        Triple(3, Icons.Default.Settings, "Настройки")
                                     )
 
                                     tabs.forEach { (index, icon, title) ->
@@ -512,6 +521,9 @@ class MainActivity : ComponentActivity() {
                                             onSelectTerm = { curriculumViewModel.selectTerm(it) },
                                             onRefresh = { curriculumViewModel.refresh() },
                                             onOpenLogin = { scheduleViewModel.showLoginSheet() }
+                                        )
+                                        3 -> SettingsScreen(
+                                            viewModel = settingsViewModel
                                         )
                                     }
                                 }

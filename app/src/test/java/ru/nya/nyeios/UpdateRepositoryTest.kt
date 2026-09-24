@@ -91,5 +91,26 @@ class UpdateRepositoryTest {
         val vOld = AppVersion.parse("0.1.4a")
         assertTrue("0.2.0 should be newer than 0.1.4a", vNew > vOld)
     }
+
+    @Test
+    fun `github rate limit isLow is true when remaining is less than 30`() {
+        val stateLow = ru.nya.nyeios.data.update.GithubRateLimitState(remaining = 29, resetTimeMs = 1000L)
+        assertTrue("Rate limit with 29 should be low", stateLow.isLow)
+
+        val stateZero = ru.nya.nyeios.data.update.GithubRateLimitState(remaining = 0, resetTimeMs = 1000L)
+        assertTrue("Rate limit with 0 should be low", stateZero.isLow)
+    }
+
+    @Test
+    fun `github rate limit isLow is false when remaining is 30 or higher or null`() {
+        val stateNormal = ru.nya.nyeios.data.update.GithubRateLimitState(remaining = 30, resetTimeMs = 1000L)
+        assertFalse("Rate limit with 30 should not be low", stateNormal.isLow)
+
+        val stateHigh = ru.nya.nyeios.data.update.GithubRateLimitState(remaining = 58, resetTimeMs = 1000L)
+        assertFalse("Rate limit with 58 should not be low", stateHigh.isLow)
+
+        val stateNull = ru.nya.nyeios.data.update.GithubRateLimitState(remaining = null, resetTimeMs = null)
+        assertFalse("Rate limit with null should not be low", stateNull.isLow)
+    }
 }
 
