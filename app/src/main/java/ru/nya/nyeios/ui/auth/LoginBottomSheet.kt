@@ -2,6 +2,8 @@ package ru.nya.nyeios.ui.auth
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -85,112 +87,115 @@ fun LoginBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = ObsidianSurface,
+        containerColor = ru.nya.nyeios.ui.theme.NierPanel,
         dragHandle = {
             Box(
                 modifier = Modifier
-                    .padding(vertical = 12.dp)
-                    .size(width = 36.dp, height = 4.dp)
-                    .clip(CircleShape)
-                    .background(ObsidianBorder)
+                    .padding(vertical = 10.dp)
+                    .size(width = 36.dp, height = 3.dp)
+                    .background(ru.nya.nyeios.ui.theme.NierBorder)
             )
         }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 36.dp),
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Header
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(LectureBlue.copy(alpha = 0.15f)),
+                        .size(36.dp)
+                        .background(ru.nya.nyeios.ui.theme.NierBlue.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Key,
-                        contentDescription = null,
-                        tint = LectureBlue,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    Text(text = "🔑", fontSize = 16.sp)
                 }
                 Column {
                     Text(
                         text = "Вход в ЭИОС ГСГУ",
-                        fontSize = 18.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary
+                        fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                        color = ru.nya.nyeios.ui.theme.NierDark
                     )
                     Text(
                         text = "Данные шифруются Android Keystore",
-                        fontSize = 12.sp,
-                        color = TextMuted
+                        fontSize = 10.sp,
+                        fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                        color = ru.nya.nyeios.ui.theme.NierDim
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             if (authSession.isLoggedIn) {
                 // Already Logged in card
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(ObsidianCard)
-                        .padding(16.dp)
+                        .background(ru.nya.nyeios.ui.theme.NierPanelAlt)
+                        .border(1.dp, ru.nya.nyeios.ui.theme.NierGreen)
+                        .padding(12.dp)
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                tint = PracticeGreen,
-                                modifier = Modifier.size(20.dp)
-                            )
+                            Text(text = "✅", fontSize = 14.sp)
                             Text(
                                 text = "Вы успешно авторизованы",
-                                fontWeight = FontWeight.SemiBold,
-                                color = TextPrimary,
-                                fontSize = 14.sp
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                color = ru.nya.nyeios.ui.theme.NierDark,
+                                fontSize = 13.sp
                             )
                         }
                         Text(
                             text = "Логин: ${authSession.username.ifEmpty { "Сохранённая сессия" }}",
-                            color = TextSecondary,
-                            fontSize = 13.sp
+                            color = ru.nya.nyeios.ui.theme.NierDim,
+                            fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                            fontSize = 11.sp
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                OutlinedButton(
-                    onClick = onLogout,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = ExamRed)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, ru.nya.nyeios.ui.theme.NierRed)
+                        .clickable { onLogout() }
+                        .padding(10.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text("Выйти из аккаунта")
+                    Text(
+                        text = "ВЫЙТИ ИЗ АККАУНТА",
+                        color = ru.nya.nyeios.ui.theme.NierRed,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                        letterSpacing = 1.sp
+                    )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
                 Text(
-                    text = "Или введите новые данные ниже для смены пользователя:",
-                    color = TextMuted,
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(vertical = 8.dp)
+                    text = "Или введите новые данные для смены пользователя:",
+                    color = ru.nya.nyeios.ui.theme.NierDim,
+                    fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                    fontSize = 10.sp,
+                    modifier = Modifier.padding(vertical = 4.dp)
                 )
             }
 
@@ -200,123 +205,150 @@ fun LoginBottomSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 12.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(ExamRedBg)
-                        .padding(12.dp)
+                        .background(ru.nya.nyeios.ui.theme.NierRed.copy(alpha = 0.1f))
+                        .border(1.dp, ru.nya.nyeios.ui.theme.NierRed.copy(alpha = 0.4f))
+                        .padding(10.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Warning,
-                            contentDescription = null,
-                            tint = ExamRed,
-                            modifier = Modifier.size(18.dp)
-                        )
+                        Text(text = "⚠", color = ru.nya.nyeios.ui.theme.NierRed, fontSize = 12.sp)
                         Text(
                             text = errorMessage ?: "",
-                            color = ExamRed,
-                            fontSize = 13.sp
+                            color = ru.nya.nyeios.ui.theme.NierRed,
+                            fontSize = 11.sp,
+                            fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily
                         )
                     }
                 }
             }
 
             // Input Fields
-            OutlinedTextField(
-                value = username,
-                onValueChange = { username = it },
-                label = { Text("Логин ЭИОС (e-mail или имя)") },
-                leadingIcon = {
-                    Icon(Icons.Default.Person, contentDescription = null, tint = TextMuted)
-                },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next
-                ),
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                ),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = LectureBlue,
-                    unfocusedBorderColor = ObsidianBorder,
-                    focusedTextColor = TextPrimary,
-                    unfocusedTextColor = TextPrimary
-                ),
-                shape = RoundedCornerShape(10.dp),
-                modifier = Modifier.fillMaxWidth()
-            )
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                // Username field
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = "ЛОГИН / E-MAIL",
+                        fontSize = 9.sp,
+                        letterSpacing = 1.sp,
+                        fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = ru.nya.nyeios.ui.theme.NierDim
+                    )
+                    OutlinedTextField(
+                        value = username,
+                        onValueChange = { username = it },
+                        placeholder = { Text("ivan.petrov@gsgu.ru", color = ru.nya.nyeios.ui.theme.NierDim) },
+                        leadingIcon = {
+                            Text(text = "👤", fontSize = 12.sp)
+                        },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                        ),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = ru.nya.nyeios.ui.theme.NierDark,
+                            unfocusedBorderColor = ru.nya.nyeios.ui.theme.NierBorder,
+                            focusedTextColor = ru.nya.nyeios.ui.theme.NierDark,
+                            unfocusedTextColor = ru.nya.nyeios.ui.theme.NierDark,
+                            focusedContainerColor = ru.nya.nyeios.ui.theme.NierPanelAlt,
+                            unfocusedContainerColor = ru.nya.nyeios.ui.theme.NierPanelAlt
+                        ),
+                        textStyle = androidx.compose.ui.text.TextStyle(
+                            fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                            fontSize = 12.sp
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
 
-            Spacer(modifier = Modifier.height(12.dp))
+                // Password field
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = "ПАРОЛЬ",
+                        fontSize = 9.sp,
+                        letterSpacing = 1.sp,
+                        fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = ru.nya.nyeios.ui.theme.NierDim
+                    )
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        placeholder = { Text("••••••••", color = ru.nya.nyeios.ui.theme.NierDim) },
+                        leadingIcon = {
+                            Text(text = "🔒", fontSize = 12.sp)
+                        },
+                        trailingIcon = {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Text(text = if (passwordVisible) "👁" else "🙈", fontSize = 12.sp)
+                            }
+                        },
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                focusManager.clearFocus()
+                                onLogin(username, password)
+                            }
+                        ),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = ru.nya.nyeios.ui.theme.NierDark,
+                            unfocusedBorderColor = ru.nya.nyeios.ui.theme.NierBorder,
+                            focusedTextColor = ru.nya.nyeios.ui.theme.NierDark,
+                            unfocusedTextColor = ru.nya.nyeios.ui.theme.NierDark,
+                            focusedContainerColor = ru.nya.nyeios.ui.theme.NierPanelAlt,
+                            unfocusedContainerColor = ru.nya.nyeios.ui.theme.NierPanelAlt
+                        ),
+                        textStyle = androidx.compose.ui.text.TextStyle(
+                            fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                            fontSize = 12.sp
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
 
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Пароль от ЭИОС") },
-                leadingIcon = {
-                    Icon(Icons.Default.Lock, contentDescription = null, tint = TextMuted)
-                },
-                trailingIcon = {
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(
-                            imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = if (passwordVisible) "Скрыть" else "Показать",
-                            tint = TextMuted
-                        )
-                    }
-                },
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        focusManager.clearFocus()
-                        onLogin(username, password)
-                    }
-                ),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = LectureBlue,
-                    unfocusedBorderColor = ObsidianBorder,
-                    focusedTextColor = TextPrimary,
-                    unfocusedTextColor = TextPrimary
-                ),
-                shape = RoundedCornerShape(10.dp),
-                modifier = Modifier.fillMaxWidth()
-            )
+            Spacer(modifier = Modifier.height(18.dp))
 
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Button(
-                onClick = {
-                    focusManager.clearFocus()
-                    onLogin(username, password)
-                },
-                enabled = !isLoggingIn && username.isNotBlank() && password.isNotBlank(),
+            // NieR Action Button
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp),
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = LectureBlue,
-                    contentColor = Color.White
-                )
+                    .height(46.dp)
+                    .background(ru.nya.nyeios.ui.theme.NierDark)
+                    .clickable(enabled = !isLoggingIn && username.isNotBlank() && password.isNotBlank()) {
+                        focusManager.clearFocus()
+                        onLogin(username, password)
+                    },
+                contentAlignment = Alignment.Center
             ) {
                 if (isLoggingIn) {
                     CircularProgressIndicator(
-                        color = Color.White,
-                        modifier = Modifier.size(22.dp),
+                        color = ru.nya.nyeios.ui.theme.NierBg,
+                        modifier = Modifier.size(20.dp),
                         strokeWidth = 2.dp
                     )
                 } else {
                     Text(
-                        text = if (authSession.isLoggedIn) "Обновить авторизацию" else "Войти",
+                        text = if (authSession.isLoggedIn) "▶  ОБНОВИТЬ АВТОРИЗАЦИЮ" else "▶  ВОЙТИ В ЭИОС",
+                        fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp
+                        letterSpacing = 2.sp,
+                        color = ru.nya.nyeios.ui.theme.NierBg,
+                        fontSize = 13.sp
                     )
                 }
             }

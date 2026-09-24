@@ -253,52 +253,32 @@ fun CurriculumTermsBar(
     LazyRow(
         modifier = Modifier
             .fillMaxWidth()
+            .background(ru.nya.nyeios.ui.theme.NierPanel)
+            .border(1.dp, ru.nya.nyeios.ui.theme.NierBorderLight)
             .padding(vertical = 8.dp),
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        contentPadding = PaddingValues(horizontal = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         items(terms) { term ->
             val isSelected = term.termNum == selectedTermNum
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(if (isSelected) LectureBlue else ObsidianCard)
+                    .background(if (isSelected) ru.nya.nyeios.ui.theme.NierBlue else ru.nya.nyeios.ui.theme.NierPanelAlt)
                     .border(
                         1.dp,
-                        if (isSelected) LectureBlue else ObsidianBorder,
-                        RoundedCornerShape(12.dp)
+                        if (isSelected) ru.nya.nyeios.ui.theme.NierBlue else ru.nya.nyeios.ui.theme.NierBorder
                     )
                     .clickable { onSelectTerm(term.termNum) }
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Text(
-                        text = term.termTitle,
-                        color = if (isSelected) Color.White else TextPrimary,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        fontSize = 13.sp
-                    )
-
-                    if (term.isCurrent) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(if (isSelected) Color.White.copy(alpha = 0.25f) else LiveBadgeColor.copy(alpha = 0.2f))
-                                .padding(horizontal = 4.dp, vertical = 1.dp)
-                        ) {
-                            Text(
-                                text = "Текущий",
-                                color = if (isSelected) Color.White else LiveBadgeColor,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
+                Text(
+                    text = term.termTitle,
+                    color = if (isSelected) Color.White else ru.nya.nyeios.ui.theme.NierDim,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                    fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                    fontSize = 11.sp
+                )
             }
         }
     }
@@ -313,25 +293,27 @@ fun CurriculumStatsHeader(term: CurriculumTerm) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+            .background(ru.nya.nyeios.ui.theme.NierPanel)
+            .border(1.dp, ru.nya.nyeios.ui.theme.NierBorderLight)
+            .padding(vertical = 6.dp, horizontal = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         StatCard(
-            title = "Дисциплин",
+            title = "Предметов",
             count = totalSubjects.toString(),
-            color = LectureBlue,
-            modifier = Modifier.weight(1f)
-        )
-        StatCard(
-            title = "Экзаменов",
-            count = examsCount.toString(),
-            color = ExamRed,
+            color = ru.nya.nyeios.ui.theme.NierDark,
             modifier = Modifier.weight(1f)
         )
         StatCard(
             title = "Зачётов",
             count = passedCount.toString(),
-            color = PracticeGreen,
+            color = ru.nya.nyeios.ui.theme.NierGreen,
+            modifier = Modifier.weight(1f)
+        )
+        StatCard(
+            title = "Экзаменов",
+            count = examsCount.toString(),
+            color = ru.nya.nyeios.ui.theme.NierRed,
             modifier = Modifier.weight(1f)
         )
     }
@@ -346,26 +328,26 @@ fun StatCard(
 ) {
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(ObsidianSurface)
-            .border(1.dp, ObsidianBorder, RoundedCornerShape(12.dp))
-            .padding(horizontal = 10.dp, vertical = 8.dp),
+            .padding(vertical = 4.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp)
+            verticalArrangement = Arrangement.spacedBy(1.dp)
         ) {
             Text(
                 text = count,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
+                fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
                 color = color
             )
             Text(
-                text = title,
-                fontSize = 11.sp,
-                color = TextMuted
+                text = title.uppercase(),
+                fontSize = 8.sp,
+                letterSpacing = 0.5.sp,
+                fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                color = ru.nya.nyeios.ui.theme.NierDim
             )
         }
     }
@@ -376,164 +358,157 @@ fun CurriculumSubjectCard(subject: CurriculumSubject) {
     var isExpanded by remember { mutableStateOf(false) }
 
     val (ctrlColor, ctrlBg) = when (subject.controlCategory) {
-        CurriculumControlType.EXAM -> Pair(ExamRed, ExamRedBg)
-        CurriculumControlType.GRADED_TEST -> Pair(LabAmber, LabAmberBg)
-        CurriculumControlType.TEST -> Pair(PracticeGreen, PracticeGreenBg)
-        CurriculumControlType.COURSEWORK -> Pair(OtherPurple, OtherPurpleBg)
-        CurriculumControlType.OTHER -> Pair(LectureBlue, LectureBlueBg)
+        CurriculumControlType.EXAM -> Pair(ru.nya.nyeios.ui.theme.NierRed, ru.nya.nyeios.ui.theme.NierRed.copy(alpha = 0.15f))
+        CurriculumControlType.GRADED_TEST -> Pair(ru.nya.nyeios.ui.theme.NierAmber, ru.nya.nyeios.ui.theme.NierAmber.copy(alpha = 0.15f))
+        CurriculumControlType.TEST -> Pair(ru.nya.nyeios.ui.theme.NierGreen, ru.nya.nyeios.ui.theme.NierGreen.copy(alpha = 0.15f))
+        CurriculumControlType.COURSEWORK -> Pair(ru.nya.nyeios.ui.theme.NierPurple, ru.nya.nyeios.ui.theme.NierPurple.copy(alpha = 0.15f))
+        CurriculumControlType.OTHER -> Pair(ru.nya.nyeios.ui.theme.NierBlue, ru.nya.nyeios.ui.theme.NierBlue.copy(alpha = 0.15f))
     }
 
     val gradeText = subject.grade.trim()
-    val (gradeColor, gradeBg) = when {
-        gradeText.contains("отлич", ignoreCase = true) -> Pair(LiveBadgeColor, LiveBadgeColor.copy(alpha = 0.15f))
-        gradeText.contains("хорош", ignoreCase = true) -> Pair(LectureBlue, LectureBlueBg)
-        gradeText.contains("зачт", ignoreCase = true) -> Pair(PracticeGreen, PracticeGreenBg)
-        gradeText.contains("удовл", ignoreCase = true) -> Pair(LabAmber, LabAmberBg)
-        gradeText.contains("незач", ignoreCase = true) || gradeText.contains("неуд", ignoreCase = true) -> Pair(ExamRed, ExamRedBg)
-        else -> Pair(TextMuted, ObsidianSurface)
-    }
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(ObsidianCard)
-            .border(1.dp, ObsidianBorder, RoundedCornerShape(14.dp))
-            .clickable { isExpanded = !isExpanded }
-            .padding(14.dp)
+            .background(ru.nya.nyeios.ui.theme.NierPanelAlt)
+            .border(1.dp, ru.nya.nyeios.ui.theme.NierBorderLight)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            // Header Row: Control badge and Grade badge
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // Header Row: Control type badge, Subject name, Score and Arrow
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { isExpanded = !isExpanded }
+                    .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                // Control type badge
+                // Control Type Badge
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
                         .background(ctrlBg)
-                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                        .padding(horizontal = 5.dp, vertical = 2.dp)
                 ) {
                     Text(
                         text = subject.controlType,
                         color = ctrlColor,
-                        fontSize = 11.sp,
+                        fontSize = 9.sp,
+                        fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
                         fontWeight = FontWeight.Bold
                     )
                 }
 
+                // Subject Name
+                Text(
+                    text = subject.subject,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                    color = ru.nya.nyeios.ui.theme.NierDark,
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Score / Grade display
+                val scorePrimary = when {
+                    subject.finalRating.isNotBlank() && subject.finalRating != "0" -> subject.finalRating
+                    subject.currentScore.isNotBlank() && subject.currentScore != "0" -> subject.currentScore
+                    subject.currentRating.isNotBlank() && subject.currentRating != "0" -> subject.currentRating
+                    subject.termRating.isNotBlank() && subject.termRating != "0" -> subject.termRating
+                    else -> null
+                }
+
+                val scoreLabel = when {
+                    subject.finalRating.isNotBlank() && subject.finalRating != "0" -> "/100"
+                    subject.currentScore.isNotBlank() && subject.currentScore != "0" -> " б."
+                    else -> ""
+                }
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    // Current Score Badge (if available)
-                    if (subject.currentScore.isNotBlank() && subject.currentScore != "0") {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(ObsidianSurface)
-                                .border(1.dp, ObsidianBorder, RoundedCornerShape(6.dp))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = "КТ: ${subject.currentScore}",
-                                color = LiveBadgeColor,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-
-                    // Final Grade Badge
                     if (gradeText.isNotEmpty()) {
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(gradeBg)
-                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                                .background(ctrlColor.copy(alpha = 0.12f))
+                                .border(0.5.dp, ctrlColor)
+                                .padding(horizontal = 4.dp, vertical = 1.dp)
                         ) {
                             Text(
                                 text = gradeText,
-                                color = gradeColor,
-                                fontSize = 11.sp,
+                                color = ctrlColor,
+                                fontSize = 9.sp,
+                                fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
                                 fontWeight = FontWeight.Bold
                             )
                         }
-                    } else {
+                    }
+
+                    if (scorePrimary != null) {
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text(
+                                text = scorePrimary,
+                                color = ru.nya.nyeios.ui.theme.NierDark,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily
+                            )
+                            if (scoreLabel.isNotEmpty()) {
+                                Text(
+                                    text = scoreLabel,
+                                    color = ru.nya.nyeios.ui.theme.NierDim,
+                                    fontSize = 8.sp,
+                                    fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                                    modifier = Modifier.padding(bottom = 1.dp)
+                                )
+                            }
+                        }
+                    } else if (gradeText.isEmpty()) {
                         Text(
                             text = "—",
-                            color = TextMuted,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold
+                            color = ru.nya.nyeios.ui.theme.NierDim,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily
                         )
                     }
 
-                    Icon(
-                        imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = null,
-                        tint = TextMuted,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-            }
-
-            // Subject Title
-            Text(
-                text = subject.subject,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary,
-                lineHeight = 20.sp
-            )
-
-            // Primary Metrics Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "${subject.hours} ч.${if (subject.zet.isNotBlank() && subject.zet != "0") " • ${subject.zet} ЗЕТ" else ""}",
-                    color = TextMuted,
-                    fontSize = 12.sp
-                )
-
-                if (subject.finalRating.isNotBlank() && subject.finalRating != "0") {
                     Text(
-                        text = "Итог: ${subject.finalRating}",
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary,
-                        fontSize = 12.sp
+                        text = if (isExpanded) "▲" else "▼",
+                        color = ru.nya.nyeios.ui.theme.NierDim,
+                        fontSize = 9.sp
                     )
                 }
             }
 
-            // Expanded BRS details accordion
+            // Expanded details block
             AnimatedVisibility(visible = isExpanded) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(ObsidianSurface)
-                        .padding(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                        .background(ru.nya.nyeios.ui.theme.NierPanel)
+                        .border(1.dp, ru.nya.nyeios.ui.theme.NierBorderLight)
+                        .padding(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    BrsDetailRow(label = "Текущий контроль (балл)", value = subject.currentScore.ifEmpty { "0" })
+                    BrsDetailRow(label = "Текущий контроль (балл):", value = subject.currentScore.ifEmpty { "0" })
                     if (subject.currentRating.isNotBlank()) {
-                        BrsDetailRow(label = "Рейтинг по текущей успеваемости", value = subject.currentRating)
+                        BrsDetailRow(label = "Рейтинг текущей успеваемости:", value = subject.currentRating)
                     }
                     if (subject.termRating.isNotBlank()) {
-                        BrsDetailRow(label = "Семестровый рейтинг", value = subject.termRating)
+                        BrsDetailRow(label = "Семестровый рейтинг:", value = subject.termRating)
                     }
-                    BrsDetailRow(label = "Баллы на экзамене / зачёте", value = subject.examScore.ifEmpty { "0" })
-                    BrsDetailRow(label = "Итоговый рейтинг", value = subject.finalRating.ifEmpty { "0" }, isHighlight = true)
+                    BrsDetailRow(label = "Баллы на экзамене / зачёте:", value = subject.examScore.ifEmpty { "0" })
+                    BrsDetailRow(label = "Итоговый рейтинг:", value = if (subject.finalRating.isNotBlank() && subject.finalRating != "0") subject.finalRating else "—", isHighlight = true)
+                    if (gradeText.isNotEmpty()) {
+                        BrsDetailRow(label = "Итоговая оценка:", value = gradeText, isHighlight = true)
+                    }
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun BrsDetailRow(

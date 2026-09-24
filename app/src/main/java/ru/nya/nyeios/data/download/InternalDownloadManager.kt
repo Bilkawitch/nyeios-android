@@ -472,6 +472,78 @@ class InternalDownloadManager private constructor(private val context: Context) 
                 }
             }
             _downloadStates.value = stateUpdates
+
+            // Automatically clean up old or already-installed APK files
+            cleanOldApks()
+        }
+    }
+
+    /**
+     * Удаляет установочные APK-файлы обновлений, которые уже установлены (<= текущей версии)
+     * или были запущены на установку.
+     */
+    fun cleanOldApks() {
+        scope.launch {
+            val currentVersionStr = ru.nya.nyeios.data.update.AppVersionProvider.getVersionName(context)
+            val currentAppVersion = try {
+                ru.nya.nyeios.data.update.AppVersion.parse(currentVersionStr)
+            } catch (_: Exception) {
+                null
+            }
+
+            val filesToDelete = mutableListOf<File>()
+
+            // Check files in downloadDir
+            downloadDir.listFiles()?.forEach { file ->
+                if (file.isFile && file.name.endsWith(".apk", ignoreCase = true)) {
+                    val fileName = file.name
+                    val versionMatch = Regex("""NyEIOS-([0-9a-zA-Z._-]+)\.apk""", RegexOption.IGNORE_CASE).find(fileName)
+                    if (versionMatch != null) {
+                        val apkVersionStr = versionMatch.groupValues[1]
+                        val apkVersion = try {
+                            ru.nya.nyeios.data.update.AppVersion.parse(apkVersionStr)
+                        } catch (_: Exception) {
+                            null
+                        }
+                        if (currentAppVersion != null && apkVersion != null) {
+                            // If apk version is older or EQUAL to current installed version, delete it!
+                            if (apkVersion <= currentAppVersion) {
+                                filesToDelete.add(file)
+                            }
+                        } else {
+                            filesToDelete.add(file)
+                        }
+                    } else {
+                        // Any other leftover apk file in app downloads directory
+                        filesToDelete.add(file)
+                    }
+                }
+            }
+
+            // Also check SharedPreferences if an APK was scheduled for install
+            val prefs = context.getSharedPreferences("nyeios_update_prefs", Context.MODE_PRIVATE)
+            val pendingApk = prefs.getString("pending_install_apk_path", null)
+            if (!pendingApk.isNullOrEmpty()) {
+                val f = File(pendingApk)
+                if (f.exists() && !filesToDelete.contains(f)) {
+                    filesToDelete.add(f)
+                }
+                prefs.edit().remove("pending_install_apk_path").apply()
+            }
+
+            if (filesToDelete.isNotEmpty()) {
+                filesToDelete.forEach { f ->
+                    try {
+                        f.delete()
+                    } catch (_: Exception) {}
+                }
+
+                _downloadedFiles.update { list ->
+                    list.filterNot { item -> filesToDelete.any { it.absolutePath == item.file.absolutePath } }
+                }
+
+                saveDownloadsMetadata(_downloadedFiles.value)
+            }
         }
     }
 

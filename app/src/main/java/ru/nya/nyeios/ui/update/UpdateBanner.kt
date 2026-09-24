@@ -1,10 +1,11 @@
-﻿package ru.nya.nyeios.ui.update
+package ru.nya.nyeios.ui.update
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,32 +21,29 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.SystemUpdate
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ru.nya.nyeios.data.model.UpdateUiState
-import ru.nya.nyeios.ui.theme.ExamRed
-import ru.nya.nyeios.ui.theme.ExamRedBg
-import ru.nya.nyeios.ui.theme.LectureBlue
-import ru.nya.nyeios.ui.theme.ObsidianBorder
-import ru.nya.nyeios.ui.theme.ObsidianCard
-import ru.nya.nyeios.ui.theme.PracticeGreen
-import ru.nya.nyeios.ui.theme.TextMuted
-import ru.nya.nyeios.ui.theme.TextPrimary
-import ru.nya.nyeios.ui.theme.TextSecondary
+import ru.nya.nyeios.ui.theme.NierBlue
+import ru.nya.nyeios.ui.theme.NierBorder
+import ru.nya.nyeios.ui.theme.NierBorderLight
+import ru.nya.nyeios.ui.theme.NierDark
+import ru.nya.nyeios.ui.theme.NierDarkSecondary
+import ru.nya.nyeios.ui.theme.NierDim
+import ru.nya.nyeios.ui.theme.NierGreen
+import ru.nya.nyeios.ui.theme.NierPanel
+import ru.nya.nyeios.ui.theme.NierRed
+import ru.nya.nyeios.ui.theme.RajdhaniFamily
+import ru.nya.nyeios.ui.theme.ShareTechMonoFamily
 
 @Composable
 fun UpdateBanner(
@@ -53,8 +51,6 @@ fun UpdateBanner(
     viewModel: UpdateViewModel,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-
     val visible = state is UpdateUiState.UpdateAvailable
         || state is UpdateUiState.Downloading
         || state is UpdateUiState.ReadyToInstall
@@ -69,11 +65,10 @@ fun UpdateBanner(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .background(ObsidianCard)
-                .border(1.dp, ObsidianBorder, RoundedCornerShape(14.dp))
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(horizontal = 8.dp, vertical = 6.dp)
+                .background(NierPanel)
+                .border(1.dp, NierBorderLight)
+                .padding(horizontal = 12.dp, vertical = 10.dp)
         ) {
             when (state) {
                 is UpdateUiState.UpdateAvailable -> BannerAvailable(state, viewModel)
@@ -90,21 +85,26 @@ fun UpdateBanner(
 
 @Composable
 private fun BannerAvailable(state: UpdateUiState.UpdateAvailable, viewModel: UpdateViewModel) {
-    Row(verticalAlignment = Alignment.Top) {
+    Row(
+        verticalAlignment = Alignment.Top,
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Default.SystemUpdate,
                     contentDescription = null,
-                    tint = LectureBlue,
-                    modifier = Modifier.size(16.dp)
+                    tint = NierBlue,
+                    modifier = Modifier.size(15.dp)
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    text = "Доступно обновление ${state.info.version}",
+                    text = "ДОСТУПНО ОБНОВЛЕНИЕ v${state.info.version}",
+                    fontFamily = RajdhaniFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp,
-                    color = TextPrimary
+                    letterSpacing = 0.5.sp,
+                    color = NierDark
                 )
             }
 
@@ -112,44 +112,56 @@ private fun BannerAvailable(state: UpdateUiState.UpdateAvailable, viewModel: Upd
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = state.info.changelog,
-                    fontSize = 11.sp,
-                    color = TextSecondary,
-                    lineHeight = 15.sp
+                    fontFamily = ShareTechMonoFamily,
+                    fontSize = 10.sp,
+                    color = NierDim,
+                    lineHeight = 14.sp
                 )
             }
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
 
-            Button(
-                onClick = { viewModel.downloadApk(state.info) },
-                colors = ButtonDefaults.buttonColors(containerColor = LectureBlue),
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.height(34.dp)
+            Box(
+                modifier = Modifier
+                    .background(NierBlue)
+                    .clickable { viewModel.downloadApk(state.info) }
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Download,
-                    contentDescription = null,
-                    modifier = Modifier.size(14.dp)
-                )
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    text = "Скачать",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Download,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Text(
+                        text = "СКАЧАТЬ",
+                        fontFamily = RajdhaniFamily,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp,
+                        color = Color.White
+                    )
+                }
             }
         }
 
         // Кнопка закрытия
-        IconButton(
-            onClick = { viewModel.dismiss() },
-            modifier = Modifier.size(32.dp)
+        Box(
+            modifier = Modifier
+                .size(24.dp)
+                .clickable { viewModel.dismiss() },
+            contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Default.Close,
                 contentDescription = "Закрыть",
-                tint = TextMuted,
-                modifier = Modifier.size(18.dp)
+                tint = NierDim,
+                modifier = Modifier.size(15.dp)
             )
         }
     }
@@ -159,53 +171,58 @@ private fun BannerAvailable(state: UpdateUiState.UpdateAvailable, viewModel: Upd
 
 @Composable
 private fun BannerDownloading(state: UpdateUiState.Downloading, viewModel: UpdateViewModel) {
-    Column {
+    Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "Скачивание ${state.info.version}…",
+                text = "СКАЧИВАНИЕ v${state.info.version}…",
+                fontFamily = RajdhaniFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 13.sp,
-                color = TextPrimary
+                letterSpacing = 0.5.sp,
+                color = NierDark
             )
             val downloaded = formatSize(state.bytesNow)
             val total = if (state.bytesTotal > 0) formatSize(state.bytesTotal) else "?"
             Text(
                 text = "$downloaded / $total",
-                fontSize = 11.sp,
-                color = TextMuted
+                fontFamily = ShareTechMonoFamily,
+                fontSize = 10.sp,
+                color = NierDim
             )
         }
 
         Spacer(Modifier.height(8.dp))
 
-        if (state.progress > 0f) {
-            LinearProgressIndicator(
-                progress = { state.progress },
-                modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)),
-                color = LectureBlue,
-                trackColor = ObsidianBorder
-            )
-        } else {
-            LinearProgressIndicator(
-                modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)),
-                color = LectureBlue,
-                trackColor = ObsidianBorder
-            )
-        }
+        LinearProgressIndicator(
+            progress = { if (state.progress > 0f) state.progress else 0f },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(2.dp),
+            color = NierBlue,
+            trackColor = NierBlue.copy(alpha = 0.2f)
+        )
 
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(8.dp))
 
-        OutlinedButton(
-            onClick = { viewModel.cancelDownload() },
-            shape = RoundedCornerShape(8.dp),
-            modifier = Modifier.height(34.dp),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = TextMuted)
+        Box(
+            modifier = Modifier
+                .border(1.dp, NierBorder)
+                .background(Color.Transparent)
+                .clickable { viewModel.cancelDownload() }
+                .padding(horizontal = 10.dp, vertical = 4.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Text("Отмена", fontSize = 12.sp)
+            Text(
+                text = "ОТМЕНА",
+                fontFamily = ShareTechMonoFamily,
+                fontSize = 10.sp,
+                letterSpacing = 0.5.sp,
+                color = NierDark
+            )
         }
     }
 }
@@ -223,28 +240,35 @@ private fun BannerReadyToInstall(viewModel: UpdateViewModel) {
     ) {
         Column {
             Text(
-                text = "Обновление загружено",
+                text = "ОБНОВЛЕНИЕ ЗАГРУЖЕНО",
+                fontFamily = RajdhaniFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 13.sp,
-                color = TextPrimary
+                letterSpacing = 0.5.sp,
+                color = NierDark
             )
             Text(
-                text = "Нажмите, чтобы установить",
-                fontSize = 11.sp,
-                color = TextSecondary
+                text = "Нажмите, чтобы установить APK",
+                fontFamily = ShareTechMonoFamily,
+                fontSize = 10.sp,
+                color = NierDim
             )
         }
 
-        Button(
-            onClick = { viewModel.installApk(context) },
-            colors = ButtonDefaults.buttonColors(containerColor = PracticeGreen),
-            shape = RoundedCornerShape(8.dp),
-            modifier = Modifier.height(36.dp)
+        Box(
+            modifier = Modifier
+                .background(NierGreen)
+                .clickable { viewModel.installApk(context) }
+                .padding(horizontal = 14.dp, vertical = 7.dp),
+            contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "Установить",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold
+                text = "УСТАНОВИТЬ",
+                fontFamily = RajdhaniFamily,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.5.sp,
+                color = Color.White
             )
         }
     }
@@ -261,27 +285,32 @@ private fun BannerError(state: UpdateUiState.Error, viewModel: UpdateViewModel) 
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "Ошибка обновления",
+                text = "ОШИБКА ОБНОВЛЕНИЯ",
+                fontFamily = RajdhaniFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 13.sp,
-                color = ExamRed
+                letterSpacing = 0.5.sp,
+                color = NierRed
             )
             Text(
                 text = state.message,
-                fontSize = 11.sp,
-                color = TextMuted
+                fontFamily = ShareTechMonoFamily,
+                fontSize = 10.sp,
+                color = NierDim
             )
         }
 
-        IconButton(
-            onClick = { viewModel.dismiss() },
-            modifier = Modifier.size(32.dp)
+        Box(
+            modifier = Modifier
+                .size(24.dp)
+                .clickable { viewModel.dismiss() },
+            contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Default.Close,
                 contentDescription = "Закрыть",
-                tint = TextMuted,
-                modifier = Modifier.size(18.dp)
+                tint = NierDim,
+                modifier = Modifier.size(15.dp)
             )
         }
     }

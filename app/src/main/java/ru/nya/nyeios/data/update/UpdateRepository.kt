@@ -13,7 +13,7 @@ import ru.nya.nyeios.data.model.UpdateInfo
 import ru.nya.nyeios.data.net.NetworkLogger
 import java.util.concurrent.TimeUnit
 
-internal data class VersionPart(val num: Int, val suffix: String) : Comparable<VersionPart> {
+data class VersionPart(val num: Int, val suffix: String) : Comparable<VersionPart> {
     override fun compareTo(other: VersionPart): Int {
         val c = num.compareTo(other.num)
         if (c != 0) return c
@@ -21,7 +21,7 @@ internal data class VersionPart(val num: Int, val suffix: String) : Comparable<V
     }
 }
 
-internal data class AppVersion(val parts: List<VersionPart>) : Comparable<AppVersion> {
+data class AppVersion(val parts: List<VersionPart>) : Comparable<AppVersion> {
     override fun compareTo(other: AppVersion): Int {
         val maxLen = maxOf(parts.size, other.parts.size)
         for (i in 0 until maxLen) {

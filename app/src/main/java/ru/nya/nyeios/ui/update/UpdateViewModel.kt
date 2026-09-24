@@ -129,6 +129,9 @@ class UpdateViewModel(application: Application) : AndroidViewModel(application) 
         }
 
         try {
+            val prefs = context.getSharedPreferences("nyeios_update_prefs", Context.MODE_PRIVATE)
+            prefs.edit().putString("pending_install_apk_path", file.absolutePath).apply()
+
             val uri = FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.fileprovider",
