@@ -85,14 +85,29 @@ import ru.nya.nyeios.data.floormap.FloorRoute
 import ru.nya.nyeios.data.floormap.RoomType
 import ru.nya.nyeios.ui.theme.LectureBlue
 import ru.nya.nyeios.ui.theme.LiveBadgeColor
+import ru.nya.nyeios.ui.theme.NierAmber
+import ru.nya.nyeios.ui.theme.NierBg
+import ru.nya.nyeios.ui.theme.NierBlue
+import ru.nya.nyeios.ui.theme.NierBorder
+import ru.nya.nyeios.ui.theme.NierBorderLight
+import ru.nya.nyeios.ui.theme.NierDark
+import ru.nya.nyeios.ui.theme.NierDarkSecondary
+import ru.nya.nyeios.ui.theme.NierGreen
+import ru.nya.nyeios.ui.theme.NierMagenta
+import ru.nya.nyeios.ui.theme.NierPanel
+import ru.nya.nyeios.ui.theme.NierPanelAlt
+import ru.nya.nyeios.ui.theme.NierRed
 import ru.nya.nyeios.ui.theme.ObsidianBg
 import ru.nya.nyeios.ui.theme.ObsidianBorder
 import ru.nya.nyeios.ui.theme.ObsidianCard
 import ru.nya.nyeios.ui.theme.ObsidianSurface
+import ru.nya.nyeios.ui.theme.RajdhaniFamily
+import ru.nya.nyeios.ui.theme.ShareTechMonoFamily
 import ru.nya.nyeios.ui.theme.TextMuted
 import ru.nya.nyeios.ui.theme.TextPrimary
 import ru.nya.nyeios.ui.theme.TextSecondary
 import kotlin.math.hypot
+import kotlin.math.roundToInt
 
 enum class RouteEditTarget {
     START,       // Selection applies to "Предыдущая"
@@ -147,16 +162,16 @@ fun FloorMapBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = ObsidianSurface,
-        scrimColor = Color.Black.copy(alpha = 0.70f),
+        containerColor = NierBg,
+        scrimColor = Color(0x991A1812),
         dragHandle = {
             Box(
                 modifier = Modifier
                     .padding(vertical = 8.dp)
-                    .width(36.dp)
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(ObsidianBorder)
+                    .width(32.dp)
+                    .height(3.dp)
+                    .clip(RoundedCornerShape(1.dp))
+                    .background(NierDark.copy(alpha = 0.5f))
             )
         }
     ) {
@@ -169,25 +184,19 @@ fun FloorMapBottomSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                    .padding(horizontal = 14.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Box(
                         modifier = Modifier
                             .size(32.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(
-                                if (route != null && (route.points.isNotEmpty() || route.isCrossFloor)) {
-                                    if (route.isCrossFloor) Color(0xFFD946EF).copy(alpha = 0.2f) else LectureBlue.copy(alpha = 0.2f)
-                                } else {
-                                    LiveBadgeColor.copy(alpha = 0.15f)
-                                }
-                            ),
+                            .border(1.5.dp, NierDark, RoundedCornerShape(2.dp))
+                            .background(if (route?.isCrossFloor == true) NierMagenta else NierDark),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -197,11 +206,7 @@ fun FloorMapBottomSheet(
                                 Icons.Default.LocationOn
                             },
                             contentDescription = null,
-                            tint = if (route != null && (route.points.isNotEmpty() || route.isCrossFloor)) {
-                                if (route.isCrossFloor) Color(0xFFD946EF) else LectureBlue
-                            } else {
-                                LiveBadgeColor
-                            },
+                            tint = NierBg,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -216,119 +221,273 @@ fun FloorMapBottomSheet(
                                 "Навигация по корпусу"
                             },
                             fontSize = 17.sp,
+                            fontFamily = RajdhaniFamily,
                             fontWeight = FontWeight.Bold,
-                            color = TextPrimary
+                            color = NierDark
                         )
                         Text(
                             text = "ГОУ ВО МО «ГСГУ»",
-                            fontSize = 11.sp,
-                            color = TextMuted
+                            fontSize = 10.sp,
+                            fontFamily = ShareTechMonoFamily,
+                            color = NierBorder
                         )
                     }
                 }
 
                 IconButton(
                     onClick = onDismiss,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(30.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Закрыть",
-                        tint = TextSecondary,
-                        modifier = Modifier.size(20.dp)
+                        tint = NierDark,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
 
-            // Floor Selector Row
+            // Floor Selector Tabs (.map-tabs)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .background(NierPanel)
+                    .border(BorderStroke(1.dp, NierBorderLight))
             ) {
-                // 3rd Floor Tab
+                // Tab 3
                 val is3Selected = selectedFloor == 3
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(if (is3Selected) LectureBlue else ObsidianCard)
-                        .border(1.dp, if (is3Selected) LectureBlue else ObsidianBorder, RoundedCornerShape(10.dp))
+                        .weight(1f)
+                        .background(if (is3Selected) NierDark else NierPanel)
                         .clickable {
                             selectedFloor = 3
                             if (destRoom == null || destRoom?.floor != 3) {
                                 destRoom = FloorMapRepository.findRoom("301")
                             }
                         }
-                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                        .padding(vertical = 6.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "3 этаж",
-                        fontSize = 13.sp,
-                        fontWeight = if (is3Selected) FontWeight.Bold else FontWeight.Medium,
-                        color = if (is3Selected) Color.White else TextPrimary
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "3",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = RajdhaniFamily,
+                            color = if (is3Selected) NierBg else NierDark,
+                            lineHeight = 18.sp
+                        )
+                        Text(
+                            text = "ЭТАЖ",
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = RajdhaniFamily,
+                            letterSpacing = 0.5.sp,
+                            color = if (is3Selected) NierBg.copy(alpha = 0.75f) else NierBorder
+                        )
+                    }
                 }
 
-                // 4th Floor Tab
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .height(38.dp)
+                        .background(NierBorder)
+                )
+
+                // Tab 4
                 val is4Selected = selectedFloor == 4
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(if (is4Selected) LectureBlue else ObsidianCard)
-                        .border(1.dp, if (is4Selected) LectureBlue else ObsidianBorder, RoundedCornerShape(10.dp))
+                        .weight(1f)
+                        .background(if (is4Selected) NierDark else NierPanel)
                         .clickable {
                             selectedFloor = 4
                             if (destRoom == null || destRoom?.floor != 4) {
                                 destRoom = FloorMapRepository.findRoom("421")
                             }
                         }
-                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                        .padding(vertical = 6.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "4 этаж",
-                        fontSize = 13.sp,
-                        fontWeight = if (is4Selected) FontWeight.Bold else FontWeight.Medium,
-                        color = if (is4Selected) Color.White else TextPrimary
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "4",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = RajdhaniFamily,
+                            color = if (is4Selected) NierBg else NierDark,
+                            lineHeight = 18.sp
+                        )
+                        Text(
+                            text = "ЭТАЖ",
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = RajdhaniFamily,
+                            letterSpacing = 0.5.sp,
+                            color = if (is4Selected) NierBg.copy(alpha = 0.75f) else NierBorder
+                        )
+                    }
                 }
 
-                // Multi-floor Dual View Tab ("3 ↔ 4 Связка")
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .height(38.dp)
+                        .background(NierBorder)
+                )
+
+                // Tab 3<->4
                 val isMultiSelected = selectedFloor == 0
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(if (isMultiSelected) Color(0xFFD946EF) else ObsidianCard)
-                        .border(1.dp, if (isMultiSelected) Color(0xFFD946EF) else ObsidianBorder, RoundedCornerShape(10.dp))
+                        .weight(1f)
+                        .background(if (isMultiSelected) NierMagenta else NierPanel)
                         .clickable { selectedFloor = 0 }
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                        .padding(vertical = 6.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "3↔4",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = RajdhaniFamily,
+                            color = if (isMultiSelected) Color.White else NierDark,
+                            lineHeight = 18.sp
+                        )
+                        Text(
+                            text = "СВЯЗКА",
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = RajdhaniFamily,
+                            letterSpacing = 0.5.sp,
+                            color = if (isMultiSelected) Color.White.copy(alpha = 0.85f) else NierBorder
+                        )
+                    }
+                }
+            }
+
+            // Route Panel (.route-panel)
+            if (destRoom != null) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(NierPanelAlt)
+                        .border(BorderStroke(1.dp, NierBorderLight))
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Row(
+                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Text(
-                            text = "3 ↔ 4 Связка",
-                            fontSize = 13.sp,
-                            fontWeight = if (isMultiSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isMultiSelected) Color.White else TextPrimary
-                        )
-                        if (route?.isCrossFloor == true) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(Color.White.copy(alpha = 0.22f))
-                                    .padding(horizontal = 4.dp, vertical = 1.dp)
-                            ) {
+                        // Start pill
+                        val isEditingStart = editTarget == RouteEditTarget.START
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .border(
+                                    width = if (isEditingStart) 1.5.dp else 1.dp,
+                                    color = if (isEditingStart) NierBlue else NierBorderLight,
+                                    shape = RoundedCornerShape(2.dp)
+                                )
+                                .background(if (isEditingStart) NierBlue.copy(alpha = 0.12f) else NierPanel)
+                                .clickable { editTarget = RouteEditTarget.START }
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Column {
                                 Text(
-                                    text = "путь",
-                                    fontSize = 9.sp,
+                                    text = if (isEditingStart) "ОТ ▼" else "ОТ",
+                                    fontSize = 8.sp,
+                                    fontFamily = RajdhaniFamily,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color.White
+                                    color = if (isEditingStart) NierBlue else NierBorder
+                                )
+                                Text(
+                                    text = if (startRoom != null) startRoom!!.room else "—",
+                                    fontSize = 14.sp,
+                                    fontFamily = RajdhaniFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    color = NierDark
                                 )
                             }
                         }
+
+                        Text(
+                            text = "→",
+                            fontSize = 14.sp,
+                            fontFamily = RajdhaniFamily,
+                            fontWeight = FontWeight.Bold,
+                            color = NierBorder
+                        )
+
+                        // Dest pill
+                        val isEditingDest = editTarget == RouteEditTarget.DESTINATION
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .border(
+                                    width = if (isEditingDest) 1.5.dp else 1.dp,
+                                    color = if (isEditingDest) NierBlue else NierBorderLight,
+                                    shape = RoundedCornerShape(2.dp)
+                                )
+                                .background(if (isEditingDest) NierBlue.copy(alpha = 0.12f) else NierPanel)
+                                .clickable { editTarget = RouteEditTarget.DESTINATION }
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Column {
+                                Text(
+                                    text = if (isEditingDest) "ДО ▼" else "ДО",
+                                    fontSize = 8.sp,
+                                    fontFamily = RajdhaniFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isEditingDest) NierBlue else NierBorder
+                                )
+                                Text(
+                                    text = destRoom!!.room,
+                                    fontSize = 14.sp,
+                                    fontFamily = RajdhaniFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isEditingDest) NierBlue else NierDark
+                                )
+                            }
+                        }
+
+                        if (startRoom != null) {
+                            IconButton(
+                                onClick = { startRoom = null },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Сбросить маршрут",
+                                    tint = NierBorder,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // Route metrics
+                    if (route != null) {
+                        val distPx = computeRouteDistance(route)
+                        val meters = (distPx * 0.11f).toInt()
+                        val minutes = maxOf(1, (meters / 70.0).roundToInt())
+                        val distText = if (route.isCrossFloor) {
+                            "Межэтажный · ${route.transitionStairsName} · ≈ $meters м"
+                        } else {
+                            "≈ $meters м · ~$minutes мин · $selectedFloor этаж"
+                        }
+                        Text(
+                            text = distText,
+                            fontSize = 9.sp,
+                            fontFamily = ShareTechMonoFamily,
+                            color = if (route.isCrossFloor) NierMagenta else NierBorder,
+                            modifier = Modifier.align(Alignment.End)
+                        )
                     }
                 }
             }
@@ -380,23 +539,10 @@ fun FloorMapBottomSheet(
                 }
             }
 
-            // Bottom Info Card (Route Navigation or Single Room details)
-            if (selectedFloor in listOf(0, 3, 4)) {
-                Spacer(modifier = Modifier.height(8.dp))
-                if (startRoom != null && destRoom != null) {
-                    RouteInfoCard(
-                        startRoom = startRoom,
-                        destRoom = destRoom!!,
-                        route = route,
-                        editTarget = editTarget,
-                        onSelectEditTarget = { editTarget = it },
-                        onClearRoute = { startRoom = null }
-                    )
-                } else if (destRoom != null) {
-                    RoomInfoCard(
-                        room = destRoom!!
-                    )
-                }
+            // Bottom Info Card (Room details when single room is selected and no route)
+            if (selectedFloor in listOf(0, 3, 4) && startRoom == null && destRoom != null) {
+                Spacer(modifier = Modifier.height(6.dp))
+                RoomInfoCard(room = destRoom!!)
             }
         }
     }
@@ -467,10 +613,9 @@ private fun SingleFloorInteractiveView(
         modifier = Modifier
             .fillMaxWidth()
             .height(350.dp)
-            .padding(horizontal = 16.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(ObsidianBg)
-            .border(1.dp, ObsidianBorder, RoundedCornerShape(16.dp))
+            .padding(horizontal = 14.dp)
+            .background(NierBg)
+            .border(BorderStroke(1.dp, NierBorderLight))
     ) {
         val viewWidthPx = constraints.maxWidth.toFloat()
         val viewHeightPx = constraints.maxHeight.toFloat()
@@ -583,15 +728,14 @@ private fun SingleFloorInteractiveView(
                 drawImage(floorImageBitmap)
 
                 // 2. Draw Floor Watermark / Badge
-                drawRoundRect(
-                    color = ObsidianSurface.copy(alpha = 0.85f),
-                    topLeft = Offset(16f, 16f),
-                    size = Size(100f, 32f),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f)
+                drawRect(
+                    color = NierDark.copy(alpha = 0.85f),
+                    topLeft = Offset(14f, 14f),
+                    size = Size(80f, 26f)
                 )
-                textPaint.color = android.graphics.Color.WHITE
-                textPaint.textSize = 16f
-                drawContext.canvas.nativeCanvas.drawText("$floor ЭТАЖ", 66f, 38f, textPaint)
+                textPaint.color = android.graphics.Color.parseColor("#CAC6A8")
+                textPaint.textSize = 14f
+                drawContext.canvas.nativeCanvas.drawText("$floor ЭТАЖ", 54f, 32f, textPaint)
 
                 // 3. Draw Room Outlines
                 drawRoomsList(
@@ -609,7 +753,7 @@ private fun SingleFloorInteractiveView(
                     drawRouteSegments(
                         pts = currentFloorRoutePoints,
                         chevronAnim = chevronAnim,
-                        baseColor = if (route?.isCrossFloor == true) Color(0xFFD946EF) else LectureBlue,
+                        baseColor = if (route?.isCrossFloor == true) NierMagenta else NierDark,
                         yOffset = 0f
                     )
 
@@ -621,13 +765,13 @@ private fun SingleFloorInteractiveView(
                             // Starts at room door, ends at stairs
                             drawDoorMarker(startPt, isStart = true)
                             // Beacon at stairs
-                            drawCircle(color = Color(0xFFD946EF).copy(alpha = pulseAlpha), radius = 14f, center = endPt)
-                            drawCircle(color = Color(0xFFD946EF), radius = 6.5f, center = endPt)
+                            drawCircle(color = NierMagenta.copy(alpha = pulseAlpha), radius = 14f, center = endPt)
+                            drawCircle(color = NierMagenta, radius = 6.5f, center = endPt)
                             drawCircle(color = Color.White, radius = 3f, center = endPt)
                         } else if (route.toFloor == floor) {
                             // Starts at stairs, ends at room door
-                            drawCircle(color = Color(0xFFD946EF).copy(alpha = pulseAlpha), radius = 14f, center = startPt)
-                            drawCircle(color = Color(0xFFD946EF), radius = 6.5f, center = startPt)
+                            drawCircle(color = NierMagenta.copy(alpha = pulseAlpha), radius = 14f, center = startPt)
+                            drawCircle(color = NierMagenta, radius = 6.5f, center = startPt)
                             drawCircle(color = Color.White, radius = 3f, center = startPt)
                             drawDoorMarker(endPt, isStart = false)
                         }
@@ -639,58 +783,50 @@ private fun SingleFloorInteractiveView(
             }
         }
 
-        // Floating Zoom / Fit Controls
-        Row(
+        // Floating Zoom / Fit Controls (.map-zoom-btns)
+        Column(
             modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(12.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(ObsidianSurface.copy(alpha = 0.88f))
-                .border(1.dp, ObsidianBorder, RoundedCornerShape(12.dp))
-                .padding(4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                .align(Alignment.TopEnd)
+                .padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            IconButton(
-                onClick = { scale = (scale * 1.25f).coerceAtMost(3.8f) },
-                modifier = Modifier.size(32.dp)
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .border(1.dp, NierDark, RoundedCornerShape(2.dp))
+                    .background(NierPanel)
+                    .clickable { scale = (scale * 1.25f).coerceAtMost(3.8f) },
+                contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Приблизить",
-                    tint = TextPrimary,
-                    modifier = Modifier.size(16.dp)
-                )
+                Text(text = "+", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = NierDark, textAlign = TextAlign.Center)
             }
 
-            IconButton(
-                onClick = { scale = (scale / 1.25f).coerceAtLeast(fitScale * 0.7f) },
-                modifier = Modifier.size(32.dp)
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .border(1.dp, NierDark, RoundedCornerShape(2.dp))
+                    .background(NierPanel)
+                    .clickable { scale = (scale / 1.25f).coerceAtLeast(fitScale * 0.7f) },
+                contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Remove,
-                    contentDescription = "Отдалить",
-                    tint = TextPrimary,
-                    modifier = Modifier.size(16.dp)
-                )
+                Text(text = "–", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = NierDark, textAlign = TextAlign.Center)
             }
 
-            IconButton(
-                onClick = {
-                    scale = fitScale
-                    offset = Offset(
-                        (viewWidthPx - mapWidth * fitScale) / 2f,
-                        (viewHeightPx - mapHeight * fitScale) / 2f
-                    )
-                },
-                modifier = Modifier.size(32.dp)
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .border(1.dp, NierDark, RoundedCornerShape(2.dp))
+                    .background(NierPanel)
+                    .clickable {
+                        scale = fitScale
+                        offset = Offset(
+                            (viewWidthPx - mapWidth * fitScale) / 2f,
+                            (viewHeightPx - mapHeight * fitScale) / 2f
+                        )
+                    },
+                contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.FitScreen,
-                    contentDescription = "Вписать в экран",
-                    tint = LectureBlue,
-                    modifier = Modifier.size(16.dp)
-                )
+                Text(text = "⊡", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = NierDark, textAlign = TextAlign.Center)
             }
         }
     }
@@ -747,10 +883,9 @@ private fun MultiFloorInteractiveView(
         modifier = Modifier
             .fillMaxWidth()
             .height(410.dp)
-            .padding(horizontal = 16.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(ObsidianBg)
-            .border(1.dp, ObsidianBorder, RoundedCornerShape(16.dp))
+            .padding(horizontal = 14.dp)
+            .background(NierBg)
+            .border(BorderStroke(1.dp, NierBorderLight))
     ) {
         val viewWidthPx = constraints.maxWidth.toFloat()
         val viewHeightPx = constraints.maxHeight.toFloat()
@@ -869,28 +1004,26 @@ private fun MultiFloorInteractiveView(
             }) {
                 // 1. Draw Floor 4 (Top Plan)
                 drawImage(floor4ImageBitmap, topLeft = Offset.Zero)
-                drawRoundRect(
-                    color = ObsidianSurface.copy(alpha = 0.85f),
-                    topLeft = Offset(16f, 16f),
-                    size = Size(100f, 32f),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f)
+                drawRect(
+                    color = NierDark.copy(alpha = 0.85f),
+                    topLeft = Offset(14f, 14f),
+                    size = Size(80f, 26f)
                 )
-                textPaint.color = android.graphics.Color.WHITE
-                textPaint.textSize = 16f
-                drawContext.canvas.nativeCanvas.drawText("4 ЭТАЖ", 66f, 38f, textPaint)
+                textPaint.color = android.graphics.Color.parseColor("#CAC6A8")
+                textPaint.textSize = 14f
+                drawContext.canvas.nativeCanvas.drawText("4 ЭТАЖ", 54f, 32f, textPaint)
                 drawRoomsList(rooms4, startRoom, destRoom, pulseAlpha, pulseStrokeWidth, textPaint, yOffset = 0f)
 
                 // 2. Draw Floor 3 (Bottom Plan)
                 drawImage(floor3ImageBitmap, topLeft = Offset(0f, floor3Y))
-                drawRoundRect(
-                    color = ObsidianSurface.copy(alpha = 0.85f),
-                    topLeft = Offset(16f, floor3Y + 16f),
-                    size = Size(100f, 32f),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f)
+                drawRect(
+                    color = NierDark.copy(alpha = 0.85f),
+                    topLeft = Offset(14f, floor3Y + 14f),
+                    size = Size(80f, 26f)
                 )
-                textPaint.color = android.graphics.Color.WHITE
-                textPaint.textSize = 16f
-                drawContext.canvas.nativeCanvas.drawText("3 ЭТАЖ", 66f, floor3Y + 38f, textPaint)
+                textPaint.color = android.graphics.Color.parseColor("#CAC6A8")
+                textPaint.textSize = 14f
+                drawContext.canvas.nativeCanvas.drawText("3 ЭТАЖ", 54f, floor3Y + 32f, textPaint)
                 drawRoomsList(rooms3, startRoom, destRoom, pulseAlpha, pulseStrokeWidth, textPaint, yOffset = floor3Y)
 
                 // 3. Draw Route
@@ -899,9 +1032,9 @@ private fun MultiFloorInteractiveView(
                     val pts3 = if (route.fromFloor == 3) route.fromFloorPoints else route.toFloorPoints
 
                     // Floor 4 leg
-                    drawRouteSegments(pts4, chevronAnim, LectureBlue, yOffset = 0f)
+                    drawRouteSegments(pts4, chevronAnim, NierDark, yOffset = 0f)
                     // Floor 3 leg
-                    drawRouteSegments(pts3, chevronAnim, LectureBlue, yOffset = floor3Y)
+                    drawRouteSegments(pts3, chevronAnim, NierDark, yOffset = floor3Y)
 
                     // Connecting Stairs Dashed Line (Floor 4 Stairs <---> Floor 3 Stairs)
                     val st4 = if (route.fromFloor == 4) route.fromStairsPoint else route.toStairsPoint
@@ -913,7 +1046,7 @@ private fun MultiFloorInteractiveView(
 
                         // Magenta Glow Line
                         drawLine(
-                            color = Color(0xFFD946EF).copy(alpha = 0.35f),
+                            color = NierMagenta.copy(alpha = 0.35f),
                             start = p4,
                             end = p3,
                             strokeWidth = 9.0f,
@@ -922,7 +1055,7 @@ private fun MultiFloorInteractiveView(
 
                         // Animated Dashed Line
                         drawLine(
-                            color = Color(0xFFD946EF),
+                            color = NierMagenta,
                             start = p4,
                             end = p3,
                             strokeWidth = 4.0f,
@@ -931,34 +1064,32 @@ private fun MultiFloorInteractiveView(
                         )
 
                         // Glowing Beacons at stairs ends
-                        drawCircle(color = Color(0xFFD946EF).copy(alpha = pulseAlpha), radius = 14f, center = p4)
-                        drawCircle(color = Color(0xFFD946EF), radius = 6.5f, center = p4)
+                        drawCircle(color = NierMagenta.copy(alpha = pulseAlpha), radius = 14f, center = p4)
+                        drawCircle(color = NierMagenta, radius = 6.5f, center = p4)
                         drawCircle(color = Color.White, radius = 3f, center = p4)
 
-                        drawCircle(color = Color(0xFFD946EF).copy(alpha = pulseAlpha), radius = 14f, center = p3)
-                        drawCircle(color = Color(0xFFD946EF), radius = 6.5f, center = p3)
+                        drawCircle(color = NierMagenta.copy(alpha = pulseAlpha), radius = 14f, center = p3)
+                        drawCircle(color = NierMagenta, radius = 6.5f, center = p3)
                         drawCircle(color = Color.White, radius = 3f, center = p3)
 
                         // Badge in the inter-floor gap
                         val midX = (p4.x + p3.x) / 2f
                         val midY = (p4.y + p3.y) / 2f
 
-                        drawRoundRect(
-                            color = ObsidianSurface.copy(alpha = 0.90f),
-                            topLeft = Offset(midX - 120f, midY - 18f),
-                            size = Size(240f, 36f),
-                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(18f, 18f)
+                        drawRect(
+                            color = NierDark.copy(alpha = 0.90f),
+                            topLeft = Offset(midX - 110f, midY - 14f),
+                            size = Size(220f, 28f)
                         )
-                        drawRoundRect(
-                            color = Color(0xFFD946EF),
-                            topLeft = Offset(midX - 120f, midY - 18f),
-                            size = Size(240f, 36f),
-                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(18f, 18f),
+                        drawRect(
+                            color = NierMagenta,
+                            topLeft = Offset(midX - 110f, midY - 14f),
+                            size = Size(220f, 28f),
                             style = Stroke(width = 1.5f)
                         )
 
                         badgePaint.color = android.graphics.Color.WHITE
-                        drawContext.canvas.nativeCanvas.drawText("↕ ${route.transitionStairsName}", midX, midY + 6f, badgePaint)
+                        drawContext.canvas.nativeCanvas.drawText("↕ ${route.transitionStairsName}", midX, midY + 5f, badgePaint)
                     }
 
                     // Start marker
@@ -978,65 +1109,57 @@ private fun MultiFloorInteractiveView(
                     if (destPt != null) drawDoorMarker(destPt, isStart = false)
                 } else if (route != null && !route.isCrossFloor && route.points.size >= 2) {
                     val yOff = if (route.toFloor == 3) floor3Y else 0f
-                    drawRouteSegments(route.points, chevronAnim, LectureBlue, yOffset = yOff)
+                    drawRouteSegments(route.points, chevronAnim, NierDark, yOffset = yOff)
                     drawDoorMarker(Offset(route.points.first().x, route.points.first().y + yOff), isStart = true)
                     drawDoorMarker(Offset(route.points.last().x, route.points.last().y + yOff), isStart = false)
                 }
             }
         }
 
-        // Floating Zoom / Fit Controls
-        Row(
+        // Floating Zoom / Fit Controls (.map-zoom-btns)
+        Column(
             modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(12.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(ObsidianSurface.copy(alpha = 0.88f))
-                .border(1.dp, ObsidianBorder, RoundedCornerShape(12.dp))
-                .padding(4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                .align(Alignment.TopEnd)
+                .padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            IconButton(
-                onClick = { scale = (scale * 1.25f).coerceAtMost(3.5f) },
-                modifier = Modifier.size(32.dp)
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .border(1.dp, NierDark, RoundedCornerShape(2.dp))
+                    .background(NierPanel)
+                    .clickable { scale = (scale * 1.25f).coerceAtMost(3.5f) },
+                contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Приблизить",
-                    tint = TextPrimary,
-                    modifier = Modifier.size(16.dp)
-                )
+                Text(text = "+", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = NierDark, textAlign = TextAlign.Center)
             }
 
-            IconButton(
-                onClick = { scale = (scale / 1.25f).coerceAtLeast(fitScale * 0.6f) },
-                modifier = Modifier.size(32.dp)
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .border(1.dp, NierDark, RoundedCornerShape(2.dp))
+                    .background(NierPanel)
+                    .clickable { scale = (scale / 1.25f).coerceAtLeast(fitScale * 0.6f) },
+                contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Remove,
-                    contentDescription = "Отдалить",
-                    tint = TextPrimary,
-                    modifier = Modifier.size(16.dp)
-                )
+                Text(text = "–", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = NierDark, textAlign = TextAlign.Center)
             }
 
-            IconButton(
-                onClick = {
-                    scale = fitScale
-                    offset = Offset(
-                        (viewWidthPx - combinedWidth * fitScale) / 2f,
-                        (viewHeightPx - combinedHeight * fitScale) / 2f
-                    )
-                },
-                modifier = Modifier.size(32.dp)
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .border(1.dp, NierDark, RoundedCornerShape(2.dp))
+                    .background(NierPanel)
+                    .clickable {
+                        scale = fitScale
+                        offset = Offset(
+                            (viewWidthPx - combinedWidth * fitScale) / 2f,
+                            (viewHeightPx - combinedHeight * fitScale) / 2f
+                        )
+                    },
+                contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.FitScreen,
-                    contentDescription = "Вписать оба этажа",
-                    tint = Color(0xFFD946EF),
-                    modifier = Modifier.size(16.dp)
-                )
+                Text(text = "⊡", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = NierDark, textAlign = TextAlign.Center)
             }
         }
     }
@@ -1063,17 +1186,17 @@ private fun DrawScope.drawRoomsList(
         when {
             isDest -> {
                 drawRect(
-                    color = LiveBadgeColor.copy(alpha = pulseAlpha),
+                    color = NierBorder.copy(alpha = 0.70f + pulseAlpha * 0.3f),
                     topLeft = rTopLeft,
                     size = rSize
                 )
                 drawRect(
-                    color = LiveBadgeColor,
+                    color = NierDark,
                     topLeft = rTopLeft,
                     size = rSize,
                     style = Stroke(width = pulseStrokeWidth)
                 )
-                textPaint.color = android.graphics.Color.WHITE
+                textPaint.color = android.graphics.Color.parseColor("#CAC6A8")
                 textPaint.textSize = if (r.width > 50) 24f else 18f
                 drawContext.canvas.nativeCanvas.drawText(
                     r.room,
@@ -1084,17 +1207,17 @@ private fun DrawScope.drawRoomsList(
             }
             isStart -> {
                 drawRect(
-                    color = LectureBlue.copy(alpha = 0.28f),
+                    color = NierDark,
                     topLeft = rTopLeft,
                     size = rSize
                 )
                 drawRect(
-                    color = LectureBlue,
+                    color = NierDark,
                     topLeft = rTopLeft,
                     size = rSize,
-                    style = Stroke(width = 2.5f)
+                    style = Stroke(width = 2.0f)
                 )
-                textPaint.color = android.graphics.Color.WHITE
+                textPaint.color = android.graphics.Color.parseColor("#CAC6A8")
                 textPaint.textSize = if (r.width > 50) 22f else 16f
                 drawContext.canvas.nativeCanvas.drawText(
                     r.room,
@@ -1105,7 +1228,12 @@ private fun DrawScope.drawRoomsList(
             }
             else -> {
                 drawRect(
-                    color = Color.White.copy(alpha = 0.08f),
+                    color = NierDark.copy(alpha = 0.06f),
+                    topLeft = rTopLeft,
+                    size = rSize
+                )
+                drawRect(
+                    color = NierBorderLight,
                     topLeft = rTopLeft,
                     size = rSize,
                     style = Stroke(width = 0.8f)
@@ -1118,7 +1246,7 @@ private fun DrawScope.drawRoomsList(
 private fun DrawScope.drawRouteSegments(
     pts: List<Offset>,
     chevronAnim: Float,
-    baseColor: Color = LectureBlue,
+    baseColor: Color = NierDark,
     yOffset: Float = 0f
 ) {
     if (pts.size < 2) return
@@ -1126,17 +1254,17 @@ private fun DrawScope.drawRouteSegments(
 
     for (i in 0 until mappedPts.size - 1) {
         drawLine(
-            color = baseColor.copy(alpha = 0.45f),
+            color = baseColor.copy(alpha = 0.50f),
             start = mappedPts[i],
             end = mappedPts[i + 1],
-            strokeWidth = 9.0f,
+            strokeWidth = 6.0f,
             cap = StrokeCap.Round
         )
         drawLine(
-            color = if (baseColor == Color(0xFFD946EF)) Color(0xFFF0ABFC) else Color(0xFF60A5FA),
+            color = baseColor,
             start = mappedPts[i],
             end = mappedPts[i + 1],
-            strokeWidth = 4.5f,
+            strokeWidth = 3.5f,
             cap = StrokeCap.Round
         )
     }
@@ -1168,14 +1296,14 @@ private fun DrawScope.drawRouteSegments(
                 color = Color.White,
                 start = w1,
                 end = tip,
-                strokeWidth = 2.0f,
+                strokeWidth = 1.8f,
                 cap = StrokeCap.Round
             )
             drawLine(
                 color = Color.White,
                 start = w2,
                 end = tip,
-                strokeWidth = 2.0f,
+                strokeWidth = 1.8f,
                 cap = StrokeCap.Round
             )
 
@@ -1185,233 +1313,22 @@ private fun DrawScope.drawRouteSegments(
 }
 
 private fun DrawScope.drawDoorMarker(center: Offset, isStart: Boolean) {
-    val color = if (isStart) LectureBlue else LiveBadgeColor
+    val color = if (isStart) NierDark else NierBorder
     drawCircle(
         color = color.copy(alpha = 0.35f),
-        radius = 12f,
+        radius = 10f,
         center = center
     )
     drawCircle(
         color = color,
-        radius = 6.5f,
+        radius = 5.5f,
         center = center
     )
     drawCircle(
         color = Color.White,
-        radius = 3f,
+        radius = 2.5f,
         center = center
     )
-}
-
-@Composable
-private fun RouteInfoCard(
-    startRoom: FloorRoom?,
-    destRoom: FloorRoom,
-    route: FloorRoute?,
-    editTarget: RouteEditTarget,
-    onSelectEditTarget: (RouteEditTarget) -> Unit,
-    onClearRoute: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(ObsidianCard)
-            .border(1.dp, ObsidianBorder, RoundedCornerShape(14.dp))
-            .padding(14.dp)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            // Interactive Selectable Steps Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Start Room Pill (Selectable for edit)
-                val isEditingStart = editTarget == RouteEditTarget.START
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(
-                            if (isEditingStart) LectureBlue.copy(alpha = 0.22f) else ObsidianSurface
-                        )
-                        .border(
-                            if (isEditingStart) 2.dp else 1.dp,
-                            if (isEditingStart) LectureBlue else ObsidianBorder,
-                            RoundedCornerShape(10.dp)
-                        )
-                        .clickable { onSelectEditTarget(RouteEditTarget.START) }
-                        .padding(horizontal = 10.dp, vertical = 8.dp)
-                ) {
-                    Column {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = "ПРЕДЫДУЩАЯ",
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (isEditingStart) LectureBlue else TextMuted
-                            )
-                            if (isEditingStart) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(6.dp)
-                                        .clip(CircleShape)
-                                        .background(LectureBlue)
-                                )
-                            }
-                        }
-                        Text(
-                            text = if (startRoom != null) "Каб. ${startRoom.room} (${startRoom.floor} эт.)" else "Выбрать",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isEditingStart) Color.White else TextPrimary
-                        )
-                    }
-                }
-
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = null,
-                    tint = TextMuted,
-                    modifier = Modifier.size(18.dp)
-                )
-
-                // Destination Room Pill (Selectable for edit)
-                val isEditingDest = editTarget == RouteEditTarget.DESTINATION
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(
-                            if (isEditingDest) LiveBadgeColor.copy(alpha = 0.22f) else ObsidianSurface
-                        )
-                        .border(
-                            if (isEditingDest) 2.dp else 1.dp,
-                            if (isEditingDest) LiveBadgeColor else ObsidianBorder,
-                            RoundedCornerShape(10.dp)
-                        )
-                        .clickable { onSelectEditTarget(RouteEditTarget.DESTINATION) }
-                        .padding(horizontal = 10.dp, vertical = 8.dp)
-                ) {
-                    Column {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = "ТЕКУЩАЯ",
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (isEditingDest) LiveBadgeColor else TextMuted
-                            )
-                            if (isEditingDest) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(6.dp)
-                                        .clip(CircleShape)
-                                        .background(LiveBadgeColor)
-                                )
-                            }
-                        }
-                        Text(
-                            text = "Каб. ${destRoom.room} (${destRoom.floor} эт.)",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isEditingDest) Color.White else LiveBadgeColor
-                        )
-                    }
-                }
-            }
-
-            // Description Line
-            if (route != null) {
-                Text(
-                    text = route.description,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = TextSecondary
-                )
-            }
-
-            // Cross-floor stairs notification
-            if (route != null && route.isCrossFloor && route.transitionStairsName.isNotBlank()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFFD946EF).copy(alpha = 0.15f))
-                        .border(1.dp, Color(0xFFD946EF).copy(alpha = 0.35f), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 10.dp, vertical = 6.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Route,
-                            contentDescription = null,
-                            tint = Color(0xFFD946EF),
-                            modifier = Modifier.size(15.dp)
-                        )
-                        Text(
-                            text = "Переход по лестнице: ${route.transitionStairsName} (${route.fromFloor} ↔ ${route.toFloor} этаж)",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFFF0ABFC)
-                        )
-                    }
-                }
-            }
-
-            // Active edit mode hint
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.NearMe,
-                    contentDescription = null,
-                    tint = if (editTarget == RouteEditTarget.START) LectureBlue else LiveBadgeColor,
-                    modifier = Modifier.size(13.dp)
-                )
-                Text(
-                    text = if (editTarget == RouteEditTarget.START) {
-                        "Кликните на кабинет на карте, чтобы сменить начало пути (Предыдущая)"
-                    } else {
-                        "Кликните на кабинет на карте, чтобы сменить цель (Текущая)"
-                    },
-                    fontSize = 11.sp,
-                    color = TextMuted
-                )
-            }
-
-            // Destination details
-            if (destRoom.type == RoomType.DEAN_OFFICE) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = null,
-                        tint = Color(0xFFD29922),
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Text(
-                        text = "Кабинет 421 — Деканат факультета",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFFD29922)
-                    )
-                }
-            }
-        }
-    }
 }
 
 @Composable
@@ -1421,13 +1338,12 @@ private fun RoomInfoCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(ObsidianCard)
-            .border(1.dp, ObsidianBorder, RoundedCornerShape(14.dp))
-            .padding(14.dp)
+            .padding(horizontal = 14.dp)
+            .background(NierPanelAlt)
+            .border(BorderStroke(1.dp, NierBorderLight))
+            .padding(12.dp)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1439,50 +1355,42 @@ private fun RoomInfoCard(
                 ) {
                     Text(
                         text = "Кабинет ${room.room}",
-                        fontSize = 18.sp,
+                        fontSize = 17.sp,
+                        fontFamily = RajdhaniFamily,
                         fontWeight = FontWeight.Bold,
-                        color = LiveBadgeColor
+                        color = NierDark
                     )
 
                     if (room.type == RoomType.DEAN_OFFICE) {
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(Color(0xFFD29922).copy(alpha = 0.2f))
-                                .border(1.dp, Color(0xFFD29922).copy(alpha = 0.5f), RoundedCornerShape(6.dp))
-                                .padding(horizontal = 8.dp, vertical = 2.dp)
+                                .border(1.dp, NierAmber, RoundedCornerShape(2.dp))
+                                .background(NierAmber.copy(alpha = 0.15f))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Star,
-                                    contentDescription = null,
-                                    tint = Color(0xFFD29922),
-                                    modifier = Modifier.size(12.dp)
-                                )
-                                Text(
-                                    text = "Деканат",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFD29922)
-                                )
-                            }
+                            Text(
+                                text = "Деканат",
+                                fontSize = 9.sp,
+                                fontFamily = RajdhaniFamily,
+                                fontWeight = FontWeight.Bold,
+                                color = NierAmber
+                            )
                         }
                     }
                 }
 
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(ObsidianSurface)
-                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                        .background(NierPanel)
+                        .border(1.dp, NierBorderLight, RoundedCornerShape(2.dp))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
                     Text(
                         text = room.wing.title,
-                        fontSize = 11.sp,
-                        color = TextMuted
+                        fontSize = 9.sp,
+                        fontFamily = RajdhaniFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = NierBorder
                     )
                 }
             }
@@ -1497,15 +1405,17 @@ private fun RoomInfoCard(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = "Тип:",
-                        fontSize = 12.sp,
-                        color = TextMuted
+                        text = "ТИП:",
+                        fontSize = 10.sp,
+                        fontFamily = ShareTechMonoFamily,
+                        color = NierBorder
                     )
                     Text(
                         text = room.type.title,
-                        fontSize = 12.sp,
+                        fontSize = 11.sp,
+                        fontFamily = RajdhaniFamily,
                         fontWeight = FontWeight.SemiBold,
-                        color = TextPrimary
+                        color = NierDark
                     )
                 }
 
@@ -1514,15 +1424,17 @@ private fun RoomInfoCard(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = "Лестница:",
-                        fontSize = 12.sp,
-                        color = TextMuted
+                        text = "ЛЕСТНИЦА:",
+                        fontSize = 10.sp,
+                        fontFamily = ShareTechMonoFamily,
+                        color = NierBorder
                     )
                     Text(
                         text = room.nearestStairs,
-                        fontSize = 12.sp,
+                        fontSize = 11.sp,
+                        fontFamily = RajdhaniFamily,
                         fontWeight = FontWeight.SemiBold,
-                        color = LectureBlue
+                        color = NierBlue
                     )
                 }
             }
@@ -1539,64 +1451,84 @@ private fun FloorStubView(
         modifier = Modifier
             .fillMaxWidth()
             .height(280.dp)
-            .padding(horizontal = 16.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(ObsidianBg)
-            .border(1.dp, ObsidianBorder, RoundedCornerShape(16.dp))
-            .padding(24.dp),
+            .padding(horizontal = 14.dp)
+            .background(NierPanelAlt)
+            .border(BorderStroke(1.dp, NierBorderLight))
+            .padding(20.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(56.dp)
-                    .clip(CircleShape)
-                    .background(ObsidianCard)
-                    .border(1.dp, ObsidianBorder, CircleShape),
+                    .size(48.dp)
+                    .border(1.dp, NierDark, RoundedCornerShape(2.dp))
+                    .background(NierPanel),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Layers,
                     contentDescription = null,
-                    tint = LectureBlue,
-                    modifier = Modifier.size(28.dp)
+                    tint = NierDark,
+                    modifier = Modifier.size(24.dp)
                 )
             }
 
             Text(
                 text = "Схема $floor этажа в разработке",
                 fontSize = 16.sp,
+                fontFamily = RajdhaniFamily,
                 fontWeight = FontWeight.Bold,
-                color = TextPrimary,
+                color = NierDark,
                 textAlign = TextAlign.Center
             )
 
             Text(
                 text = "План аудиторий $floor этажа будет добавлен в одном из следующих обновлений. Сейчас доступна интерактивная карта 4 этажа.",
-                fontSize = 13.sp,
-                color = TextMuted,
+                fontSize = 11.sp,
+                fontFamily = ShareTechMonoFamily,
+                color = NierBorder,
                 textAlign = TextAlign.Center,
-                lineHeight = 18.sp
+                lineHeight = 16.sp
             )
 
             Button(
                 onClick = onSwitchToFloor4,
-                shape = RoundedCornerShape(10.dp),
+                shape = RoundedCornerShape(2.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = LectureBlue,
-                    contentColor = Color.White
+                    containerColor = NierDark,
+                    contentColor = NierBg
                 ),
                 modifier = Modifier.padding(top = 4.dp)
             ) {
                 Text(
-                    text = "Открыть 4 этаж",
+                    text = "▶ Открыть 4 этаж",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp
+                    fontFamily = RajdhaniFamily,
+                    fontSize = 12.sp,
+                    letterSpacing = 0.5.sp
                 )
             }
         }
     }
 }
+
+private fun computeRouteDistance(route: FloorRoute): Float {
+    fun ptsDist(pts: List<Offset>): Float {
+        var d = 0f
+        for (i in 0 until pts.size - 1) {
+            val dx = pts[i + 1].x - pts[i].x
+            val dy = pts[i + 1].y - pts[i].y
+            d += hypot(dx, dy)
+        }
+        return d
+    }
+    return if (route.isCrossFloor) {
+        ptsDist(route.fromFloorPoints) + ptsDist(route.toFloorPoints)
+    } else {
+        ptsDist(route.points)
+    }
+}
+

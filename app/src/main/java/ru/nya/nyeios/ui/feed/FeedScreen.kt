@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -61,6 +62,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
@@ -649,12 +652,6 @@ fun FeedPostCard(
     onShare: (FeedAttachment) -> Unit,
     onSaveToPublic: (FeedAttachment) -> Unit
 ) {
-    val avatarBg = remember(post.authorName) {
-        val colors = listOf(LectureBlue, PracticeGreen, LabAmber, OtherPurple, Color(0xFF06B6D4), Color(0xFFEC4899))
-        val idx = abs(post.authorName.hashCode()) % colors.size
-        colors[idx]
-    }
-
     val initials = remember(post.authorName) {
         val words = post.authorName.split(" ").filter { it.isNotBlank() }
         when {
@@ -667,75 +664,74 @@ fun FeedPostCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(ObsidianCard)
-            .border(1.dp, ObsidianBorder, RoundedCornerShape(14.dp))
-            .padding(16.dp)
+            .background(ru.nya.nyeios.ui.theme.NierPanelAlt)
+            .border(1.dp, ru.nya.nyeios.ui.theme.NierBorderLight)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            // Header: Avatar, Name, Destination & Time
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // Header Row: Avatar, Author, Destination and Time with bottom border
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .drawBehind {
+                        drawLine(
+                            color = ru.nya.nyeios.ui.theme.NierBorderLight,
+                            start = Offset(0f, size.height),
+                            end = Offset(size.width, size.height),
+                            strokeWidth = 1.dp.toPx()
+                        )
+                    }
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Monogram Avatar
+                // Square NieR Avatar box
                 Box(
                     modifier = Modifier
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .background(avatarBg),
+                        .size(32.dp)
+                        .background(ru.nya.nyeios.ui.theme.NierDark)
+                        .border(1.5.dp, ru.nya.nyeios.ui.theme.NierDark),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = initials,
-                        color = Color.White,
+                        color = ru.nya.nyeios.ui.theme.NierBg,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp
+                        fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                        fontSize = 11.sp
                     )
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
+                    Text(
+                        text = post.authorName,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                        color = ru.nya.nyeios.ui.theme.NierDark,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    if (post.destination.isNotEmpty()) {
                         Text(
-                            text = post.authorName,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextPrimary,
+                            text = "→ ${post.destination}",
+                            color = ru.nya.nyeios.ui.theme.NierDim,
+                            fontSize = 9.sp,
+                            fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f, fill = false)
-                        )
-
-                        if (post.destination.isNotEmpty()) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(LectureBlueBg)
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            ) {
-                                Text(
-                                    text = "→ ${post.destination}",
-                                    color = LectureBlue,
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    maxLines = 1
-                                )
-                            }
-                        }
-                    }
-
-                    if (post.postTime.isNotEmpty()) {
-                        Text(
-                            text = post.postTime,
-                            fontSize = 12.sp,
-                            color = TextMuted
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
+                }
+
+                if (post.postTime.isNotEmpty()) {
+                    Text(
+                        text = post.postTime,
+                        fontSize = 9.sp,
+                        fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                        color = ru.nya.nyeios.ui.theme.NierDim,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.End
+                    )
                 }
             }
 
@@ -744,21 +740,22 @@ fun FeedPostCard(
                 SelectionContainer {
                     Text(
                         text = post.textClean,
-                        color = TextPrimary,
-                        fontSize = 14.sp,
-                        lineHeight = 21.sp,
-                        fontWeight = FontWeight.Normal
+                        color = ru.nya.nyeios.ui.theme.NierDark,
+                        fontSize = 11.sp,
+                        lineHeight = 17.sp,
+                        fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                        modifier = Modifier.padding(10.dp)
                     )
                 }
             }
 
-            // Attachments block with Internal Downloader
+            // Attachments block
             if (post.attachments.isNotEmpty()) {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 4.dp)
+                        .padding(horizontal = 10.dp, vertical = 6.dp)
                 ) {
                     post.attachments.forEach { att ->
                         val state = downloadStates[att.url] ?: downloadManager.getDownloadState(att.url, att.name)
@@ -790,284 +787,93 @@ fun FeedAttachmentItem(
     onShare: () -> Unit,
     onSaveToPublic: () -> Unit
 ) {
-    val (iconColor, extLabel) = remember(attachment.name) {
-        val lower = attachment.name.lowercase()
-        when {
-            lower.endsWith(".pdf") -> Pair(ExamRed, "PDF")
-            lower.endsWith(".docx") || lower.endsWith(".doc") -> Pair(LectureBlue, "DOC")
-            lower.endsWith(".xlsx") || lower.endsWith(".xls") -> Pair(PracticeGreen, "XLS")
-            lower.endsWith(".zip") || lower.endsWith(".rar") || lower.endsWith(".7z") -> Pair(LabAmber, "ZIP")
-            lower.endsWith(".ppt") || lower.endsWith(".pptx") -> Pair(OtherPurple, "PPT")
-            else -> Pair(OtherPurple, "ФАЙЛ")
-        }
-    }
+    val isDownloaded = state is DownloadState.Completed
+    val isDownloading = state is DownloadState.Downloading
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .background(ObsidianSurface)
+            .background(ru.nya.nyeios.ui.theme.NierPanel)
             .border(
                 1.dp,
-                when (state) {
-                    is DownloadState.Downloading -> LectureBlue.copy(alpha = 0.4f)
-                    is DownloadState.Completed -> PracticeGreen.copy(alpha = 0.35f)
-                    is DownloadState.Failed -> ExamRed.copy(alpha = 0.4f)
-                    else -> ObsidianBorder
-                },
-                RoundedCornerShape(10.dp)
+                if (isDownloaded) ru.nya.nyeios.ui.theme.NierGreen else ru.nya.nyeios.ui.theme.NierBorderLight
             )
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    when (state) {
-                        is DownloadState.Completed -> onOpen()
-                        is DownloadState.Downloading -> {} // do nothing or let user click cancel
-                        else -> onDownload()
-                    }
-                },
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Extension badge / icon
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(
-                        when (state) {
-                            is DownloadState.Completed -> PracticeGreenBg
-                            else -> iconColor.copy(alpha = 0.15f)
-                        }
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                if (state is DownloadState.Completed) {
-                    Icon(
-                        imageVector = Icons.Default.CheckCircle,
-                        contentDescription = null,
-                        tint = PracticeGreen,
-                        modifier = Modifier.size(20.dp)
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.Description,
-                        contentDescription = null,
-                        tint = iconColor,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-            }
+            Text(
+                text = if (isDownloaded) "✅" else "📄",
+                fontSize = 14.sp
+            )
 
-            // Filename & Status
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = attachment.name,
-                    color = TextPrimary,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                    color = if (isDownloaded) ru.nya.nyeios.ui.theme.NierGreen else ru.nya.nyeios.ui.theme.NierDark,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-
-                when (state) {
-                    is DownloadState.Downloading -> {
-                        Text(
-                            text = if (state.totalBytes > 0) {
-                                "${(state.progress * 100).toInt()}% • ${downloadManager.formatFileSize(state.bytesDownloaded)} / ${downloadManager.formatFileSize(state.totalBytes)}"
-                            } else {
-                                "Загрузка... ${downloadManager.formatFileSize(state.bytesDownloaded)}"
-                            },
-                            color = LectureBlue,
-                            fontSize = 11.sp
-                        )
-                    }
-
-                    is DownloadState.Completed -> {
-                        Text(
-                            text = "Скачан локально • ${downloadManager.formatFileSize(state.sizeBytes)}",
-                            color = PracticeGreen,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-
-                    is DownloadState.Failed -> {
-                        Text(
-                            text = state.error,
-                            color = ExamRed,
-                            fontSize = 11.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-
-                    DownloadState.Idle -> {
-                        Text(
-                            text = "Нажмите для загрузки в приложение",
-                            color = TextMuted,
-                            fontSize = 11.sp
-                        )
-                    }
-                }
-            }
-
-            // Right Tag or Action Icon
-            when (state) {
-                is DownloadState.Downloading -> {
-                    IconButton(
-                        onClick = onCancel,
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Отмена загрузки",
-                            tint = TextMuted,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
-
-                is DownloadState.Failed -> {
-                    IconButton(
-                        onClick = onDownload,
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Повторить",
-                            tint = ExamRed,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
-
-                DownloadState.Idle -> {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(LectureBlueBg)
-                            .clickable { onDownload() }
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Download,
-                                contentDescription = null,
-                                tint = LectureBlue,
-                                modifier = Modifier.size(12.dp)
-                            )
-                            Text(
-                                text = extLabel,
-                                color = LectureBlue,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-
-                is DownloadState.Completed -> {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(PracticeGreenBg)
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                    ) {
-                        Text(
-                            text = extLabel,
-                            color = PracticeGreen,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-        }
-
-        // Progress indicator if downloading
-        if (state is DownloadState.Downloading) {
-            if (state.progress >= 0f) {
-                LinearProgressIndicator(
-                    progress = { state.progress },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(4.dp)
-                        .clip(RoundedCornerShape(2.dp)),
-                    color = LectureBlue,
-                    trackColor = ObsidianBorder
-                )
-            } else {
-                LinearProgressIndicator(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(4.dp)
-                        .clip(RoundedCornerShape(2.dp)),
-                    color = LectureBlue,
-                    trackColor = ObsidianBorder
-                )
-            }
-        }
-
-        // Quick action buttons if Completed
-        if (state is DownloadState.Completed) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Button(
-                    onClick = onOpen,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = LectureBlueBg,
-                        contentColor = LectureBlue
-                    ),
-                    shape = RoundedCornerShape(6.dp),
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                    modifier = Modifier.height(28.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                        contentDescription = null,
-                        modifier = Modifier.size(12.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
+                val completedSize = (state as? DownloadState.Completed)?.file?.length() ?: 0L
+                if (completedSize > 0) {
                     Text(
-                        text = "Открыть",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium
+                        text = downloadManager.formatFileSize(completedSize),
+                        fontSize = 9.sp,
+                        fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                        color = ru.nya.nyeios.ui.theme.NierDim
                     )
                 }
+            }
+        }
 
-                IconButton(
-                    onClick = onShare,
-                    modifier = Modifier.size(28.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Share,
-                        contentDescription = "Поделиться",
-                        tint = TextSecondary,
-                        modifier = Modifier.size(14.dp)
-                    )
+        // Progress bar for active download
+        if (isDownloading) {
+            val progress = (state as DownloadState.Downloading).progress
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(2.dp)
+                    .background(ru.nya.nyeios.ui.theme.NierBlue.copy(alpha = 0.2f))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(progress.coerceIn(0f, 1f))
+                        .fillMaxHeight()
+                        .background(ru.nya.nyeios.ui.theme.NierBlue)
+                )
+            }
+        }
+
+        // Action Buttons Row (NieR styled bordered buttons)
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            when (state) {
+                is DownloadState.Completed -> {
+                    NierActionButton(text = "↗ Открыть", isPrimary = true, onClick = onOpen)
+                    NierActionButton(text = "⤴ Поделиться", isPrimary = false, onClick = onShare)
+                    NierActionButton(text = "💾 Сохранить", isPrimary = false, onClick = onSaveToPublic)
                 }
-
-                IconButton(
-                    onClick = onSaveToPublic,
-                    modifier = Modifier.size(28.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.SaveAlt,
-                        contentDescription = "Сохранить в папку Загрузки",
-                        tint = TextSecondary,
-                        modifier = Modifier.size(14.dp)
+                is DownloadState.Downloading -> {
+                    Text(
+                        text = "Загрузка ${(state.progress * 100).toInt()}%...",
+                        fontSize = 9.sp,
+                        fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                        color = ru.nya.nyeios.ui.theme.NierBlue
                     )
+                    Spacer(modifier = Modifier.weight(1f))
+                    NierActionButton(text = "✕ Отмена", isDanger = true, onClick = onCancel)
+                }
+                else -> {
+                    NierActionButton(text = "⬇ Скачать", isPrimary = true, onClick = onDownload)
                 }
             }
         }
@@ -1075,22 +881,52 @@ fun FeedAttachmentItem(
 }
 
 @Composable
+fun NierActionButton(
+    text: String,
+    isPrimary: Boolean = false,
+    isDanger: Boolean = false,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .background(
+                when {
+                    isPrimary -> ru.nya.nyeios.ui.theme.NierDark
+                    else -> Color.Transparent
+                }
+            )
+            .border(
+                1.dp,
+                when {
+                    isDanger -> ru.nya.nyeios.ui.theme.NierRed
+                    else -> ru.nya.nyeios.ui.theme.NierDark
+                }
+            )
+            .clickable { onClick() }
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+            color = when {
+                isPrimary -> ru.nya.nyeios.ui.theme.NierBg
+                isDanger -> ru.nya.nyeios.ui.theme.NierRed
+                else -> ru.nya.nyeios.ui.theme.NierDark
+            }
+        )
+    }
+}
+
+
+@Composable
 fun FeedSyncProgressCard(
     progress: FeedSyncProgress,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-    val pulseAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.35f,
-        targetValue = 1.0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(800),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pulseAlpha"
-    )
-
     val formattedTime = remember(progress.elapsedSeconds) {
         val m = progress.elapsedSeconds / 60
         val s = progress.elapsedSeconds % 60
@@ -1100,13 +936,12 @@ fun FeedSyncProgressCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(ObsidianCard)
-            .border(1.dp, PracticeGreen.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
-            .padding(14.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+            .background(ru.nya.nyeios.ui.theme.NierGreen.copy(alpha = 0.05f))
+            .border(1.dp, ru.nya.nyeios.ui.theme.NierGreen)
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Top Header Row: Status Icon + Title + Pulsing Beacon + Monospace Timer Badge
+        // Header Row: Cloud Icon + Title + Timer
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -1114,138 +949,79 @@ fun FeedSyncProgressCard(
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .clip(CircleShape)
-                        .background(PracticeGreen.copy(alpha = pulseAlpha))
-                )
-                Text(
-                    text = "Синхронизация ленты",
-                    color = TextPrimary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                )
+                Text(text = "☁", fontSize = 14.sp, color = ru.nya.nyeios.ui.theme.NierGreen)
+                Column {
+                    Text(
+                        text = "Синхронизация Живой ленты",
+                        color = ru.nya.nyeios.ui.theme.NierDark,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                        fontSize = 13.sp
+                    )
+                    Text(
+                        text = "Загрузка данных с eios.gukolomna.ru",
+                        color = ru.nya.nyeios.ui.theme.NierDim,
+                        fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                        fontSize = 9.sp
+                    )
+                }
             }
 
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(PracticeGreenBg)
-                    .border(1.dp, PracticeGreen.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
-                    .padding(horizontal = 8.dp, vertical = 3.dp)
-            ) {
-                Text(
-                    text = formattedTime,
-                    color = PracticeGreen,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp,
-                    fontFamily = FontFamily.Monospace
-                )
-            }
-        }
-
-        // Primary Status Message
-        Text(
-            text = progress.statusText.ifEmpty { "Подключение к eios.gukolomna.ru..." },
-            color = TextPrimary,
-            fontWeight = FontWeight.Medium,
-            fontSize = 13.sp,
-            lineHeight = 18.sp
-        )
-
-        // Sub Status (Speed, packet indicator, elapsed explanation)
-        if (progress.subStatusText.isNotEmpty()) {
             Text(
-                text = progress.subStatusText,
-                color = if (progress.isReceivingPackets) PracticeGreen else TextSecondary,
-                fontSize = 11.sp,
-                fontWeight = if (progress.isReceivingPackets) FontWeight.SemiBold else FontWeight.Normal
+                text = formattedTime,
+                color = ru.nya.nyeios.ui.theme.NierDark,
+                fontWeight = FontWeight.Bold,
+                fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                fontSize = 12.sp
             )
         }
 
         // Progress Bar
-        val isDownloading = progress.stage == FeedSyncStage.DOWNLOADING && progress.bytesDownloaded > 0
-        if (isDownloading) {
-            val total = progress.totalBytes.coerceAtLeast(1L)
-            val frac = (progress.bytesDownloaded.toFloat() / total).coerceIn(0.01f, 1f)
-            val percent = (frac * 100).toInt().coerceIn(1, 99)
+        val total = progress.totalBytes.coerceAtLeast(1L)
+        val frac = if (progress.bytesDownloaded > 0) (progress.bytesDownloaded.toFloat() / total).coerceIn(0.05f, 1f) else 0.2f
 
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                LinearProgressIndicator(
-                    progress = { frac },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(7.dp)
-                        .clip(RoundedCornerShape(4.dp)),
-                    color = PracticeGreen,
-                    trackColor = ObsidianBorder
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "$percent%",
-                        color = PracticeGreen,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "${formatBytesLocal(progress.bytesDownloaded)} / ~7.5 МБ",
-                        color = TextMuted,
-                        fontSize = 11.sp
-                    )
-                }
-            }
-        } else {
-            LinearProgressIndicator(
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(3.dp)
+                .background(ru.nya.nyeios.ui.theme.NierGreen.copy(alpha = 0.2f))
+        ) {
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(6.dp)
-                    .clip(RoundedCornerShape(3.dp)),
-                color = PracticeGreen,
-                trackColor = ObsidianBorder
+                    .fillMaxWidth(frac)
+                    .fillMaxHeight()
+                    .background(ru.nya.nyeios.ui.theme.NierGreen)
             )
         }
 
-        // Footer: Note & Cancel Button
+        // Stats Row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Таймаут: 25 мин • Фоновый режим",
-                color = TextMuted,
-                fontSize = 11.sp
+                text = "${formatBytesLocal(progress.bytesDownloaded)} / ~7.5 МБ",
+                color = ru.nya.nyeios.ui.theme.NierDim,
+                fontSize = 9.sp,
+                fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily
             )
-
-            Row(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .clickable { onCancel() }
-                    .background(ExamRedBg)
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = null,
-                    tint = ExamRed,
-                    modifier = Modifier.size(13.dp)
-                )
-                Text(
-                    text = "Отменить",
-                    color = ExamRed,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+            Text(
+                text = progress.statusText.ifEmpty { "Загрузка..." },
+                color = ru.nya.nyeios.ui.theme.NierDim,
+                fontSize = 9.sp,
+                fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily
+            )
         }
+
+        // Cancel button
+        NierActionButton(
+            text = "✕ Отменить загрузку",
+            isDanger = true,
+            onClick = onCancel
+        )
     }
 }
 

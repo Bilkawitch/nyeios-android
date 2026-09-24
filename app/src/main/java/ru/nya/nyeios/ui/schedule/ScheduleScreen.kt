@@ -77,7 +77,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import kotlinx.coroutines.delay
@@ -301,31 +304,28 @@ fun ScheduleScreen(
                             val currentDay = uiState.schedule.days.getOrNull(dayIdx)
 
                             if (currentDay == null || currentDay.lessons.isEmpty()) {
-                                // Empty state
+                                // NieR Empty state slot
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .padding(32.dp),
+                                        .padding(24.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .border(1.dp, ru.nya.nyeios.ui.theme.NierBorderLight)
+                                            .background(ru.nya.nyeios.ui.theme.NierPanelAlt.copy(alpha = 0.5f))
+                                            .padding(vertical = 16.dp, horizontal = 12.dp),
+                                        contentAlignment = Alignment.Center
                                     ) {
                                         Text(
-                                            text = "✨",
-                                            fontSize = 40.sp
-                                        )
-                                        Text(
-                                            text = "Пар нет!",
+                                            text = "— ЗАНЯТИЙ НЕТ · СВОБОДНЫЙ ДЕНЬ —",
+                                            fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 18.sp,
-                                            color = TextPrimary
-                                        )
-                                        Text(
-                                            text = "На этот день занятия не запланированы. Можно отдыхать!",
-                                            color = TextMuted,
-                                            fontSize = 14.sp
+                                            fontSize = 11.sp,
+                                            letterSpacing = 1.sp,
+                                            color = ru.nya.nyeios.ui.theme.NierDim
                                         )
                                     }
                                 }
@@ -398,31 +398,34 @@ fun WeekNavigator(
 ) {
     val schedule = (uiState as? ScheduleUiState.Success)?.schedule
     val dateSubtitle = if (schedule != null && schedule.startDate.isNotEmpty()) {
-        "${schedule.startDate} — ${schedule.endDate}"
+        "${schedule.startDate} – ${schedule.endDate} · Неделя $weekOffset"
     } else {
-        "Расписание недели"
+        "Неделя $weekOffset"
     }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(ObsidianSurface)
-            .border(1.dp, ObsidianBorder, RoundedCornerShape(14.dp))
-            .padding(horizontal = 8.dp, vertical = 6.dp),
+            .background(ru.nya.nyeios.ui.theme.NierPanel)
+            .border(width = 1.dp, color = ru.nya.nyeios.ui.theme.NierBorderLight)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        IconButton(
-            onClick = onPrev,
-            modifier = Modifier.size(36.dp)
+        // Prev button (square NieR button)
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .background(ru.nya.nyeios.ui.theme.NierPanel)
+                .border(1.dp, ru.nya.nyeios.ui.theme.NierDark)
+                .clickable { onPrev() },
+            contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Предыдущая неделя",
-                tint = TextPrimary,
-                modifier = Modifier.size(18.dp)
+            Text(
+                text = "◀",
+                fontSize = 11.sp,
+                color = ru.nya.nyeios.ui.theme.NierDark,
+                fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily
             )
         }
 
@@ -439,25 +442,58 @@ fun WeekNavigator(
                 },
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (weekOffset == 0) LectureBlue else TextPrimary
+                fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                color = ru.nya.nyeios.ui.theme.NierDark,
+                letterSpacing = 0.5.sp
             )
             Text(
                 text = dateSubtitle,
-                fontSize = 11.sp,
-                color = TextMuted
+                fontSize = 10.sp,
+                fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                color = ru.nya.nyeios.ui.theme.NierDim
             )
         }
 
-        IconButton(
-            onClick = onNext,
-            modifier = Modifier.size(36.dp)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = "Следующая неделя",
-                tint = TextPrimary,
-                modifier = Modifier.size(18.dp)
-            )
+            if (weekOffset != 0) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(ru.nya.nyeios.ui.theme.NierBlue)
+                        .clickable { onToday() }
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "СЕГОДНЯ",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                        color = Color.White,
+                        letterSpacing = 0.5.sp
+                    )
+                }
+            }
+
+            // Next button
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .background(ru.nya.nyeios.ui.theme.NierPanel)
+                    .border(1.dp, ru.nya.nyeios.ui.theme.NierDark)
+                    .clickable { onNext() },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "▶",
+                    fontSize = 11.sp,
+                    color = ru.nya.nyeios.ui.theme.NierDark,
+                    fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily
+                )
+            }
         }
     }
 }
@@ -470,137 +506,65 @@ fun DaySelectorRow(
 ) {
     if (days.isEmpty()) return
 
-    val tabSpacing = 6.dp
     val dayCount = days.size
     val safeSelectedIndex = selectedIndex.coerceIn(0, dayCount - 1)
-    val density = LocalDensity.current
-    var rowHeightDp by remember { mutableStateOf(52.dp) }
 
-    BoxWithConstraints(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .background(ru.nya.nyeios.ui.theme.NierPanel)
+            .border(width = 1.dp, color = ru.nya.nyeios.ui.theme.NierDark)
     ) {
-        val tabWidth = (maxWidth - tabSpacing * (dayCount - 1)) / dayCount
-        val indicatorOffset by animateDpAsState(
-            targetValue = (tabWidth + tabSpacing) * safeSelectedIndex,
-            animationSpec = spring(
-                dampingRatio = 0.82f,
-                stiffness = 380f
-            ),
-            label = "day_tab_indicator_offset"
-        )
+        days.forEachIndexed { index, day ->
+            val isSelected = index == safeSelectedIndex
+            val cleanDayDate = Regex("""(\d{1,2}\.\d{1,2})""").find(day.dateString.ifEmpty { day.dayTitle })?.value
+                ?: day.dateString.take(5)
 
-        // 1. Inactive background slots
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(tabSpacing)
-        ) {
-            days.forEach { _ ->
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(rowHeightDp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(ObsidianCard)
-                        .border(1.dp, ObsidianBorder, RoundedCornerShape(12.dp))
-                )
-            }
-        }
-
-        // 2. Sliding active indicator pill
-        Box(
-            modifier = Modifier
-                .offset(x = indicatorOffset)
-                .width(tabWidth)
-                .height(rowHeightDp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(LectureBlue)
-                .border(1.dp, LectureBlue, RoundedCornerShape(12.dp))
-        )
-
-        // 3. Foreground interactive tabs with smooth cross-fading colors and tactile scale pop
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .onSizeChanged { size ->
-                    if (size.height > 0) {
-                        rowHeightDp = with(density) { size.height.toDp() }
-                    }
-                },
-            horizontalArrangement = Arrangement.spacedBy(tabSpacing)
-        ) {
-            days.forEachIndexed { index, day ->
-                val isSelected = index == safeSelectedIndex
-                val textColor by animateColorAsState(
-                    targetValue = if (isSelected) Color.White else TextPrimary,
-                    animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
-                    label = "tab_text_color"
-                )
-                val dateColor by animateColorAsState(
-                    targetValue = if (isSelected) Color.White.copy(alpha = 0.85f) else TextMuted,
-                    animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
-                    label = "tab_date_color"
-                )
-                val dotColor by animateColorAsState(
-                    targetValue = if (isSelected) Color.White else LiveBadgeColor,
-                    animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
-                    label = "tab_dot_color"
-                )
-                val tabScale by animateFloatAsState(
-                    targetValue = if (isSelected) 1.0f else 0.96f,
-                    animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f),
-                    label = "tab_scale"
-                )
-
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .graphicsLayer {
-                            scaleX = tabScale
-                            scaleY = tabScale
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { onSelectDay(index) }
+                    .padding(vertical = 6.dp, horizontal = 2.dp)
+                    .drawBehind {
+                        // Vertical separator between tabs
+                        if (index < dayCount - 1) {
+                            drawLine(
+                                color = ru.nya.nyeios.ui.theme.NierBorderLight,
+                                start = Offset(size.width, 4f),
+                                end = Offset(size.width, size.height - 4f),
+                                strokeWidth = 1.dp.toPx()
+                            )
                         }
-                        .clip(RoundedCornerShape(12.dp))
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) {
-                            onSelectDay(index)
+                        // Active bottom indicator bar
+                        if (isSelected) {
+                            drawRect(
+                                color = ru.nya.nyeios.ui.theme.NierBlue,
+                                topLeft = Offset(0f, size.height - 2.5.dp.toPx()),
+                                size = androidx.compose.ui.geometry.Size(size.width, 2.5.dp.toPx())
+                            )
                         }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(1.dp)
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = day.dayName,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                fontSize = 13.sp,
-                                color = textColor
-                            )
-                            if (day.isToday) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(6.dp)
-                                        .clip(CircleShape)
-                                        .background(dotColor)
-                                )
-                            }
-                        }
-                        val cleanDayDate = Regex("""(\d{1,2}\.\d{1,2})""").find(day.dateString.ifEmpty { day.dayTitle })?.value ?: day.dateString.take(5)
-                        if (cleanDayDate.isNotEmpty()) {
-                            Text(
-                                text = cleanDayDate,
-                                fontSize = 10.sp,
-                                color = dateColor
-                            )
-                        }
+                    Text(
+                        text = day.dayName.uppercase(),
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                        fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                        fontSize = 11.sp,
+                        letterSpacing = 0.5.sp,
+                        color = if (isSelected) ru.nya.nyeios.ui.theme.NierDark else ru.nya.nyeios.ui.theme.NierDim
+                    )
+                    if (cleanDayDate.isNotEmpty()) {
+                        Text(
+                            text = cleanDayDate,
+                            fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                            fontSize = 9.sp,
+                            color = if (isSelected) ru.nya.nyeios.ui.theme.NierBlue else ru.nya.nyeios.ui.theme.NierDim
+                        )
                     }
                 }
             }
@@ -633,239 +597,207 @@ fun LessonCard(
         label = "lesson_progress"
     )
 
-    val (badgeColor, badgeBg) = when (lesson.type) {
-        LessonType.LECTURE -> Pair(LectureBlue, LectureBlueBg)
-        LessonType.SEMINAR, LessonType.PRACTICE -> Pair(PracticeGreen, PracticeGreenBg)
-        LessonType.LAB -> Pair(LabAmber, LabAmberBg)
-        LessonType.EXAM -> Pair(ExamRed, ExamRedBg)
-        LessonType.OTHER -> Pair(OtherPurple, OtherPurpleBg)
+    val dotColor = when (lesson.type) {
+        LessonType.LECTURE -> ru.nya.nyeios.ui.theme.NierBlue
+        LessonType.SEMINAR, LessonType.PRACTICE -> ru.nya.nyeios.ui.theme.NierGreen
+        LessonType.LAB -> ru.nya.nyeios.ui.theme.NierAmber
+        LessonType.EXAM -> ru.nya.nyeios.ui.theme.NierRed
+        LessonType.OTHER -> ru.nya.nyeios.ui.theme.NierPurple
     }
+
+    // Split time into slot or bounds
+    val timeParts = lesson.time.split("-").map { it.trim() }
+    val startTime = timeParts.getOrNull(0) ?: lesson.time
+    val endTime = timeParts.getOrNull(1) ?: ""
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(if (isOngoing) ObsidianCardSelected else ObsidianCard)
+            .background(ru.nya.nyeios.ui.theme.NierPanelAlt)
             .border(
-                1.dp,
-                if (isOngoing) LiveGlowBorder else ObsidianBorder,
-                RoundedCornerShape(14.dp)
+                width = if (isOngoing) 1.5.dp else 1.dp,
+                color = if (isOngoing) ru.nya.nyeios.ui.theme.NierGreen else ru.nya.nyeios.ui.theme.NierBorderLight
             )
-            .padding(14.dp)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            // Header Row: Time & Type Badge
+        Column(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                // Left Column: Time & Slot Info with right divider
+                Box(
+                    modifier = Modifier
+                        .width(62.dp)
+                        .drawBehind {
+                            drawLine(
+                                color = ru.nya.nyeios.ui.theme.NierBorderLight,
+                                start = Offset(size.width, 0f),
+                                end = Offset(size.width, size.height),
+                                strokeWidth = 1.dp.toPx()
+                            )
+                        }
+                        .padding(vertical = 10.dp, horizontal = 4.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(ObsidianSurface)
-                            .border(1.dp, ObsidianBorder, RoundedCornerShape(6.dp))
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(1.dp)
                     ) {
                         Text(
-                            text = lesson.time,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = TextPrimary
+                            text = startTime,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                            color = ru.nya.nyeios.ui.theme.NierDark
                         )
-                    }
-
-                    if (isOngoing) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(LiveBadgeColor.copy(alpha = 0.15f))
-                                .padding(horizontal = 6.dp, vertical = 3.dp)
-                        ) {
+                        if (endTime.isNotEmpty()) {
                             Text(
-                                text = "СЕЙЧАС ИДЁТ",
+                                text = "–",
+                                fontSize = 8.sp,
+                                fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                                color = ru.nya.nyeios.ui.theme.NierDim
+                            )
+                            Text(
+                                text = endTime,
                                 fontSize = 10.sp,
-                                fontWeight = FontWeight.Black,
-                                color = LiveBadgeColor
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                                color = ru.nya.nyeios.ui.theme.NierDark
                             )
                         }
                     }
                 }
 
-                // Lesson Type
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(badgeBg)
-                        .padding(horizontal = 8.dp, vertical = 3.dp)
-                ) {
-                    Text(
-                        text = lesson.type.title,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = badgeColor
-                    )
-                }
-            }
-
-            // Subject Title
-            Text(
-                text = lesson.subject,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary,
-                lineHeight = 20.sp
-            )
-
-            // Details: Teacher and Room
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                if (lesson.teacher.isNotEmpty()) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.weight(1f, fill = false)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = null,
-                            tint = TextMuted,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Text(
-                            text = lesson.teacher,
-                            fontSize = 12.sp,
-                            color = TextSecondary
-                        )
-                    }
-                }
-
-                if (lesson.room.isNotEmpty()) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(ObsidianSurface)
-                            .border(1.dp, ObsidianBorder, RoundedCornerShape(6.dp))
-                            .clickable { onRoomClick(lesson.room) }
-                            .padding(horizontal = 7.dp, vertical = 3.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.LocationOn,
-                            contentDescription = "Показать кабинет на карте",
-                            tint = LectureBlue,
-                            modifier = Modifier.size(15.dp)
-                        )
-                        Text(
-                            text = lesson.room,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = TextPrimary
-                        )
-                    }
-                }
-            }
-
-            if (lesson.subgroup.isNotEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(ObsidianSurface)
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                ) {
-                    Text(
-                        text = lesson.subgroup,
-                        fontSize = 10.sp,
-                        color = TextMuted
-                    )
-                }
-            }
-
-            // Real-time loading bar for lesson
-            val currentProgress = progressInfo
-            if (currentProgress != null) {
-                Spacer(modifier = Modifier.height(4.dp))
+                // Right Column: Lesson Details
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    // Time stats: Elapsed & Remaining / Status
+                    // Type Row + Live Badge
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            horizontalArrangement = Arrangement.spacedBy(5.dp)
                         ) {
-                            Text(
-                                text = "Прошло:",
-                                fontSize = 11.sp,
-                                color = TextMuted,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                text = currentProgress.elapsedText,
-                                fontSize = 11.sp,
-                                color = if (currentProgress.progress > 0f) PracticeGreen else TextMuted,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            if (currentProgress.isOngoing) {
-                                Text(
-                                    text = "Осталось:",
-                                    fontSize = 11.sp,
-                                    color = TextMuted,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                            Text(
-                                text = currentProgress.remainingText,
-                                fontSize = 11.sp,
-                                color = when {
-                                    currentProgress.isOngoing -> TextPrimary
-                                    currentProgress.isUpcoming -> LectureBlue
-                                    currentProgress.isFinished -> PracticeGreen
-                                    else -> TextSecondary
-                                },
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-
-                    // Loading / Progress Bar
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(6.dp)
-                            .clip(RoundedCornerShape(3.dp))
-                            .background(ObsidianBg)
-                            .border(0.5.dp, ObsidianBorder, RoundedCornerShape(3.dp))
-                    ) {
-                        if (animatedProgress > 0f) {
                             Box(
                                 modifier = Modifier
-                                    .fillMaxWidth(animatedProgress.coerceIn(0f, 1f))
-                                    .fillMaxHeight()
-                                    .clip(RoundedCornerShape(3.dp))
-                                    .background(PracticeGreen)
+                                    .size(6.dp)
+                                    .background(dotColor)
                             )
+                            Text(
+                                text = lesson.type.title.uppercase(),
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                color = ru.nya.nyeios.ui.theme.NierDim,
+                                letterSpacing = 0.8.sp
+                            )
+                            if (lesson.subgroup.isNotEmpty()) {
+                                Text(
+                                    text = "· ${lesson.subgroup}",
+                                    fontSize = 9.sp,
+                                    fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                                    color = ru.nya.nyeios.ui.theme.NierDim
+                                )
+                            }
+                        }
+
+                        if (isOngoing) {
+                            Row(
+                                modifier = Modifier
+                                    .background(ru.nya.nyeios.ui.theme.NierGreen.copy(alpha = 0.18f))
+                                    .border(1.dp, ru.nya.nyeios.ui.theme.NierGreen)
+                                    .padding(horizontal = 5.dp, vertical = 1.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(4.dp)
+                                        .clip(CircleShape)
+                                        .background(ru.nya.nyeios.ui.theme.NierGreen)
+                                )
+                                Text(
+                                    text = "СЕЙЧАС",
+                                    fontSize = 8.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                    color = ru.nya.nyeios.ui.theme.NierGreen,
+                                    letterSpacing = 0.5.sp
+                                )
+                            }
                         }
                     }
+
+                    // Subject Name
+                    Text(
+                        text = lesson.subject,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                        color = ru.nya.nyeios.ui.theme.NierDark,
+                        lineHeight = 16.sp
+                    )
+
+                    // Meta: Teacher & Room Badge
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = lesson.teacher.ifEmpty { "Преподаватель не указан" },
+                            fontSize = 10.sp,
+                            fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                            color = ru.nya.nyeios.ui.theme.NierDim,
+                            modifier = Modifier.weight(1f, fill = false),
+                            maxLines = 1
+                        )
+
+                        if (lesson.room.isNotEmpty()) {
+                            val isDotRoom = lesson.room.contains("ДО", ignoreCase = true) ||
+                                    lesson.room.contains("ДОТ", ignoreCase = true) ||
+                                    lesson.room.contains("ЭОР", ignoreCase = true)
+
+                            Box(
+                                modifier = Modifier
+                                    .background(if (isDotRoom) ru.nya.nyeios.ui.theme.NierHighlight else ru.nya.nyeios.ui.theme.NierDark)
+                                    .clickable { onRoomClick(lesson.room) }
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "📍 ${lesson.room}",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                    color = ru.nya.nyeios.ui.theme.NierSelectionText
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Bottom Progress bar for ongoing lesson
+            if (isOngoing && animatedProgress > 0f) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(2.dp)
+                        .background(ru.nya.nyeios.ui.theme.NierGreen.copy(alpha = 0.2f))
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(animatedProgress.coerceIn(0f, 1f))
+                            .fillMaxHeight()
+                            .background(ru.nya.nyeios.ui.theme.NierGreen)
+                    )
                 }
             }
         }

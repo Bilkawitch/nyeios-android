@@ -1,6 +1,5 @@
 package ru.nya.nyeios.ui.download
 
-import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,31 +15,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.DeleteSweep
-import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.FileDownload
-import androidx.compose.material.icons.filled.FolderOpen
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -49,29 +39,30 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ru.nya.nyeios.data.download.DownloadState
 import ru.nya.nyeios.data.download.DownloadedFile
 import ru.nya.nyeios.data.download.InternalDownloadManager
-import ru.nya.nyeios.ui.theme.ExamRed
-import ru.nya.nyeios.ui.theme.ExamRedBg
-import ru.nya.nyeios.ui.theme.LabAmber
-import ru.nya.nyeios.ui.theme.LectureBlue
-import ru.nya.nyeios.ui.theme.LectureBlueBg
-import ru.nya.nyeios.ui.theme.ObsidianBg
-import ru.nya.nyeios.ui.theme.ObsidianBorder
-import ru.nya.nyeios.ui.theme.ObsidianCard
-import ru.nya.nyeios.ui.theme.ObsidianSurface
-import ru.nya.nyeios.ui.theme.OtherPurple
-import ru.nya.nyeios.ui.theme.PracticeGreen
-import ru.nya.nyeios.ui.theme.TextMuted
-import ru.nya.nyeios.ui.theme.TextPrimary
-import ru.nya.nyeios.ui.theme.TextSecondary
+import ru.nya.nyeios.ui.theme.NierAmber
+import ru.nya.nyeios.ui.theme.NierBg
+import ru.nya.nyeios.ui.theme.NierBlue
+import ru.nya.nyeios.ui.theme.NierBorder
+import ru.nya.nyeios.ui.theme.NierBorderLight
+import ru.nya.nyeios.ui.theme.NierDark
+import ru.nya.nyeios.ui.theme.NierDarkSecondary
+import ru.nya.nyeios.ui.theme.NierDim
+import ru.nya.nyeios.ui.theme.NierGreen
+import ru.nya.nyeios.ui.theme.NierPanel
+import ru.nya.nyeios.ui.theme.NierPanelAlt
+import ru.nya.nyeios.ui.theme.NierPurple
+import ru.nya.nyeios.ui.theme.NierRed
+import ru.nya.nyeios.ui.theme.RajdhaniFamily
+import ru.nya.nyeios.ui.theme.ShareTechMonoFamily
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -105,98 +96,124 @@ fun DownloadsBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = ObsidianSurface,
+        containerColor = NierPanel,
+        shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp),
         dragHandle = {
             Box(
                 modifier = Modifier
-                    .padding(top = 10.dp, bottom = 6.dp)
-                    .size(width = 36.dp, height = 4.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(ObsidianBorder)
+                    .padding(top = 8.dp, bottom = 6.dp)
+                    .size(width = 32.dp, height = 3.dp)
+                    .background(NierBorder)
             )
         }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 32.dp)
+                .padding(horizontal = 14.dp)
+                .padding(bottom = 28.dp)
         ) {
             // Header
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 6.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(LectureBlueBg),
+                            .size(28.dp)
+                            .background(NierDark),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.FileDownload,
                             contentDescription = null,
-                            tint = LectureBlue,
-                            modifier = Modifier.size(20.dp)
+                            tint = NierBg,
+                            modifier = Modifier.size(16.dp)
                         )
                     }
 
-                    Column {
-                        Text(
-                            text = "Загрузки ЭИОС",
-                            color = TextPrimary,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = if (downloadedFiles.isEmpty()) {
-                                "Нет сохраненных файлов"
-                            } else {
-                                "Файлов: ${downloadedFiles.size} • ${downloadManager.formatFileSize(totalBytes)}"
-                            },
-                            color = TextSecondary,
-                            fontSize = 12.sp
-                        )
+                    Text(
+                        text = "ЗАГРУЗКИ",
+                        color = NierDark,
+                        fontFamily = RajdhaniFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 17.sp,
+                        letterSpacing = 1.sp
+                    )
+
+                    if (downloadedFiles.isNotEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .background(NierBlue)
+                                .padding(horizontal = 6.dp, vertical = 1.dp)
+                        ) {
+                            Text(
+                                text = "${downloadedFiles.size}",
+                                color = Color.White,
+                                fontFamily = RajdhaniFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp
+                            )
+                        }
                     }
                 }
 
                 if (downloadedFiles.isNotEmpty()) {
-                    IconButton(
-                        onClick = { showClearConfirm = true }
+                    Box(
+                        modifier = Modifier
+                            .border(1.dp, NierRed)
+                            .background(Color.Transparent)
+                            .clickable { showClearConfirm = true }
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.DeleteSweep,
-                            contentDescription = "Очистить всё",
-                            tint = ExamRed.copy(alpha = 0.85f),
-                            modifier = Modifier.size(22.dp)
+                        Text(
+                            text = "ОЧИСТИТЬ ВСЁ",
+                            color = NierRed,
+                            fontFamily = ShareTechMonoFamily,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            if (downloadedFiles.isNotEmpty()) {
+                Text(
+                    text = "ЛОКАЛЬНОЕ ХРАНИЛИЩЕ // ${downloadManager.formatFileSize(totalBytes)} ИСПОЛЬЗОВАНО",
+                    color = NierDim,
+                    fontFamily = ShareTechMonoFamily,
+                    fontSize = 10.sp,
+                    modifier = Modifier.padding(bottom = 10.dp)
+                )
+            } else {
+                Spacer(modifier = Modifier.height(10.dp))
+            }
 
             // Active Downloads Section
             if (activeDownloads.isNotEmpty()) {
                 Text(
-                    text = "Идёт скачивание (${activeDownloads.size}):",
-                    color = LectureBlue,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    text = "[ ИДЁТ СКАЧИВАНИЕ: ${activeDownloads.size} ]",
+                    color = NierBlue,
+                    fontFamily = ShareTechMonoFamily,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 6.dp)
                 )
 
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 14.dp)
+                        .padding(bottom = 12.dp)
                 ) {
                     activeDownloads.forEach { (url, state) ->
                         if (state is DownloadState.Downloading) {
@@ -211,61 +228,67 @@ fun DownloadsBottomSheet(
                 }
             }
 
-            // Downloaded Files List
+            // Downloaded Files List or Empty
             if (downloadedFiles.isEmpty() && activeDownloads.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 40.dp),
+                        .border(1.dp, NierBorderLight)
+                        .background(NierPanelAlt)
+                        .padding(vertical = 36.dp, horizontal = 16.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(56.dp)
-                                .clip(CircleShape)
-                            .background(ObsidianCard),
+                                .size(40.dp)
+                                .border(1.dp, NierBorder)
+                                .background(NierPanel),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Download,
                                 contentDescription = null,
-                                tint = TextMuted,
-                                modifier = Modifier.size(28.dp)
+                                tint = NierDim,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
 
                         Text(
-                            text = "Файлов пока нет",
-                            color = TextPrimary,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.SemiBold
+                            text = "ФАЙЛОВ ПОКА НЕТ",
+                            color = NierDark,
+                            fontFamily = RajdhaniFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            letterSpacing = 1.sp
                         )
 
                         Text(
-                            text = "Нажимайте на вложения в Живой ленте — они скачаются прямо в приложение и будут доступны без интернета.",
-                            color = TextMuted,
-                            fontSize = 12.sp,
-                            lineHeight = 18.sp,
-                            modifier = Modifier.padding(horizontal = 24.dp),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            text = "Нажимайте на вложения в Живой ленте — они сохранятся в памяти приложения и будут доступны офлайн.",
+                            color = NierDim,
+                            fontFamily = ShareTechMonoFamily,
+                            fontSize = 11.sp,
+                            lineHeight = 16.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 16.dp)
                         )
                     }
                 }
             } else {
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    items(
+                    itemsIndexed(
                         items = downloadedFiles,
-                        key = { it.file.absolutePath }
-                    ) { item ->
+                        key = { _, item -> item.file.absolutePath }
+                    ) { index, item ->
                         DownloadedFileItem(
                             item = item,
+                            isAlt = index % 2 == 1,
                             onOpen = { onOpenFile(item.file) },
                             onShare = { onShareFile(item.file) },
                             onSaveToDownloads = { onSaveToDownloads(item.file) },
@@ -281,36 +304,64 @@ fun DownloadsBottomSheet(
     if (showClearConfirm) {
         AlertDialog(
             onDismissRequest = { showClearConfirm = false },
-            containerColor = ObsidianCard,
+            containerColor = NierPanel,
+            shape = RoundedCornerShape(0.dp),
+            modifier = Modifier.border(1.5.dp, NierDark),
             title = {
                 Text(
-                    text = "Удалить все файлы?",
-                    color = TextPrimary,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold
+                    text = "УДАЛИТЬ ВСЕ ФАЙЛЫ?",
+                    color = NierDark,
+                    fontFamily = RajdhaniFamily,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
                 )
             },
             text = {
                 Text(
                     text = "Все скачанные вложения (${downloadedFiles.size} шт.) будут удалены из локального хранилища приложения. Вы всегда сможете скачать их заново из Живой ленты.",
-                    color = TextSecondary,
-                    fontSize = 13.sp
+                    color = NierDarkSecondary,
+                    fontFamily = ShareTechMonoFamily,
+                    fontSize = 11.sp,
+                    lineHeight = 16.sp
                 )
             },
             confirmButton = {
-                Button(
-                    onClick = {
-                        onClearAll()
-                        showClearConfirm = false
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = ExamRed)
+                Box(
+                    modifier = Modifier
+                        .background(NierRed)
+                        .clickable {
+                            onClearAll()
+                            showClearConfirm = false
+                        }
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text("Удалить всё", color = TextPrimary)
+                    Text(
+                        text = "УДАЛИТЬ ВСЁ",
+                        color = Color.White,
+                        fontFamily = ShareTechMonoFamily,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    )
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showClearConfirm = false }) {
-                    Text("Отмена", color = TextMuted)
+                Box(
+                    modifier = Modifier
+                        .border(1.dp, NierBorder)
+                        .clickable { showClearConfirm = false }
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "ОТМЕНА",
+                        color = NierDark,
+                        fontFamily = ShareTechMonoFamily,
+                        fontSize = 11.sp,
+                        letterSpacing = 1.sp
+                    )
                 }
             }
         )
@@ -332,11 +383,10 @@ private fun ActiveDownloadItem(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(ObsidianCard)
-            .border(1.dp, LectureBlue.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
-            .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            .background(NierPanelAlt)
+            .border(1.dp, NierBlue)
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -346,9 +396,10 @@ private fun ActiveDownloadItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = cleanName,
-                    color = TextPrimary,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
+                    color = NierDark,
+                    fontFamily = ShareTechMonoFamily,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -358,50 +409,44 @@ private fun ActiveDownloadItem(
                     } else {
                         "Загрузка... ${downloadManager.formatFileSize(state.bytesDownloaded)}"
                     },
-                    color = TextSecondary,
-                    fontSize = 11.sp
+                    color = NierDim,
+                    fontFamily = ShareTechMonoFamily,
+                    fontSize = 10.sp
                 )
             }
 
-            IconButton(
-                onClick = onCancel,
-                modifier = Modifier.size(28.dp)
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .border(1.dp, NierBorderLight)
+                    .background(NierPanel)
+                    .clickable { onCancel() },
+                contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Отмена",
-                    tint = TextMuted,
-                    modifier = Modifier.size(16.dp)
+                    tint = NierDark,
+                    modifier = Modifier.size(14.dp)
                 )
             }
         }
 
-        if (state.progress >= 0f) {
-            LinearProgressIndicator(
-                progress = { state.progress },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(2.dp)),
-                color = LectureBlue,
-                trackColor = ObsidianBorder
-            )
-        } else {
-            LinearProgressIndicator(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(2.dp)),
-                color = LectureBlue,
-                trackColor = ObsidianBorder
-            )
-        }
+        LinearProgressIndicator(
+            progress = { if (state.progress >= 0f) state.progress else 0f },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(2.dp),
+            color = NierBlue,
+            trackColor = NierBlue.copy(alpha = 0.2f)
+        )
     }
 }
 
 @Composable
 private fun DownloadedFileItem(
     item: DownloadedFile,
+    isAlt: Boolean,
     onOpen: () -> Unit,
     onShare: () -> Unit,
     onSaveToDownloads: () -> Unit,
@@ -411,12 +456,12 @@ private fun DownloadedFileItem(
     val (iconColor, extLabel) = remember(item.name) {
         val lower = item.name.lowercase()
         when {
-            lower.endsWith(".pdf") -> Pair(ExamRed, "PDF")
-            lower.endsWith(".docx") || lower.endsWith(".doc") -> Pair(LectureBlue, "DOC")
-            lower.endsWith(".xlsx") || lower.endsWith(".xls") -> Pair(PracticeGreen, "XLS")
-            lower.endsWith(".zip") || lower.endsWith(".rar") || lower.endsWith(".7z") -> Pair(LabAmber, "ZIP")
-            lower.endsWith(".ppt") || lower.endsWith(".pptx") -> Pair(OtherPurple, "PPT")
-            else -> Pair(TextSecondary, "ФАЙЛ")
+            lower.endsWith(".pdf") -> Pair(NierRed, "PDF")
+            lower.endsWith(".docx") || lower.endsWith(".doc") -> Pair(NierBlue, "DOC")
+            lower.endsWith(".xlsx") || lower.endsWith(".xls") -> Pair(NierGreen, "XLS")
+            lower.endsWith(".zip") || lower.endsWith(".rar") || lower.endsWith(".7z") -> Pair(NierAmber, "ZIP")
+            lower.endsWith(".ppt") || lower.endsWith(".pptx") -> Pair(NierPurple, "PPT")
+            else -> Pair(NierDarkSecondary, "FILE")
         }
     }
 
@@ -429,118 +474,122 @@ private fun DownloadedFileItem(
         }
     }
 
-    Column(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(ObsidianCard)
-            .border(1.dp, ObsidianBorder, RoundedCornerShape(12.dp))
-            .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+            .background(if (isAlt) NierPanelAlt else NierPanel)
+            .border(0.5.dp, NierBorderLight)
+            .clickable { onOpen() }
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Row(
+        // File extension square badge
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onOpen() },
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                .size(32.dp)
+                .border(1.dp, iconColor)
+                .background(iconColor.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(iconColor.copy(alpha = 0.15f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = extLabel,
-                    color = iconColor,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = item.name,
-                    color = TextPrimary,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = "${downloadManager.formatFileSize(item.sizeBytes)}${if (dateFormatted.isNotEmpty()) " • $dateFormatted" else ""}",
-                    color = TextMuted,
-                    fontSize = 11.sp
-                )
-            }
+            Text(
+                text = extLabel,
+                color = iconColor,
+                fontFamily = RajdhaniFamily,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
 
-        // Action Buttons Row
+        // File Info
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = item.name,
+                color = NierDark,
+                fontFamily = ShareTechMonoFamily,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = "${downloadManager.formatFileSize(item.sizeBytes)}${if (dateFormatted.isNotEmpty()) " // $dateFormatted" else ""}",
+                color = NierDim,
+                fontFamily = ShareTechMonoFamily,
+                fontSize = 9.sp
+            )
+        }
+
+        // Action Buttons: Open, Share, SaveToDevice, Delete
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Button(
-                onClick = onOpen,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = LectureBlueBg,
-                    contentColor = LectureBlue
-                ),
-                shape = RoundedCornerShape(8.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                modifier = Modifier.height(32.dp)
+            // ↗ Open
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .border(1.dp, NierBorderLight)
+                    .background(NierPanel)
+                    .clickable { onOpen() },
+                contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                    contentDescription = null,
-                    modifier = Modifier.size(14.dp)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = "Открыть",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium
+                    contentDescription = "Открыть",
+                    tint = NierDark,
+                    modifier = Modifier.size(13.dp)
                 )
             }
 
-            IconButton(
-                onClick = onShare,
-                modifier = Modifier.size(32.dp)
+            // ⤴ Share
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .border(1.dp, NierBorderLight)
+                    .background(NierPanel)
+                    .clickable { onShare() },
+                contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Share,
                     contentDescription = "Поделиться",
-                    tint = TextSecondary,
-                    modifier = Modifier.size(16.dp)
+                    tint = NierDark,
+                    modifier = Modifier.size(13.dp)
                 )
             }
 
-            IconButton(
-                onClick = onSaveToDownloads,
-                modifier = Modifier.size(32.dp)
+            // 💾 Save to Downloads folder
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .border(1.dp, NierBorderLight)
+                    .background(NierPanel)
+                    .clickable { onSaveToDownloads() },
+                contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.SaveAlt,
-                    contentDescription = "Сохранить в папку Загрузки",
-                    tint = TextSecondary,
-                    modifier = Modifier.size(16.dp)
+                    contentDescription = "Сохранить на устройство",
+                    tint = NierDark,
+                    modifier = Modifier.size(13.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.weight(1f))
-
-            IconButton(
-                onClick = onDelete,
-                modifier = Modifier.size(32.dp)
+            // 🗑 Delete (Red button)
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .border(1.dp, NierRed)
+                    .background(NierPanel)
+                    .clickable { onDelete() },
+                contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.DeleteOutline,
                     contentDescription = "Удалить",
-                    tint = ExamRed.copy(alpha = 0.7f),
-                    modifier = Modifier.size(16.dp)
+                    tint = NierRed,
+                    modifier = Modifier.size(14.dp)
                 )
             }
         }

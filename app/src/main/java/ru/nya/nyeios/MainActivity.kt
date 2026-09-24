@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -161,387 +162,385 @@ class MainActivity : ComponentActivity() {
                     }
 
                     Scaffold(
-                        containerColor = ObsidianBg,
+                        containerColor = ru.nya.nyeios.ui.theme.NierBg,
                         topBar = {
-                            TopAppBar(
-                                colors = TopAppBarDefaults.topAppBarColors(
-                                    containerColor = ObsidianBg
-                                ),
-                                title = {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(10.dp))
-                                            .clickable {
-                                                if (hasPendingUpdate) {
-                                                    updateViewModel.restoreBanner()
-                                                } else {
-                                                    isNetworkLogsSheetVisible = true
-                                                }
-                                            }
-                                            .padding(vertical = 2.dp, horizontal = 4.dp)
-                                    ) {
-                                        // App logo with soft pulsing gradient halo when update is available
-                                        val pulseTransition = rememberInfiniteTransition(label = "update_pulse")
-                                        val pulseAlpha by pulseTransition.animateFloat(
-                                            initialValue = 0.20f,
-                                            targetValue = 0.85f,
-                                            animationSpec = infiniteRepeatable(
-                                                animation = tween(1000, easing = FastOutSlowInEasing),
-                                                repeatMode = RepeatMode.Reverse
-                                            ),
-                                            label = "pulse_alpha"
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(ru.nya.nyeios.ui.theme.NierBg)
+                            ) {
+                                // Status Bar Simulation / Dot Row
+                                ru.nya.nyeios.ui.common.NierDotRow()
+
+                                TopAppBar(
+                                    colors = TopAppBarDefaults.topAppBarColors(
+                                        containerColor = ru.nya.nyeios.ui.theme.NierBg
+                                    ),
+                                    modifier = Modifier.drawBehind {
+                                        // Thick bottom border characteristic of NieR UI
+                                        drawLine(
+                                            color = ru.nya.nyeios.ui.theme.NierDark,
+                                            start = Offset(0f, size.height),
+                                            end = Offset(size.width, size.height),
+                                            strokeWidth = 2.dp.toPx()
                                         )
-
-                                        Box(
-                                            modifier = Modifier.size(42.dp),
-                                            contentAlignment = Alignment.Center
+                                    },
+                                    title = {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            modifier = Modifier
+                                                .clickable {
+                                                    if (hasPendingUpdate) {
+                                                        updateViewModel.restoreBanner()
+                                                    } else {
+                                                        isNetworkLogsSheetVisible = true
+                                                    }
+                                                }
+                                                .padding(vertical = 2.dp)
                                         ) {
-                                            if (hasPendingUpdate) {
-                                                Spacer(
-                                                    modifier = Modifier
-                                                        .fillMaxSize()
-                                                        .drawBehind {
-                                                            val centerOffset = Offset(size.width / 2f, size.height / 2f)
-                                                            val iconRadius = 17.dp.toPx()
-                                                            val maxRadius = size.minDimension / 2f
-                                                            val innerStop = iconRadius / maxRadius
+                                            // Square NieR Logo box
+                                            val pulseTransition = rememberInfiniteTransition(label = "update_pulse")
+                                            val pulseAlpha by pulseTransition.animateFloat(
+                                                initialValue = 0.20f,
+                                                targetValue = 0.85f,
+                                                animationSpec = infiniteRepeatable(
+                                                    animation = tween(1000, easing = FastOutSlowInEasing),
+                                                    repeatMode = RepeatMode.Reverse
+                                                ),
+                                                label = "pulse_alpha"
+                                            )
 
-                                                            drawCircle(
-                                                                brush = Brush.radialGradient(
-                                                                    colorStops = arrayOf(
-                                                                        0.0f to ExamRed.copy(alpha = pulseAlpha * 0.80f),
-                                                                        innerStop to ExamRed.copy(alpha = pulseAlpha * 0.80f),
-                                                                        innerStop + (1f - innerStop) * 0.40f to ExamRed.copy(alpha = pulseAlpha * 0.35f),
-                                                                        1.0f to Color.Transparent
-                                                                    ),
-                                                                    center = centerOffset,
-                                                                    radius = maxRadius
-                                                                ),
-                                                                radius = maxRadius,
-                                                                center = centerOffset
-                                                            )
-                                                        }
-                                                )
-                                            }
-
-                                            Image(
-                                                painter = painterResource(id = R.drawable.app_logo),
-                                                contentDescription = if (hasPendingUpdate) "Доступно обновление" else "NyEIOS",
+                                            Box(
                                                 modifier = Modifier
                                                     .size(34.dp)
-                                                    .clip(CircleShape)
-                                            )
-                                        }
-                                        Column {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                                    .background(ru.nya.nyeios.ui.theme.NierDark)
+                                                    .border(
+                                                        width = 1.5.dp,
+                                                        color = if (hasPendingUpdate) ru.nya.nyeios.ui.theme.NierRed else ru.nya.nyeios.ui.theme.NierDark
+                                                    ),
+                                                contentAlignment = Alignment.Center
                                             ) {
                                                 Text(
-                                                    text = when (currentTab) {
-                                                        0 -> "NyEIOS"
-                                                        1 -> "Живая лента"
-                                                        2 -> "Успеваемость"
-                                                        else -> "NyEIOS"
-                                                    },
-                                                    fontWeight = FontWeight.Black,
-                                                    fontSize = 20.sp,
-                                                    color = TextPrimary
+                                                    text = "Ny",
+                                                    color = ru.nya.nyeios.ui.theme.NierBg,
+                                                    fontSize = 16.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily
                                                 )
-                                                if (currentTab == 0) {
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .clip(RoundedCornerShape(6.dp))
-                                                            .background(ObsidianBorder.copy(alpha = 0.7f))
-                                                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                                                    ) {
-                                                        Text(
-                                                            text = "v$currentAppVersion",
-                                                            color = TextSecondary,
-                                                            fontSize = 11.sp,
-                                                            fontWeight = FontWeight.SemiBold
-                                                        )
-                                                    }
-                                                    val group = (scheduleUiState as? ScheduleUiState.Success)?.schedule?.group
-                                                    if (group != null) {
+                                            }
+
+                                            Column {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                                ) {
+                                                    Text(
+                                                        text = when (currentTab) {
+                                                            0 -> "NyEIOS"
+                                                            1 -> "Живая лента"
+                                                            2 -> "Успеваемость"
+                                                            else -> "NyEIOS"
+                                                        },
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 18.sp,
+                                                        fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                                        color = ru.nya.nyeios.ui.theme.NierDark,
+                                                        letterSpacing = 0.5.sp
+                                                    )
+
+                                                    if (currentTab == 0) {
                                                         Box(
                                                             modifier = Modifier
-                                                                .clip(RoundedCornerShape(6.dp))
-                                                                .background(LectureBlue.copy(alpha = 0.15f))
-                                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                                .clip(RoundedCornerShape(3.dp))
+                                                                .background(ru.nya.nyeios.ui.theme.NierDark.copy(alpha = 0.12f))
+                                                                .padding(horizontal = 5.dp, vertical = 1.dp)
                                                         ) {
                                                             Text(
-                                                                text = group,
-                                                                color = LectureBlue,
-                                                                fontSize = 11.sp,
+                                                                text = "v$currentAppVersion",
+                                                                color = ru.nya.nyeios.ui.theme.NierDim,
+                                                                fontSize = 9.sp,
+                                                                fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
                                                                 fontWeight = FontWeight.Bold
                                                             )
                                                         }
-                                                    }
-                                                }
-                                            }
-
-                                            if (lastSyncTime > 0L) {
-                                                val syncText = remember(lastSyncTime) { formatSyncTime(lastSyncTime) }
-                                                if (syncText.isNotEmpty()) {
-                                                    val isRecent = remember(lastSyncTime) {
-                                                        System.currentTimeMillis() - lastSyncTime < 30 * 60 * 1000L
-                                                    }
-                                                    Row(
-                                                        verticalAlignment = Alignment.CenterVertically,
-                                                        horizontalArrangement = Arrangement.spacedBy(3.dp),
-                                                        modifier = Modifier.padding(top = 1.dp)
-                                                    ) {
-                                                        if (feedSyncProgress.isSyncing) {
-                                                            CircularProgressIndicator(
-                                                                modifier = Modifier.size(10.dp),
-                                                                color = PracticeGreen,
-                                                                strokeWidth = 1.5.dp
-                                                            )
-                                                            Text(
-                                                                text = "Синхр. ленты...",
-                                                                color = PracticeGreen,
-                                                                fontSize = 10.sp,
-                                                                fontWeight = FontWeight.Medium
-                                                            )
-                                                        } else {
-                                                            Icon(
-                                                                imageVector = Icons.Default.SignalCellularAlt,
-                                                                contentDescription = "Синхронизация",
-                                                                tint = if (isRecent) PracticeGreen else TextMuted,
-                                                                modifier = Modifier.size(11.dp)
-                                                            )
-                                                            Text(
-                                                                text = syncText,
-                                                                color = TextMuted,
-                                                                fontSize = 10.sp,
-                                                                fontWeight = FontWeight.Normal
-                                                            )
+                                                        val group = (scheduleUiState as? ScheduleUiState.Success)?.schedule?.group
+                                                        if (group != null) {
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .clip(RoundedCornerShape(3.dp))
+                                                                    .background(ru.nya.nyeios.ui.theme.NierBlue.copy(alpha = 0.15f))
+                                                                    .padding(horizontal = 5.dp, vertical = 1.dp)
+                                                            ) {
+                                                                Text(
+                                                                    text = group,
+                                                                    color = ru.nya.nyeios.ui.theme.NierBlue,
+                                                                    fontSize = 9.sp,
+                                                                    fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                                                    fontWeight = FontWeight.Bold
+                                                                )
+                                                            }
                                                         }
                                                     }
                                                 }
-                                            }
-                                        }
-                                    }
-                                },
-                                actions = {
-                                    // Downloads button (Feed tab)
-                                    if (currentTab == 1) {
-                                        val downloadedFiles by feedViewModel.downloadedFiles.collectAsState()
-                                        IconButton(onClick = { feedViewModel.showDownloadsSheet() }) {
-                                            BadgedBox(
-                                                badge = {
-                                                    if (downloadedFiles.isNotEmpty()) {
-                                                        Badge(
-                                                            containerColor = LectureBlue,
-                                                            contentColor = Color.White
+
+                                                if (lastSyncTime > 0L) {
+                                                    val syncText = remember(lastSyncTime) { formatSyncTime(lastSyncTime) }
+                                                    if (syncText.isNotEmpty()) {
+                                                        Row(
+                                                            verticalAlignment = Alignment.CenterVertically,
+                                                            horizontalArrangement = Arrangement.spacedBy(3.dp),
+                                                            modifier = Modifier.padding(top = 1.dp)
                                                         ) {
-                                                            Text("${downloadedFiles.size}")
+                                                            if (feedSyncProgress.isSyncing) {
+                                                                CircularProgressIndicator(
+                                                                    modifier = Modifier.size(9.dp),
+                                                                    color = ru.nya.nyeios.ui.theme.NierGreen,
+                                                                    strokeWidth = 1.5.dp
+                                                                )
+                                                                Text(
+                                                                    text = "Синхр. ленты...",
+                                                                    color = ru.nya.nyeios.ui.theme.NierGreen,
+                                                                    fontSize = 9.sp,
+                                                                    fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily
+                                                                )
+                                                            } else {
+                                                                Text(
+                                                                    text = "▲ $syncText",
+                                                                    color = ru.nya.nyeios.ui.theme.NierDim,
+                                                                    fontSize = 9.sp,
+                                                                    fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily
+                                                                )
+                                                            }
                                                         }
                                                     }
                                                 }
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.FileDownload,
-                                                    contentDescription = "Загрузки",
-                                                    tint = if (downloadedFiles.isNotEmpty()) LectureBlue else TextSecondary
-                                                )
                                             }
                                         }
-                                    }
+                                    },
+                                    actions = {
+                                        // Downloads button (Feed tab)
+                                        if (currentTab == 1) {
+                                            val downloadedFiles by feedViewModel.downloadedFiles.collectAsState()
+                                            IconButton(onClick = { feedViewModel.showDownloadsSheet() }) {
+                                                BadgedBox(
+                                                    badge = {
+                                                        if (downloadedFiles.isNotEmpty()) {
+                                                            Badge(
+                                                                containerColor = ru.nya.nyeios.ui.theme.NierBlue,
+                                                                contentColor = Color.White
+                                                            ) {
+                                                                Text("${downloadedFiles.size}")
+                                                            }
+                                                        }
+                                                    }
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.FileDownload,
+                                                        contentDescription = "Загрузки",
+                                                        tint = if (downloadedFiles.isNotEmpty()) ru.nya.nyeios.ui.theme.NierBlue else ru.nya.nyeios.ui.theme.NierDarkSecondary
+                                                    )
+                                                }
+                                            }
+                                        }
 
-                                    // Profile button
-                                    IconButton(onClick = { scheduleViewModel.showLoginSheet() }) {
-                                        Icon(
-                                            imageVector = Icons.Default.AccountCircle,
-                                            contentDescription = "Профиль",
-                                            tint = if (authSession.isLoggedIn) PracticeGreen else TextMuted
+                                        // Profile button
+                                        IconButton(onClick = { scheduleViewModel.showLoginSheet() }) {
+                                            Icon(
+                                                imageVector = Icons.Default.AccountCircle,
+                                                contentDescription = "Профиль",
+                                                tint = if (authSession.isLoggedIn) ru.nya.nyeios.ui.theme.NierGreen else ru.nya.nyeios.ui.theme.NierDarkSecondary
+                                            )
+                                        }
+
+                                        // Refresh button
+                                        IconButton(
+                                            onClick = {
+                                                if (feedSyncProgress.isSyncing) {
+                                                    android.widget.Toast.makeText(
+                                                        this@MainActivity,
+                                                        "Идёт синхронизация Живой ленты. Расписание и успеваемость работают из кэша.",
+                                                        android.widget.Toast.LENGTH_SHORT
+                                                    ).show()
+                                                    return@IconButton
+                                                }
+                                                when (currentTab) {
+                                                    0 -> scheduleViewModel.refresh()
+                                                    1 -> feedViewModel.requestSyncFeed()
+                                                    2 -> curriculumViewModel.refresh()
+                                                }
+                                            }
+                                        ) {
+                                            val rotation = if (isRefreshing) {
+                                                val infiniteTransition = rememberInfiniteTransition(label = "spin")
+                                                val rot by infiniteTransition.animateFloat(
+                                                    initialValue = 0f,
+                                                    targetValue = 360f,
+                                                    animationSpec = infiniteRepeatable(
+                                                        animation = tween(1000),
+                                                        repeatMode = RepeatMode.Restart
+                                                    ),
+                                                    label = "rotation"
+                                                )
+                                                rot
+                                            } else 0f
+
+                                            Icon(
+                                                imageVector = Icons.Default.Refresh,
+                                                contentDescription = "Обновить",
+                                                tint = if (isRefreshing) ru.nya.nyeios.ui.theme.NierBlue else ru.nya.nyeios.ui.theme.NierDarkSecondary,
+                                                modifier = Modifier.rotate(rotation)
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+                        },
+                        bottomBar = {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(ru.nya.nyeios.ui.theme.NierPanel)
+                            ) {
+                                NavigationBar(
+                                    containerColor = ru.nya.nyeios.ui.theme.NierPanel,
+                                    tonalElevation = 0.dp,
+                                    modifier = Modifier.drawBehind {
+                                        // Thick top border of the NieR navigation bar
+                                        drawLine(
+                                            color = ru.nya.nyeios.ui.theme.NierDark,
+                                            start = Offset(0f, 0f),
+                                            end = Offset(size.width, 0f),
+                                            strokeWidth = 2.dp.toPx()
                                         )
                                     }
+                                ) {
+                                    val tabs = listOf(
+                                        Triple(0, Icons.Default.CalendarToday, "Расписание"),
+                                        Triple(1, Icons.Default.DynamicFeed, "Лента"),
+                                        Triple(2, Icons.Default.School, "БРС")
+                                    )
 
-                                    // Refresh button
-                                    IconButton(
-                                        onClick = {
-                                            if (feedSyncProgress.isSyncing) {
-                                                android.widget.Toast.makeText(
-                                                    this@MainActivity,
-                                                    "Идёт синхронизация Живой ленты. Расписание и успеваемость работают из кэша.",
-                                                    android.widget.Toast.LENGTH_SHORT
-                                                ).show()
-                                                return@IconButton
+                                    tabs.forEach { (index, icon, title) ->
+                                        val isSelected = currentTab == index
+                                        NavigationBarItem(
+                                            selected = isSelected,
+                                            onClick = { currentTab = index },
+                                            icon = {
+                                                Icon(
+                                                    imageVector = icon,
+                                                    contentDescription = title
+                                                )
+                                            },
+                                            label = {
+                                                Text(
+                                                    text = title.uppercase(),
+                                                    fontSize = 10.sp,
+                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                                                    fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                                    letterSpacing = 0.5.sp
+                                                )
+                                            },
+                                            colors = NavigationBarItemDefaults.colors(
+                                                selectedIconColor = ru.nya.nyeios.ui.theme.NierBlue,
+                                                selectedTextColor = ru.nya.nyeios.ui.theme.NierBlue,
+                                                unselectedIconColor = ru.nya.nyeios.ui.theme.NierDim,
+                                                unselectedTextColor = ru.nya.nyeios.ui.theme.NierDim,
+                                                indicatorColor = Color.Transparent
+                                            ),
+                                            modifier = Modifier.drawBehind {
+                                                if (isSelected) {
+                                                    val barWidth = size.width * 0.45f
+                                                    val startX = (size.width - barWidth) / 2f
+                                                    drawRect(
+                                                        color = ru.nya.nyeios.ui.theme.NierBlue,
+                                                        topLeft = Offset(startX, 0f),
+                                                        size = androidx.compose.ui.geometry.Size(barWidth, 2.dp.toPx())
+                                                    )
+                                                }
                                             }
-                                            when (currentTab) {
-                                                0 -> scheduleViewModel.refresh()
-                                                1 -> feedViewModel.requestSyncFeed()
-                                                2 -> curriculumViewModel.refresh()
-                                            }
-                                        }
-                                    ) {
-                                        val rotation = if (isRefreshing) {
-                                            val infiniteTransition = rememberInfiniteTransition(label = "spin")
-                                            val rot by infiniteTransition.animateFloat(
-                                                initialValue = 0f,
-                                                targetValue = 360f,
-                                                animationSpec = infiniteRepeatable(
-                                                    animation = tween(1000),
-                                                    repeatMode = RepeatMode.Restart
-                                                ),
-                                                label = "rotation"
-                                            )
-                                            rot
-                                        } else 0f
-
-                                        Icon(
-                                            imageVector = Icons.Default.Refresh,
-                                            contentDescription = "Обновить",
-                                            tint = if (isRefreshing) LectureBlue else TextSecondary,
-                                            modifier = Modifier.rotate(rotation)
                                         )
                                     }
                                 }
-                            )
-                        },
-                        bottomBar = {
-                            NavigationBar(
-                                containerColor = ObsidianSurface,
-                                tonalElevation = 0.dp,
-                                modifier = Modifier.border(
-                                    width = 1.dp,
-                                    color = ObsidianBorder,
-                                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
-                                ).clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-                            ) {
-                                NavigationBarItem(
-                                    selected = currentTab == 0,
-                                    onClick = { currentTab = 0 },
-                                    icon = {
-                                        Icon(
-                                            imageVector = Icons.Default.CalendarToday,
-                                            contentDescription = "Расписание"
-                                        )
-                                    },
-                                    label = { Text("Расписание", fontSize = 12.sp, fontWeight = if (currentTab == 0) FontWeight.Bold else FontWeight.Normal) },
-                                    colors = NavigationBarItemDefaults.colors(
-                                        selectedIconColor = LectureBlue,
-                                        selectedTextColor = LectureBlue,
-                                        unselectedIconColor = TextMuted,
-                                        unselectedTextColor = TextMuted,
-                                        indicatorColor = LectureBlue.copy(alpha = 0.15f)
-                                    )
-                                )
 
-                                NavigationBarItem(
-                                    selected = currentTab == 1,
-                                    onClick = { currentTab = 1 },
-                                    icon = {
-                                        Icon(
-                                            imageVector = Icons.Default.DynamicFeed,
-                                            contentDescription = "Лента"
-                                        )
-                                    },
-                                    label = { Text("Лента", fontSize = 12.sp, fontWeight = if (currentTab == 1) FontWeight.Bold else FontWeight.Normal) },
-                                    colors = NavigationBarItemDefaults.colors(
-                                        selectedIconColor = LectureBlue,
-                                        selectedTextColor = LectureBlue,
-                                        unselectedIconColor = TextMuted,
-                                        unselectedTextColor = TextMuted,
-                                        indicatorColor = LectureBlue.copy(alpha = 0.15f)
-                                    )
-                                )
-
-                                NavigationBarItem(
-                                    selected = currentTab == 2,
-                                    onClick = { currentTab = 2 },
-                                    icon = {
-                                        Icon(
-                                            imageVector = Icons.Default.School,
-                                            contentDescription = "Успеваемость"
-                                        )
-                                    },
-                                    label = { Text("БРС", fontSize = 12.sp, fontWeight = if (currentTab == 2) FontWeight.Bold else FontWeight.Normal) },
-                                    colors = NavigationBarItemDefaults.colors(
-                                        selectedIconColor = LectureBlue,
-                                        selectedTextColor = LectureBlue,
-                                        unselectedIconColor = TextMuted,
-                                        unselectedTextColor = TextMuted,
-                                        indicatorColor = LectureBlue.copy(alpha = 0.15f)
-                                    )
-                                )
+                                ru.nya.nyeios.ui.common.NierDotRow()
                             }
                         }
                     ) { innerPadding ->
-                        Box(modifier = Modifier.fillMaxSize()) {
-                        Crossfade(
-                            targetState = currentTab,
-                            label = "tab_transition",
+                        Box(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(innerPadding)
-                        ) { tab ->
-                            when (tab) {
-                                0 -> ScheduleScreen(
-                                    uiState = scheduleUiState,
-                                    weekOffset = weekOffset,
-                                    selectedDayIndex = selectedDayIndex,
-                                    onPrevWeek = { scheduleViewModel.prevWeek() },
-                                    onNextWeek = { scheduleViewModel.nextWeek() },
-                                    onCurrentWeek = { scheduleViewModel.currentWeek() },
-                                    onSelectDay = { scheduleViewModel.selectDay(it) },
-                                    onRefresh = { scheduleViewModel.refresh() },
-                                    onOpenLogin = { scheduleViewModel.showLoginSheet() }
+                        ) {
+                            ru.nya.nyeios.ui.common.NierBackground {
+                                Crossfade(
+                                    targetState = currentTab,
+                                    label = "tab_transition",
+                                    modifier = Modifier.fillMaxSize()
+                                ) { tab ->
+                                    when (tab) {
+                                        0 -> ScheduleScreen(
+                                            uiState = scheduleUiState,
+                                            weekOffset = weekOffset,
+                                            selectedDayIndex = selectedDayIndex,
+                                            onPrevWeek = { scheduleViewModel.prevWeek() },
+                                            onNextWeek = { scheduleViewModel.nextWeek() },
+                                            onCurrentWeek = { scheduleViewModel.currentWeek() },
+                                            onSelectDay = { scheduleViewModel.selectDay(it) },
+                                            onRefresh = { scheduleViewModel.refresh() },
+                                            onOpenLogin = { scheduleViewModel.showLoginSheet() }
+                                        )
+                                        1 -> FeedScreen(
+                                            uiState = feedUiState,
+                                            feedViewModel = feedViewModel,
+                                            onRefresh = { feedViewModel.refresh() },
+                                            onOpenLogin = { scheduleViewModel.showLoginSheet() }
+                                        )
+                                        2 -> CurriculumScreen(
+                                            uiState = curriculumUiState,
+                                            onSelectTerm = { curriculumViewModel.selectTerm(it) },
+                                            onRefresh = { curriculumViewModel.refresh() },
+                                            onOpenLogin = { scheduleViewModel.showLoginSheet() }
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Update banner — floating above content, pinned to bottom
+                            UpdateBanner(
+                                state = updateUiState,
+                                viewModel = updateViewModel,
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .padding(bottom = 8.dp)
+                            )
+
+                            if (isLoginSheetVisible) {
+                                LoginBottomSheet(
+                                    authSession = authSession,
+                                    isLoggingIn = isLoggingIn,
+                                    errorMessage = loginError,
+                                    onLogin = { u, p ->
+                                        scheduleViewModel.performLogin(u, p)
+                                        feedViewModel.refresh()
+                                        curriculumViewModel.refresh()
+                                    },
+                                    onLogout = {
+                                        scheduleViewModel.logout()
+                                        feedViewModel.refresh()
+                                        curriculumViewModel.refresh()
+                                    },
+                                    onDismiss = { scheduleViewModel.hideLoginSheet() }
                                 )
-                                1 -> FeedScreen(
-                                    uiState = feedUiState,
-                                    feedViewModel = feedViewModel,
-                                    onRefresh = { feedViewModel.refresh() },
-                                    onOpenLogin = { scheduleViewModel.showLoginSheet() }
-                                )
-                                2 -> CurriculumScreen(
-                                    uiState = curriculumUiState,
-                                    onSelectTerm = { curriculumViewModel.selectTerm(it) },
-                                    onRefresh = { curriculumViewModel.refresh() },
-                                    onOpenLogin = { scheduleViewModel.showLoginSheet() }
+                            }
+
+                            if (isNetworkLogsSheetVisible) {
+                                NetworkLogsBottomSheet(
+                                    onDismiss = { isNetworkLogsSheetVisible = false },
+                                    updateViewModel = updateViewModel
                                 )
                             }
                         }
-
-                        // Update banner — floating above content, pinned to bottom
-                        UpdateBanner(
-                            state = updateUiState,
-                            viewModel = updateViewModel,
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .padding(bottom = innerPadding.calculateBottomPadding())
-                        )
-
-                        if (isLoginSheetVisible) {
-                            LoginBottomSheet(
-                                authSession = authSession,
-                                isLoggingIn = isLoggingIn,
-                                errorMessage = loginError,
-                                onLogin = { u, p ->
-                                    scheduleViewModel.performLogin(u, p)
-                                    feedViewModel.refresh()
-                                    curriculumViewModel.refresh()
-                                },
-                                onLogout = {
-                                    scheduleViewModel.logout()
-                                    feedViewModel.refresh()
-                                    curriculumViewModel.refresh()
-                                },
-                                onDismiss = { scheduleViewModel.hideLoginSheet() }
-                            )
-                        }
-
-                        if (isNetworkLogsSheetVisible) {
-                            NetworkLogsBottomSheet(
-                                onDismiss = { isNetworkLogsSheetVisible = false },
-                                updateViewModel = updateViewModel
-                            )
-                        }
-                        } // end Box
                     }
                 }
             }
