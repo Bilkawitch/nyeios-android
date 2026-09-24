@@ -3,7 +3,7 @@
 Быстрый, легкий и современный неофициальный Android-клиент для студентов некоего универа. Разработан на Jetpack Compose и Material 3.
 
 ![Платформа](https://img.shields.io/badge/Platform-Android_8.0%2B-green.svg)
-![Версия](https://img.shields.io/badge/Version-0.1.0-blue.svg)
+![Версия](https://img.shields.io/badge/Version-0.2.1-blue.svg)
 ![Jetpack Compose](https://img.shields.io/badge/UI-Jetpack_Compose-brightgreen.svg)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.0.0-purple.svg)
 ![Лицензия](https://img.shields.io/badge/License-GPL--3.0-orange.svg)
@@ -23,7 +23,7 @@
 - **Мгновенная работа**: парсит только полезные данные за доли секунды (~0.1–0.3 с).
 - **100% Оффлайн-доступ (SWR)**: расписание, лента и успеваемость кэшируются локально — приложение сразу открывается даже в подвале корпуса или при отсутствии связи.
 - **Эргономичный Dark UI**: стильный интерфейс Obsidian Dark, созданный специально для комфортного ежедневного использования.
-- **Безопасность**: учетные данные сессии шифруются через аппаратный **Android Keystore** (`EncryptedSharedPreferences`).
+- **Безопасность**: учетные данные сессии шифруются через аппаратный **Android Keystore** (`EncryptedSharedPreferences`), ваши логин и пароль хранятся локально на ВАШЕМ устройстве и используются только для отправки на **веб-портал**. В приложении нет левых серверов куда отправляются данные, как и телеметрии. Ваши данные только у вас на телефоне и на **веб-портале**.
 
 ---
 
