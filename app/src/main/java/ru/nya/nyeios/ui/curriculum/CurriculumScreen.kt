@@ -408,20 +408,77 @@ fun CurriculumSubjectCard(subject: CurriculumSubject) {
                     modifier = Modifier.weight(1f)
                 )
 
-                // Final Score or Grade
-                Text(
-                    text = if (gradeText.isNotEmpty()) gradeText else if (subject.finalRating.isNotBlank() && subject.finalRating != "0") subject.finalRating else "—",
-                    color = ru.nya.nyeios.ui.theme.NierDark,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily
-                )
+                // Score / Grade display
+                val scorePrimary = when {
+                    subject.finalRating.isNotBlank() && subject.finalRating != "0" -> subject.finalRating
+                    subject.currentScore.isNotBlank() && subject.currentScore != "0" -> subject.currentScore
+                    subject.currentRating.isNotBlank() && subject.currentRating != "0" -> subject.currentRating
+                    subject.termRating.isNotBlank() && subject.termRating != "0" -> subject.termRating
+                    else -> null
+                }
 
-                Text(
-                    text = if (isExpanded) "▲" else "▼",
-                    color = ru.nya.nyeios.ui.theme.NierDim,
-                    fontSize = 9.sp
-                )
+                val scoreLabel = when {
+                    subject.finalRating.isNotBlank() && subject.finalRating != "0" -> "/100"
+                    subject.currentScore.isNotBlank() && subject.currentScore != "0" -> " б."
+                    else -> ""
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    if (gradeText.isNotEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .background(ctrlColor.copy(alpha = 0.12f))
+                                .border(0.5.dp, ctrlColor)
+                                .padding(horizontal = 4.dp, vertical = 1.dp)
+                        ) {
+                            Text(
+                                text = gradeText,
+                                color = ctrlColor,
+                                fontSize = 9.sp,
+                                fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    if (scorePrimary != null) {
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text(
+                                text = scorePrimary,
+                                color = ru.nya.nyeios.ui.theme.NierDark,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily
+                            )
+                            if (scoreLabel.isNotEmpty()) {
+                                Text(
+                                    text = scoreLabel,
+                                    color = ru.nya.nyeios.ui.theme.NierDim,
+                                    fontSize = 8.sp,
+                                    fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                                    modifier = Modifier.padding(bottom = 1.dp)
+                                )
+                            }
+                        }
+                    } else if (gradeText.isEmpty()) {
+                        Text(
+                            text = "—",
+                            color = ru.nya.nyeios.ui.theme.NierDim,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily
+                        )
+                    }
+
+                    Text(
+                        text = if (isExpanded) "▲" else "▼",
+                        color = ru.nya.nyeios.ui.theme.NierDim,
+                        fontSize = 9.sp
+                    )
+                }
             }
 
             // Expanded details block
@@ -442,7 +499,10 @@ fun CurriculumSubjectCard(subject: CurriculumSubject) {
                         BrsDetailRow(label = "Семестровый рейтинг:", value = subject.termRating)
                     }
                     BrsDetailRow(label = "Баллы на экзамене / зачёте:", value = subject.examScore.ifEmpty { "0" })
-                    BrsDetailRow(label = "Итоговая оценка / рейтинг:", value = if (gradeText.isNotEmpty()) gradeText else subject.finalRating.ifEmpty { "0" }, isHighlight = true)
+                    BrsDetailRow(label = "Итоговый рейтинг:", value = if (subject.finalRating.isNotBlank() && subject.finalRating != "0") subject.finalRating else "—", isHighlight = true)
+                    if (gradeText.isNotEmpty()) {
+                        BrsDetailRow(label = "Итоговая оценка:", value = gradeText, isHighlight = true)
+                    }
                 }
             }
         }

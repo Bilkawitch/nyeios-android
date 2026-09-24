@@ -20,6 +20,7 @@ import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -614,6 +615,7 @@ private fun SingleFloorInteractiveView(
             .fillMaxWidth()
             .height(350.dp)
             .padding(horizontal = 14.dp)
+            .clipToBounds()
             .background(NierBg)
             .border(BorderStroke(1.dp, NierBorderLight))
     ) {
@@ -703,6 +705,7 @@ private fun SingleFloorInteractiveView(
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
+                .clipToBounds()
                 .pointerInput(rooms, scale, offset) {
                     detectTapGestures { tapOffset ->
                         val mapX = (tapOffset.x - offset.x) / scale
@@ -884,6 +887,7 @@ private fun MultiFloorInteractiveView(
             .fillMaxWidth()
             .height(410.dp)
             .padding(horizontal = 14.dp)
+            .clipToBounds()
             .background(NierBg)
             .border(BorderStroke(1.dp, NierBorderLight))
     ) {
@@ -977,6 +981,7 @@ private fun MultiFloorInteractiveView(
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
+                .clipToBounds()
                 .pointerInput(rooms4, rooms3, scale, offset) {
                     detectTapGestures { tapOffset ->
                         val mapX = (tapOffset.x - offset.x) / scale

@@ -806,10 +806,42 @@ fun FeedAttachmentItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                text = if (isDownloaded) "✅" else "📄",
-                fontSize = 14.sp
-            )
+            val (iconColor, extLabel) = remember(attachment.name) {
+                val lower = attachment.name.lowercase()
+                when {
+                    lower.endsWith(".pdf") -> Pair(ru.nya.nyeios.ui.theme.NierRed, "PDF")
+                    lower.endsWith(".docx") || lower.endsWith(".doc") -> Pair(ru.nya.nyeios.ui.theme.NierBlue, "DOC")
+                    lower.endsWith(".xlsx") || lower.endsWith(".xls") -> Pair(ru.nya.nyeios.ui.theme.NierGreen, "XLS")
+                    lower.endsWith(".zip") || lower.endsWith(".rar") || lower.endsWith(".7z") -> Pair(ru.nya.nyeios.ui.theme.NierAmber, "ZIP")
+                    lower.endsWith(".ppt") || lower.endsWith(".pptx") -> Pair(ru.nya.nyeios.ui.theme.NierPurple, "PPT")
+                    else -> Pair(ru.nya.nyeios.ui.theme.NierDarkSecondary, "FILE")
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .background(if (isDownloaded) ru.nya.nyeios.ui.theme.NierGreen.copy(alpha = 0.15f) else iconColor.copy(alpha = 0.12f))
+                    .border(1.dp, if (isDownloaded) ru.nya.nyeios.ui.theme.NierGreen else iconColor),
+                contentAlignment = Alignment.Center
+            ) {
+                if (isDownloaded) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = "Скачано",
+                        tint = ru.nya.nyeios.ui.theme.NierGreen,
+                        modifier = Modifier.size(13.dp)
+                    )
+                } else {
+                    Text(
+                        text = extLabel,
+                        color = iconColor,
+                        fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -851,16 +883,31 @@ fun FeedAttachmentItem(
             }
         }
 
-        // Action Buttons Row (NieR styled bordered buttons)
+        // Action Buttons Row (NieR styled bordered buttons with vector icons)
         Row(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             when (state) {
                 is DownloadState.Completed -> {
-                    NierActionButton(text = "↗ Открыть", isPrimary = true, onClick = onOpen)
-                    NierActionButton(text = "⤴ Поделиться", isPrimary = false, onClick = onShare)
-                    NierActionButton(text = "💾 Сохранить", isPrimary = false, onClick = onSaveToPublic)
+                    NierActionButton(
+                        icon = Icons.AutoMirrored.Filled.OpenInNew,
+                        text = "Открыть",
+                        isPrimary = true,
+                        onClick = onOpen
+                    )
+                    NierActionButton(
+                        icon = Icons.Default.Share,
+                        text = "Поделиться",
+                        isPrimary = false,
+                        onClick = onShare
+                    )
+                    NierActionButton(
+                        icon = Icons.Default.SaveAlt,
+                        text = "Сохранить",
+                        isPrimary = false,
+                        onClick = onSaveToPublic
+                    )
                 }
                 is DownloadState.Downloading -> {
                     Text(
@@ -870,10 +917,20 @@ fun FeedAttachmentItem(
                         color = ru.nya.nyeios.ui.theme.NierBlue
                     )
                     Spacer(modifier = Modifier.weight(1f))
-                    NierActionButton(text = "✕ Отмена", isDanger = true, onClick = onCancel)
+                    NierActionButton(
+                        icon = Icons.Default.Close,
+                        text = "Отмена",
+                        isDanger = true,
+                        onClick = onCancel
+                    )
                 }
                 else -> {
-                    NierActionButton(text = "⬇ Скачать", isPrimary = true, onClick = onDownload)
+                    NierActionButton(
+                        icon = Icons.Default.Download,
+                        text = "Скачать",
+                        isPrimary = true,
+                        onClick = onDownload
+                    )
                 }
             }
         }
@@ -883,10 +940,17 @@ fun FeedAttachmentItem(
 @Composable
 fun NierActionButton(
     text: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
     isPrimary: Boolean = false,
     isDanger: Boolean = false,
     onClick: () -> Unit
 ) {
+    val contentColor = when {
+        isPrimary -> ru.nya.nyeios.ui.theme.NierBg
+        isDanger -> ru.nya.nyeios.ui.theme.NierRed
+        else -> ru.nya.nyeios.ui.theme.NierDark
+    }
+
     Box(
         modifier = Modifier
             .background(
@@ -906,17 +970,26 @@ fun NierActionButton(
             .padding(horizontal = 8.dp, vertical = 3.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = text,
-            fontSize = 9.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
-            color = when {
-                isPrimary -> ru.nya.nyeios.ui.theme.NierBg
-                isDanger -> ru.nya.nyeios.ui.theme.NierRed
-                else -> ru.nya.nyeios.ui.theme.NierDark
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = contentColor,
+                    modifier = Modifier.size(11.dp)
+                )
             }
-        )
+            Text(
+                text = text,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                color = contentColor
+            )
+        }
     }
 }
 

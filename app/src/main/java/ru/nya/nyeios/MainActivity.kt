@@ -322,24 +322,35 @@ class MainActivity : ComponentActivity() {
                                         // Downloads button (Feed tab)
                                         if (currentTab == 1) {
                                             val downloadedFiles by feedViewModel.downloadedFiles.collectAsState()
-                                            IconButton(onClick = { feedViewModel.showDownloadsSheet() }) {
-                                                BadgedBox(
-                                                    badge = {
-                                                        if (downloadedFiles.isNotEmpty()) {
-                                                            Badge(
-                                                                containerColor = ru.nya.nyeios.ui.theme.NierBlue,
-                                                                contentColor = Color.White
-                                                            ) {
-                                                                Text("${downloadedFiles.size}")
-                                                            }
-                                                        }
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(40.dp)
+                                                    .clickable { feedViewModel.showDownloadsSheet() },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.FileDownload,
+                                                    contentDescription = "Загрузки",
+                                                    tint = if (downloadedFiles.isNotEmpty()) ru.nya.nyeios.ui.theme.NierBlue else ru.nya.nyeios.ui.theme.NierDarkSecondary,
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                                if (downloadedFiles.isNotEmpty()) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .align(Alignment.TopEnd)
+                                                            .padding(top = 4.dp, end = 2.dp)
+                                                            .background(ru.nya.nyeios.ui.theme.NierBlue)
+                                                            .padding(horizontal = 4.dp, vertical = 1.dp)
+                                                    ) {
+                                                        Text(
+                                                            text = "${downloadedFiles.size}",
+                                                            color = Color.White,
+                                                            fontSize = 9.sp,
+                                                            fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                                            fontWeight = FontWeight.Bold,
+                                                            lineHeight = 10.sp
+                                                        )
                                                     }
-                                                ) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.FileDownload,
-                                                        contentDescription = "Загрузки",
-                                                        tint = if (downloadedFiles.isNotEmpty()) ru.nya.nyeios.ui.theme.NierBlue else ru.nya.nyeios.ui.theme.NierDarkSecondary
-                                                    )
                                                 }
                                             }
                                         }
