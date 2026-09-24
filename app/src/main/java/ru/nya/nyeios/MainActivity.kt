@@ -9,6 +9,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -56,6 +57,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -66,7 +68,10 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -160,6 +165,16 @@ class MainActivity : ComponentActivity() {
                         3 -> settingsUiState.isMeasuringPing || settingsUiState.isFetchingIp
                         else -> false
                     }
+
+                    val currentTimeMs by produceState(initialValue = System.currentTimeMillis()) {
+                        while (true) {
+                            kotlinx.coroutines.delay(10_000L)
+                            value = System.currentTimeMillis()
+                        }
+                    }
+
+                    val syncState = ru.nya.nyeios.ui.common.SyncStatusUtils.getSyncState(lastSyncTime, currentTimeMs)
+                    val isRefreshBlinking = syncState == ru.nya.nyeios.ui.common.SyncState.STALE && !isRefreshing
 
                     LaunchedEffect(currentTab) {
                         when (currentTab) {
@@ -313,9 +328,20 @@ class MainActivity : ComponentActivity() {
                                                                     fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily
                                                                 )
                                                             } else {
+                                                                val triangleColor = when (syncState) {
+                                                                    ru.nya.nyeios.ui.common.SyncState.FRESH -> ru.nya.nyeios.ui.theme.NierGreen
+                                                                    ru.nya.nyeios.ui.common.SyncState.AGED -> ru.nya.nyeios.ui.theme.NierAmber
+                                                                    ru.nya.nyeios.ui.common.SyncState.STALE -> ru.nya.nyeios.ui.theme.NierRed
+                                                                }
                                                                 Text(
-                                                                    text = "▲ $syncText",
-                                                                    color = ru.nya.nyeios.ui.theme.NierDim,
+                                                                    text = buildAnnotatedString {
+                                                                        withStyle(SpanStyle(color = triangleColor)) {
+                                                                            append("▲ ")
+                                                                        }
+                                                                        withStyle(SpanStyle(color = ru.nya.nyeios.ui.theme.NierDim)) {
+                                                                            append(syncText)
+                                                                        }
+                                                                    },
                                                                     fontSize = 9.sp,
                                                                     fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily
                                                                 )
@@ -405,12 +431,71 @@ class MainActivity : ComponentActivity() {
                                                 rot
                                             } else 0f
 
-                                            Icon(
-                                                imageVector = Icons.Default.Refresh,
-                                                contentDescription = "Обновить",
-                                                tint = if (isRefreshing) ru.nya.nyeios.ui.theme.NierBlue else ru.nya.nyeios.ui.theme.NierDarkSecondary,
-                                                modifier = Modifier.rotate(rotation)
-                                            )
+                                            val blinkPhase = if (isRefreshBlinking) {
+                                                val infiniteTransition = rememberInfiniteTransition(label = "refresh_blink")
+                                                val phase by infiniteTransition.animateFloat(
+                                                    initialValue = 0f,
+                                                    targetValue = 1f,
+                                                    animationSpec = infiniteRepeatable(
+                                                        animation = tween(1000, easing = androidx.compose.animation.core.LinearEasing),
+                                                        repeatMode = RepeatMode.Restart
+                                                    ),
+                                                    label = "blink_phase"
+                                                )
+                                                phase
+                                            } else 0f
+
+                                            val isPhaseDark = blinkPhase < 0.5f
+
+                                            val themeMode = ru.nya.nyeios.ui.theme.ThemeManager.currentTheme
+                                            val solidDark = when (themeMode) {
+                                                ru.nya.nyeios.ui.theme.NierThemeMode.BLACK -> Color(0xFF1A1A18)
+                                                ru.nya.nyeios.ui.theme.NierThemeMode.NIGHT -> Color(0xFF1E1A15)
+                                                ru.nya.nyeios.ui.theme.NierThemeMode.REGULAR -> Color(0xFF3A342B)
+                                            }
+                                            val solidLight = when (themeMode) {
+                                                ru.nya.nyeios.ui.theme.NierThemeMode.BLACK -> Color(0xFFCAC6A8)
+                                                ru.nya.nyeios.ui.theme.NierThemeMode.NIGHT -> Color(0xFFCAC6A8)
+                                                ru.nya.nyeios.ui.theme.NierThemeMode.REGULAR -> Color(0xFFEDEAD8)
+                                            }
+                                            val solidBorder = when (themeMode) {
+                                                ru.nya.nyeios.ui.theme.NierThemeMode.BLACK -> Color(0xFFCAC6A8)
+                                                ru.nya.nyeios.ui.theme.NierThemeMode.NIGHT -> Color(0xFFCAC6A8)
+                                                ru.nya.nyeios.ui.theme.NierThemeMode.REGULAR -> Color(0xFF3A342B)
+                                            }
+
+                                            val squareBg = if (isRefreshBlinking) {
+                                                if (isPhaseDark) solidDark else solidLight
+                                            } else {
+                                                Color.Transparent
+                                            }
+
+                                            val iconTint = if (isRefreshBlinking) {
+                                                if (isPhaseDark) solidLight else solidDark
+                                            } else if (isRefreshing) {
+                                                ru.nya.nyeios.ui.theme.NierBlue
+                                            } else {
+                                                ru.nya.nyeios.ui.theme.NierDarkSecondary
+                                            }
+
+                                            val squareBorder = if (isRefreshBlinking) solidBorder else Color.Transparent
+
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(28.dp)
+                                                    .background(squareBg)
+                                                    .border(if (isRefreshBlinking) 1.dp else 0.dp, squareBorder),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Refresh,
+                                                    contentDescription = "Обновить",
+                                                    tint = iconTint,
+                                                    modifier = Modifier
+                                                        .size(20.dp)
+                                                        .rotate(rotation)
+                                                )
+                                            }
                                         }
                                     }
                                 )
