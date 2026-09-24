@@ -5,24 +5,51 @@ import ru.nya.nyeios.data.model.DaySchedule
 import ru.nya.nyeios.data.model.LessonItem
 import ru.nya.nyeios.data.model.LessonType
 import ru.nya.nyeios.data.model.WeekSchedule
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
 object ScheduleParser {
 
+    fun isAuthRequired(html: String): Boolean {
+        return html.contains("name=\"AUTH_FORM\"") ||
+                html.contains("form_auth") ||
+                html.contains("<title>Авторизация</title>") ||
+                (html.contains("USER_LOGIN") && html.contains("USER_PASSWORD"))
+    }
+
     fun parse(html: String, offsetWeeks: Int = 0, startDateStr: String = "", endDateStr: String = ""): WeekSchedule? {
         val doc = Jsoup.parse(html)
-        val table = doc.selectFirst("table.schedule-table") ?: return null
+        val table = doc.selectFirst("table.schedule-table")
+
+        if (table == null) {
+            if (isAuthRequired(html)) return null
+
+            val hasTimetableContext = doc.selectFirst("div.schedule-body") != null ||
+                    doc.selectFirst("select#group-select") != null ||
+                    doc.selectFirst("div.workarea-content") != null ||
+                    doc.selectFirst("h2") != null ||
+                    html.contains("eios/contacts/timetable")
+
+            if (hasTimetableContext) {
+                return buildEmptyWeekSchedule(doc, offsetWeeks, startDateStr, endDateStr)
+            }
+            return null
+        }
 
         val thElements = table.select("thead th")
-        if (thElements.size < 2) return null
+        if (thElements.size < 2) {
+            return buildEmptyWeekSchedule(doc, offsetWeeks, startDateStr, endDateStr)
+        }
 
         // thElements[0] is header for time column, rest are days
         val rawDays = thElements.drop(1).map { it.text().trim() }
         val numDays = rawDays.size
 
-        val h2Text = doc.selectFirst("h2")?.text()?.trim() ?: "Расписание занятий"
+        val h2Raw = doc.selectFirst("h2")?.text()?.trim() ?: "Расписание занятий"
+        val h2Text = h2Raw.replace("&mdash;", "—")
 
         val groupSelect = doc.selectFirst("select#group-select")
         val groupName = groupSelect?.selectFirst("option[selected]")?.text()?.trim()
@@ -171,6 +198,68 @@ object ScheduleParser {
             endDate = endDateStr,
             offsetWeeks = offsetWeeks,
             days = parsedDays,
+            isCached = false
+        )
+    }
+
+    private fun buildEmptyWeekSchedule(
+        doc: org.jsoup.nodes.Document,
+        offsetWeeks: Int,
+        startDateStr: String,
+        endDateStr: String
+    ): WeekSchedule {
+        val h2Raw = doc.selectFirst("h2")?.text()?.trim().orEmpty()
+        val h2Clean = h2Raw.replace("&mdash;", "—").ifEmpty {
+            if (startDateStr.isNotEmpty() && endDateStr.isNotEmpty()) "$startDateStr — $endDateStr" else "Расписание занятий"
+        }
+
+        val groupSelect = doc.selectFirst("select#group-select")
+        val groupName = groupSelect?.selectFirst("option[selected]")?.text()?.trim()
+            ?: groupSelect?.selectFirst("option")?.text()?.trim()
+
+        val today = LocalDate.now()
+        val dFmt = DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.getDefault())
+        val todayDayMonth = today.format(DateTimeFormatter.ofPattern("dd.MM", Locale.getDefault()))
+
+        val parsedStart = try {
+            if (startDateStr.isNotEmpty()) LocalDate.parse(startDateStr, dFmt) else null
+        } catch (_: Exception) {
+            null
+        } ?: run {
+            val match = Regex("""(\d{2}\.\d{2}\.\d{4})""").find(h2Clean)
+            match?.value?.let {
+                try { LocalDate.parse(it, dFmt) } catch (_: Exception) { null }
+            }
+        } ?: today.plusWeeks(offsetWeeks.toLong()).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+
+        val dayNames = listOf("Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье")
+        val shortNames = listOf("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс")
+
+        val days = (0..6).map { i ->
+            val dayDate = parsedStart.plusDays(i.toLong())
+            val cleanDate = dayDate.format(DateTimeFormatter.ofPattern("dd.MM", Locale.getDefault()))
+            val fullDate = dayDate.format(dFmt)
+            val isToday = (offsetWeeks == 0 && cleanDate == todayDayMonth)
+
+            DaySchedule(
+                dayTitle = "${dayNames[i]} - $fullDate",
+                dayName = shortNames[i],
+                dateString = cleanDate,
+                isToday = isToday,
+                lessons = emptyList()
+            )
+        }
+
+        val effStartDate = if (startDateStr.isNotEmpty()) startDateStr else parsedStart.format(dFmt)
+        val effEndDate = if (endDateStr.isNotEmpty()) endDateStr else parsedStart.plusDays(6).format(dFmt)
+
+        return WeekSchedule(
+            weekTitle = h2Clean,
+            group = groupName,
+            startDate = effStartDate,
+            endDate = effEndDate,
+            offsetWeeks = offsetWeeks,
+            days = days,
             isCached = false
         )
     }

@@ -106,4 +106,65 @@ class ScheduleParserTest {
         assertEquals("ДО", tuesdayLesson.room)
         assertEquals(LessonType.LAB, tuesdayLesson.type)
     }
+
+    @Test
+    fun testEmptyWeekScheduleParser() {
+        val emptyWeekHtml = """
+            <!DOCTYPE html>
+            <html>
+            <head><title>Расписание</title></head>
+            <body>
+                <div class="schedule-body">
+                    <div class="error-messages">
+                        <div class="content-edit-form-notice-error">
+                            <span class="content-edit-form-notice-text">
+                                Расписание работает в режиме отладки, просим уточнять расписание в деканате или на стенде университета
+                            </span>
+                        </div>
+                    </div>
+                    <h2>28.09.2026 &mdash; 04.10.2026</h2>
+                    <select id="group-select">
+                        <option selected>23АН-о-41</option>
+                    </select>
+                    <p><strong>Бакалавриат, 44.03.05, 23АН-о-41</strong></p>
+                </div>
+            </body>
+            </html>
+        """.trimIndent()
+
+        val schedule = ScheduleParser.parse(emptyWeekHtml, offsetWeeks = 1, "28.09.2026", "04.10.2026")
+        assertNotNull(schedule)
+        assertEquals("23АН-о-41", schedule!!.group)
+        assertEquals("28.09.2026 — 04.10.2026", schedule.weekTitle)
+        assertEquals(7, schedule.days.size)
+        assertTrue(schedule.days.all { it.lessons.isEmpty() })
+
+        assertEquals("Пн", schedule.days[0].dayName)
+        assertEquals("28.09", schedule.days[0].dateString)
+        assertEquals("Вт", schedule.days[1].dayName)
+        assertEquals("29.09", schedule.days[1].dateString)
+        assertEquals("Вс", schedule.days[6].dayName)
+        assertEquals("04.10", schedule.days[6].dateString)
+    }
+
+    @Test
+    fun testAuthRequiredCheck() {
+        val loginHtml = """
+            <!DOCTYPE html>
+            <html>
+            <head><title>Авторизация</title></head>
+            <body>
+                <form name="form_auth" method="post">
+                    <input type="hidden" name="AUTH_FORM" value="Y" />
+                    <input type="text" name="USER_LOGIN" />
+                    <input type="password" name="USER_PASSWORD" />
+                </form>
+            </body>
+            </html>
+        """.trimIndent()
+
+        assertTrue(ScheduleParser.isAuthRequired(loginHtml))
+        val schedule = ScheduleParser.parse(loginHtml, offsetWeeks = 0, "21.09.2026", "27.09.2026")
+        org.junit.Assert.assertNull(schedule)
+    }
 }

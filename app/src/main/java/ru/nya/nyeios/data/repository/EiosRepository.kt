@@ -567,6 +567,14 @@ class EiosRepository(private val context: Context) {
                 val html = response.body?.string() ?: ""
                 updateProfileIfFound(html)
 
+                if (ScheduleParser.isAuthRequired(html)) {
+                    if (currentCacheFile.exists()) {
+                        val cached = gson.fromJson(currentCacheFile.readText(), WeekSchedule::class.java)
+                        if (cached != null) return@withLock Result.success(sanitizeCachedSchedule(cached))
+                    }
+                    return@withLock Result.failure(Exception("Сессия завершена. Требуется авторизация в ЭИОС."))
+                }
+
                 val schedule = ScheduleParser.parse(html, offsetWeeks, startDCurrent, endDCurrent)
                 if (schedule != null) {
                     try {
@@ -581,7 +589,7 @@ class EiosRepository(private val context: Context) {
                         val cached = gson.fromJson(currentCacheFile.readText(), WeekSchedule::class.java)
                         if (cached != null) return@withLock Result.success(sanitizeCachedSchedule(cached))
                     }
-                    Result.failure(Exception("Не удалось разобрать расписание. Возможно, требуется авторизация."))
+                    Result.failure(Exception("Не удалось разобрать страницу расписания."))
                 }
             } catch (e: Exception) {
                 if (currentCacheFile.exists()) {
