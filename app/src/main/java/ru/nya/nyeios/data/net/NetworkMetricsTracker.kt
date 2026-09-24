@@ -172,12 +172,29 @@ class NetworkMetricsTracker private constructor(private val context: Context) {
     /**
      * Проверяет, активен ли VPN на устройстве.
      */
+    @Suppress("DEPRECATION")
     fun isVpnActive(): Boolean {
         return try {
             val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return false
-            val activeNetwork = cm.activeNetwork ?: return false
-            val caps = cm.getNetworkCapabilities(activeNetwork) ?: return false
-            caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)
+            val activeNetwork = cm.activeNetwork
+            if (activeNetwork != null) {
+                val caps = cm.getNetworkCapabilities(activeNetwork)
+                if (caps?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true) {
+                    return true
+                }
+            }
+            val hasVpnNetwork = cm.allNetworks.any { net ->
+                cm.getNetworkCapabilities(net)?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true
+            }
+            if (hasVpnNetwork) return true
+
+            val interfaces = java.net.NetworkInterface.getNetworkInterfaces() ?: return false
+            for (iface in interfaces.asSequence()) {
+                if (iface.isUp && (iface.name.startsWith("tun") || iface.name.startsWith("ppp") || iface.name.startsWith("wg") || iface.name.startsWith("tap"))) {
+                    return true
+                }
+            }
+            false
         } catch (_: Exception) {
             false
         }

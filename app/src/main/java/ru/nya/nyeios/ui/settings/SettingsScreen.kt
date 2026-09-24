@@ -310,7 +310,7 @@ private fun GeneralSettingsContent(
 
                 // Warning Banner if remaining < 30
                 if (uiState.githubRateLimit.isLow) {
-                    VpnRateLimitWarningBanner()
+                    VpnRateLimitWarningBanner(isVpnActive = uiState.isVpnActive)
                 }
             }
         }
@@ -595,7 +595,13 @@ private fun ThemeItemRow(
 }
 
 @Composable
-private fun VpnRateLimitWarningBanner() {
+private fun VpnRateLimitWarningBanner(isVpnActive: Boolean) {
+    val warningText = if (isVpnActive) {
+        "Осталось мало запросов на проверку наличия обновлений, при 0 NyEIOS не сможет проверять наличие и скачивать обновления. У вас включен VPN, что скорее всего и является причиной."
+    } else {
+        "Осталось мало запросов на проверку наличия обновлений, при 0 NyEIOS не сможет проверять наличие и скачивать обновления. Может быть, вы сидите за роутером с VPN?"
+    }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -630,7 +636,7 @@ private fun VpnRateLimitWarningBanner() {
                     letterSpacing = 0.5.sp
                 )
                 Text(
-                    text = "Осталось мало запросов на проверку обновления. Может быть у вас включен VPN?",
+                    text = warningText,
                     color = NierDark,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
