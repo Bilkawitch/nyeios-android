@@ -62,11 +62,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ru.nya.nyeios.data.update.AppVersionProvider
 import ru.nya.nyeios.data.model.CurriculumUiState
 import ru.nya.nyeios.data.model.FeedUiState
 import ru.nya.nyeios.data.model.ScheduleUiState
@@ -116,6 +118,9 @@ class MainActivity : ComponentActivity() {
                     val feedViewModel: FeedViewModel = viewModel()
                     val curriculumViewModel: CurriculumViewModel = viewModel()
                     val updateViewModel: UpdateViewModel = viewModel()
+
+                    val context = LocalContext.current
+                    val currentAppVersion = remember(context) { AppVersionProvider.getVersionName(context) }
 
                     var currentTab by rememberSaveable { mutableIntStateOf(0) }
 
@@ -253,7 +258,7 @@ class MainActivity : ComponentActivity() {
                                                             .padding(horizontal = 6.dp, vertical = 2.dp)
                                                     ) {
                                                         Text(
-                                                            text = "v${BuildConfig.VERSION_NAME}",
+                                                            text = "v$currentAppVersion",
                                                             color = TextSecondary,
                                                             fontSize = 11.sp,
                                                             fontWeight = FontWeight.SemiBold

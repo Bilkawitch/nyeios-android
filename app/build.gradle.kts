@@ -12,8 +12,8 @@ android {
         applicationId = "ru.nya.nyeios"
         minSdk = 26
         targetSdk = 34
-        versionCode = 12
-        versionName = "0.1.4"
+        versionCode = 13
+        versionName = "0.1.4a"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -81,4 +81,9 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
     testImplementation("junit:junit:4.13.2")
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    inputs.property("buildVersionName", android.defaultConfig.versionName ?: "")
+    inputs.property("buildVersionCode", android.defaultConfig.versionCode ?: 0)
 }

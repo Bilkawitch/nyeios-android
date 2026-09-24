@@ -62,4 +62,27 @@ class UpdateRepositoryTest {
         val vNew = AppVersion.parse("1.0.0")
         assertTrue("1.0.0 should be newer than 0.9.9", vNew > vOld)
     }
+
+    @Test
+    fun `version 0_1_4a is newer than 0_1_4`() {
+        val vBase = AppVersion.parse("0.1.4")
+        val vAlpha = AppVersion.parse("0.1.4a")
+        assertTrue("0.1.4a should be newer than 0.1.4", vAlpha > vBase)
+        assertFalse("0.1.4 should NOT be newer than 0.1.4a", vBase > vAlpha)
+    }
+
+    @Test
+    fun `remote v0_1_4 is not newer than local 0_1_4a`() {
+        val vRemote = AppVersion.parse("v0.1.4")
+        val vLocal = AppVersion.parse("0.1.4a")
+        assertFalse("v0.1.4 should NOT trigger update when running 0.1.4a", vRemote > vLocal)
+    }
+
+    @Test
+    fun `same version with v prefix is not newer`() {
+        val vRemote = AppVersion.parse("v0.1.4a")
+        val vLocal = AppVersion.parse("0.1.4a")
+        assertFalse("v0.1.4a should NOT trigger update when running 0.1.4a", vRemote > vLocal)
+    }
 }
+

@@ -51,7 +51,8 @@ class UpdateRepository private constructor(private val context: Context) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences("nyeios_update_prefs", Context.MODE_PRIVATE)
 
-    private val localVersion: String = BuildConfig.VERSION_NAME
+    private val localVersion: String
+        get() = AppVersionProvider.getVersionName(context)
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
@@ -133,23 +134,39 @@ class UpdateRepository private constructor(private val context: Context) {
                 if (response.code == 304) {
                     prefs.edit().putLong(KEY_LAST_CHECKED, now).apply()
                     val remText = if (remHeader != null) " (осталось $remHeader/60 зап/ч)" else ""
-                    NetworkLogger.logInfo(
-                        tag = "UPDATE",
-                        message = "Релизы не изменились (HTTP 304 Not Modified$remText)",
-                        details = "ETag совпал. Запрос не расходует квоту GitHub API."
-                    )
 
                     // Проверяем, было ли ранее обнаружено более новое обновление, которое ещё не установили
                     val cachedJson = prefs.getString(KEY_CACHED_UPDATE_JSON, null)
+                    var pendingUpdate: UpdateInfo? = null
                     if (!cachedJson.isNullOrEmpty()) {
                         try {
                             val cachedInfo = gson.fromJson(cachedJson, UpdateInfo::class.java)
-                            if (cachedInfo != null && isNewer(cachedInfo.version, localVersion)) {
-                                return cachedInfo
+                            if (cachedInfo != null) {
+                                if (isNewer(cachedInfo.version, localVersion)) {
+                                    pendingUpdate = cachedInfo
+                                } else {
+                                    // Кэшированное обновление больше не актуально (уже на этой или более новой версии)
+                                    prefs.edit().remove(KEY_CACHED_UPDATE_JSON).apply()
+                                }
                             }
                         } catch (e: Exception) { /* игнорируем ошибку парсинга кэша */ }
                     }
-                    return null
+
+                    if (pendingUpdate != null) {
+                        NetworkLogger.logInfo(
+                            tag = "UPDATE",
+                            message = "Релизы не изменились (HTTP 304 Not Modified$remText)",
+                            details = "ETag совпал. Доступна новая версия: ${pendingUpdate.version} (установлена: $localVersion)"
+                        )
+                        return pendingUpdate
+                    } else {
+                        NetworkLogger.logInfo(
+                            tag = "UPDATE",
+                            message = "Релизы не изменились (HTTP 304 Not Modified$remText)",
+                            details = "ETag совпал. Установлена актуальная версия: $localVersion"
+                        )
+                        return null
+                    }
                 }
 
                 // 2. Ошибка превышения лимита 403 Forbidden
@@ -221,6 +238,13 @@ class UpdateRepository private constructor(private val context: Context) {
 
                 // Сохраняем в кэш найденное обновление для обслуживания последующих 304 ответов
                 prefs.edit().putString(KEY_CACHED_UPDATE_JSON, gson.toJson(updateInfo)).apply()
+
+                val remText = if (remHeader != null) " (осталось $remHeader/60 зап/ч)" else ""
+                NetworkLogger.logInfo(
+                    tag = "UPDATE",
+                    message = "Доступно обновление ${updateInfo.version}$remText",
+                    details = "Текущая: $localVersion, последняя: ${release.tagName}"
+                )
 
                 updateInfo
             }
