@@ -3,7 +3,7 @@
 Быстрый, легкий и современный неофициальный Android-клиент для студентов некоего универа. Разработан на Jetpack Compose и Material 3.
 
 ![Платформа](https://img.shields.io/badge/Platform-Android_8.0%2B-green.svg)
-![Версия](https://img.shields.io/badge/Version-0.2.1-blue.svg)
+![Версия](https://img.shields.io/badge/Version-0.2.2-blue.svg)
 ![Jetpack Compose](https://img.shields.io/badge/UI-Jetpack_Compose-brightgreen.svg)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.0.0-purple.svg)
 ![Лицензия](https://img.shields.io/badge/License-GPL--3.0-orange.svg)
