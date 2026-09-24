@@ -84,5 +84,12 @@ class UpdateRepositoryTest {
         val vLocal = AppVersion.parse("0.1.4a")
         assertFalse("v0.1.4a should NOT trigger update when running 0.1.4a", vRemote > vLocal)
     }
+
+    @Test
+    fun `version 0_2_0 is newer than 0_1_4a`() {
+        val vNew = AppVersion.parse("0.2.0")
+        val vOld = AppVersion.parse("0.1.4a")
+        assertTrue("0.2.0 should be newer than 0.1.4a", vNew > vOld)
+    }
 }
 
