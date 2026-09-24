@@ -164,6 +164,7 @@ fun FloorMapBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = NierBg,
+        shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp),
         scrimColor = Color(0x991A1812),
         dragHandle = {
             Box(

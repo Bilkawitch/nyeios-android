@@ -88,10 +88,11 @@ fun LoginBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = ru.nya.nyeios.ui.theme.NierPanel,
+        shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp),
         dragHandle = {
             Box(
                 modifier = Modifier
-                    .padding(vertical = 10.dp)
+                    .padding(top = 8.dp, bottom = 6.dp)
                     .size(width = 36.dp, height = 3.dp)
                     .background(ru.nya.nyeios.ui.theme.NierBorder)
             )
@@ -112,11 +113,17 @@ fun LoginBottomSheet(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(36.dp)
-                        .background(ru.nya.nyeios.ui.theme.NierBlue.copy(alpha = 0.15f)),
+                        .size(34.dp)
+                        .background(ru.nya.nyeios.ui.theme.NierDark)
+                        .border(1.dp, ru.nya.nyeios.ui.theme.NierDark),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "🔑", fontSize = 16.sp)
+                    Icon(
+                        imageVector = Icons.Default.Key,
+                        contentDescription = null,
+                        tint = ru.nya.nyeios.ui.theme.NierBg,
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
                 Column {
                     Text(
@@ -151,7 +158,12 @@ fun LoginBottomSheet(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Text(text = "✅", fontSize = 14.sp)
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = ru.nya.nyeios.ui.theme.NierGreen,
+                                modifier = Modifier.size(16.dp)
+                            )
                             Text(
                                 text = "Вы успешно авторизованы",
                                 fontWeight = FontWeight.Bold,
@@ -213,7 +225,12 @@ fun LoginBottomSheet(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Text(text = "⚠", color = ru.nya.nyeios.ui.theme.NierRed, fontSize = 12.sp)
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = ru.nya.nyeios.ui.theme.NierRed,
+                            modifier = Modifier.size(14.dp)
+                        )
                         Text(
                             text = errorMessage ?: "",
                             color = ru.nya.nyeios.ui.theme.NierRed,
@@ -244,8 +261,14 @@ fun LoginBottomSheet(
                         onValueChange = { username = it },
                         placeholder = { Text("ivan.petrov@gsgu.ru", color = ru.nya.nyeios.ui.theme.NierDim) },
                         leadingIcon = {
-                            Text(text = "👤", fontSize = 12.sp)
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null,
+                                tint = ru.nya.nyeios.ui.theme.NierDim,
+                                modifier = Modifier.size(16.dp)
+                            )
                         },
+                        shape = RoundedCornerShape(0.dp),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Email,
@@ -285,13 +308,24 @@ fun LoginBottomSheet(
                         onValueChange = { password = it },
                         placeholder = { Text("••••••••", color = ru.nya.nyeios.ui.theme.NierDim) },
                         leadingIcon = {
-                            Text(text = "🔒", fontSize = 12.sp)
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = null,
+                                tint = ru.nya.nyeios.ui.theme.NierDim,
+                                modifier = Modifier.size(16.dp)
+                            )
                         },
                         trailingIcon = {
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                Text(text = if (passwordVisible) "👁" else "🙈", fontSize = 12.sp)
+                                Icon(
+                                    imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = if (passwordVisible) "Скрыть пароль" else "Показать пароль",
+                                    tint = ru.nya.nyeios.ui.theme.NierDim,
+                                    modifier = Modifier.size(18.dp)
+                                )
                             }
                         },
+                        shape = RoundedCornerShape(0.dp),
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
