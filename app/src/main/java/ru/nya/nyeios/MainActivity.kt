@@ -110,6 +110,7 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ru.nya.nyeios.ui.theme.ThemeManager.init(this)
         enableEdgeToEdge()
 
         setContent {

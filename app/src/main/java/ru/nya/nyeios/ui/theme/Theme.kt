@@ -9,48 +9,48 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val NierColorScheme = darkColorScheme(
-    primary = NierDark,
-    onPrimary = NierBg,
-    primaryContainer = NierPanel,
-    onPrimaryContainer = NierDark,
-    secondary = NierGreen,
-    onSecondary = NierBg,
-    secondaryContainer = NierPanelAlt,
-    onSecondaryContainer = NierDark,
-    tertiary = NierBlue,
-    onTertiary = NierBg,
-    tertiaryContainer = NierPanel,
-    onTertiaryContainer = NierDark,
-    background = NierBg,
-    onBackground = NierDark,
-    surface = NierPanel,
-    onSurface = NierDark,
-    surfaceVariant = NierPanelAlt,
-    onSurfaceVariant = NierDarkSecondary,
-    outline = NierBorder,
-    outlineVariant = NierBorderLight,
-    error = NierRed,
-    onError = NierBg
-)
-
 @Composable
 fun NyEIOSTheme(
     content: @Composable () -> Unit
 ) {
-    val colorScheme = NierColorScheme
+    val isNight = ThemeManager.currentTheme == NierThemeMode.NIGHT
+
+    val colorScheme = darkColorScheme(
+        primary = NierDark,
+        onPrimary = NierBg,
+        primaryContainer = NierPanel,
+        onPrimaryContainer = NierDark,
+        secondary = NierGreen,
+        onSecondary = NierBg,
+        secondaryContainer = NierPanelAlt,
+        onSecondaryContainer = NierDark,
+        tertiary = NierBlue,
+        onTertiary = NierBg,
+        tertiaryContainer = NierPanel,
+        onTertiaryContainer = NierDark,
+        background = NierBg,
+        onBackground = NierDark,
+        surface = NierPanel,
+        onSurface = NierDark,
+        surfaceVariant = NierPanelAlt,
+        onSurfaceVariant = NierDarkSecondary,
+        outline = NierBorder,
+        outlineVariant = NierBorderLight,
+        error = NierRed,
+        onError = NierBg
+    )
+
     val view = LocalView.current
 
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as? Activity)?.window
             if (window != null) {
-                // NieR Style: Status Bar and Navigation Bar match dark/panel tones
-                window.statusBarColor = NierDark.toArgb()
+                window.statusBarColor = NierBg.toArgb()
                 window.navigationBarColor = NierPanel.toArgb()
                 WindowCompat.getInsetsController(window, view).apply {
-                    isAppearanceLightStatusBars = false // White text on dark status bar
-                    isAppearanceLightNavigationBars = true // Dark icons on sand panel nav bar
+                    isAppearanceLightStatusBars = !isNight
+                    isAppearanceLightNavigationBars = !isNight
                 }
             }
         }

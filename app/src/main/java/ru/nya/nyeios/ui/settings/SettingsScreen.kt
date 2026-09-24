@@ -37,10 +37,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import ru.nya.nyeios.data.net.EiosLastGetInfo
 import ru.nya.nyeios.data.net.PingResult
 import ru.nya.nyeios.data.update.GithubRateLimitState
+import ru.nya.nyeios.ui.common.NierCheckbox
 import ru.nya.nyeios.ui.common.NierDotRow
+import ru.nya.nyeios.ui.theme.ThemeManager
+import ru.nya.nyeios.ui.theme.NierThemeMode
 import ru.nya.nyeios.ui.theme.NierAmber
 import ru.nya.nyeios.ui.theme.NierBg
 import ru.nya.nyeios.ui.theme.NierBlue
@@ -136,25 +140,11 @@ private fun SettingsSubtabBar(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     // NieR Checkbox indicator [✕] / [☐]
-                    Box(
-                        modifier = Modifier
-                            .size(14.dp)
-                            .border(
-                                width = 1.2.dp,
-                                color = if (isSelected) NierSelectionText else NierDark,
-                                shape = RoundedCornerShape(0.dp)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (isSelected) {
-                            Text(
-                                text = "✕",
-                                color = NierSelectionText,
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
+                    NierCheckbox(
+                        checked = isSelected,
+                        color = if (isSelected) NierSelectionText else NierDark,
+                        size = 14.dp
+                    )
 
                     Text(
                         text = subtab.title,
@@ -485,6 +475,9 @@ private fun GeneralSettingsContent(
 
 @Composable
 private fun ThemeSettingsContent() {
+    val context = LocalContext.current
+    val currentTheme = ThemeManager.currentTheme
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -496,14 +489,14 @@ private fun ThemeSettingsContent() {
         NierCard {
             Column(
                 modifier = Modifier.padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                // Active theme item
+                // Theme 1: YoRHa Regular
                 ThemeItemRow(
-                    title = "NieR: Automata (YoRHa OS v2.1)",
-                    subtitle = "Индустриальная песочная палитра, геометрия без скруглений, моноширинная телеметрия",
-                    isSelected = true,
-                    enabled = true
+                    title = "YoRHa Regular (Светлая тема)",
+                    subtitle = "Классическая индустриальная палитра NieR: Automata: песочно-оливковый фон, темный контрастный текст и акценты",
+                    isSelected = currentTheme == NierThemeMode.REGULAR,
+                    onClick = { ThemeManager.setTheme(context, NierThemeMode.REGULAR) }
                 )
 
                 Box(
@@ -513,31 +506,17 @@ private fun ThemeSettingsContent() {
                         .background(NierBorderLight)
                 )
 
-                // Placeholder theme items
+                // Theme 2: YoRHa Night
                 ThemeItemRow(
-                    title = "Light Minimalist (Светлый классический)",
-                    subtitle = "Чистый белый фон, высокий контраст, минималистичные акценты [В РАЗРАБОТКЕ]",
-                    isSelected = false,
-                    enabled = false
-                )
-
-                ThemeItemRow(
-                    title = "Midnight Obsidian (Глубокий темный)",
-                    subtitle = "True Black палитра для AMOLED-экранов с неоновыми маркерами [В РАЗРАБОТКЕ]",
-                    isSelected = false,
-                    enabled = false
-                )
-
-                ThemeItemRow(
-                    title = "Terminal 9S (Янтарный монохром)",
-                    subtitle = "Винтажный монитор сканирования подсистем Pod 042 [В РАЗРАБОТКЕ]",
-                    isSelected = false,
-                    enabled = false
+                    title = "YoRHa Night (Темная тема)",
+                    subtitle = "Инвертированная палитра NieR: Automata: глубокий темный фон, теплый бежевый текст и панели",
+                    isSelected = currentTheme == NierThemeMode.NIGHT,
+                    onClick = { ThemeManager.setTheme(context, NierThemeMode.NIGHT) }
                 )
             }
         }
 
-        // Info placeholder box
+        // Info box
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -547,7 +526,7 @@ private fun ThemeSettingsContent() {
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    text = "◆ МОДУЛЬ В РАЗРАБОТКЕ ◆",
+                    text = "◆ СИСТЕМА ОФОРМЛЕНИЯ YORHA ◆",
                     color = NierDark,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
@@ -555,7 +534,7 @@ private fun ThemeSettingsContent() {
                     letterSpacing = 1.sp
                 )
                 Text(
-                    text = "Вкладка зарезервирована для переключения тем оформления и управления акцентными цветами. На данный момент активна эталонная тема YoRHa OS.",
+                    text = "При переключении на YoRHa Night основные цвета интерфейса инвертируются, обеспечивая комфортное использование в темноте при сохранении аутентичной эстетики интерфейса андроидов.",
                     color = NierDim,
                     fontSize = 11.sp,
                     lineHeight = 15.sp
@@ -570,49 +549,57 @@ private fun ThemeItemRow(
     title: String,
     subtitle: String,
     isSelected: Boolean,
-    enabled: Boolean
+    onClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .clickable { onClick() }
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .padding(top = 2.dp)
-                .size(14.dp)
-                .border(
-                    width = 1.2.dp,
-                    color = if (isSelected) NierDark else NierBorderLight,
-                    shape = RoundedCornerShape(0.dp)
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            if (isSelected) {
-                Text(
-                    text = "✕",
-                    color = NierDark,
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
+        NierCheckbox(
+            checked = isSelected,
+            color = if (isSelected) NierDark else NierBorderLight,
+            size = 14.dp,
+            modifier = Modifier.padding(top = 2.dp)
+        )
 
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                color = if (enabled) NierDark else NierDim,
-                fontSize = 12.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-                fontFamily = RajdhaniFamily
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = title,
+                    color = NierDark,
+                    fontSize = 13.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                    fontFamily = RajdhaniFamily
+                )
+                if (isSelected) {
+                    Box(
+                        modifier = Modifier
+                            .background(NierDark)
+                            .padding(horizontal = 6.dp, vertical = 1.dp)
+                    ) {
+                        Text(
+                            text = "АКТИВНО",
+                            color = NierBg,
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = RajdhaniFamily,
+                            letterSpacing = 0.5.sp
+                        )
+                    }
+                }
+            }
             Text(
                 text = subtitle,
                 color = NierDim,
                 fontSize = 10.sp,
-                lineHeight = 13.sp
+                lineHeight = 14.sp
             )
         }
     }
