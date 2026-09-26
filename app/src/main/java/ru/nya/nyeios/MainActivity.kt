@@ -456,16 +456,19 @@ class MainActivity : ComponentActivity() {
                                                 ru.nya.nyeios.ui.theme.NierThemeMode.BLACK -> Color(0xFF1A1A18)
                                                 ru.nya.nyeios.ui.theme.NierThemeMode.NIGHT -> Color(0xFF1E1A15)
                                                 ru.nya.nyeios.ui.theme.NierThemeMode.REGULAR -> Color(0xFF3A342B)
+                                                ru.nya.nyeios.ui.theme.NierThemeMode.RETRO -> Color(0xFF2E2C25)
                                             }
                                             val solidLight = when (themeMode) {
                                                 ru.nya.nyeios.ui.theme.NierThemeMode.BLACK -> Color(0xFFCAC6A8)
                                                 ru.nya.nyeios.ui.theme.NierThemeMode.NIGHT -> Color(0xFFCAC6A8)
                                                 ru.nya.nyeios.ui.theme.NierThemeMode.REGULAR -> Color(0xFFEDEAD8)
+                                                ru.nya.nyeios.ui.theme.NierThemeMode.RETRO -> Color(0xFFE7E4D0)
                                             }
                                             val solidBorder = when (themeMode) {
                                                 ru.nya.nyeios.ui.theme.NierThemeMode.BLACK -> Color(0xFFCAC6A8)
                                                 ru.nya.nyeios.ui.theme.NierThemeMode.NIGHT -> Color(0xFFCAC6A8)
                                                 ru.nya.nyeios.ui.theme.NierThemeMode.REGULAR -> Color(0xFF3A342B)
+                                                ru.nya.nyeios.ui.theme.NierThemeMode.RETRO -> Color(0xFF4A4740)
                                             }
 
                                             val squareBg = if (isRefreshBlinking) {

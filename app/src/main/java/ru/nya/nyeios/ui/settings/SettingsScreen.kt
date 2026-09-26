@@ -45,6 +45,8 @@ import ru.nya.nyeios.ui.common.NierCheckbox
 import ru.nya.nyeios.ui.common.NierDotRow
 import ru.nya.nyeios.ui.theme.ThemeManager
 import ru.nya.nyeios.ui.theme.NierThemeMode
+import ru.nya.nyeios.ui.theme.UiPreferencesManager
+import ru.nya.nyeios.ui.theme.ListDensityMode
 import ru.nya.nyeios.ui.theme.NierAmber
 import ru.nya.nyeios.ui.theme.NierBg
 import ru.nya.nyeios.ui.theme.NierBlue
@@ -489,10 +491,12 @@ private fun GeneralSettingsContent(
 private fun ThemeSettingsContent() {
     val context = LocalContext.current
     val currentTheme = ThemeManager.currentTheme
+    val scrollState = rememberScrollState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(scrollState)
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
@@ -540,7 +544,156 @@ private fun ThemeSettingsContent() {
                     isSelected = currentTheme == NierThemeMode.BLACK,
                     onClick = { ThemeManager.setTheme(context, NierThemeMode.BLACK) }
                 )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(NierBorderLight)
+                )
+
+                // Theme 4: YoRHa Retro
+                ThemeItemRow(
+                    title = "YoRHa Retro (Винтажная тема)",
+                    subtitle = "Аутентичный теплый песочный холст, глубокие чернила и насыщенный синий акцент терминала",
+                    isSelected = currentTheme == NierThemeMode.RETRO,
+                    onClick = { ThemeManager.setTheme(context, NierThemeMode.RETRO) }
+                )
             }
+        }
+
+        // ── 02. ИНТЕРФЕЙС ─────────────────────────────────────────────────
+        SectionHeader(title = "[ 02 · ИНТЕРФЕЙС ]")
+
+        NierCard {
+            Column {
+                NierToggleRow(
+                    title = "Крупный шрифт расписания",
+                    subtitle = "ПРАВИЛО 1 СЕКУНДЫ · +2 DP",
+                    checked = UiPreferencesManager.largeScheduleFont,
+                    onCheckedChange = { UiPreferencesManager.setLargeScheduleFont(context, it) }
+                )
+
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(NierBorderLight))
+
+                NierToggleRow(
+                    title = "Анимации переходов",
+                    subtitle = "ШТОРКИ, МАРШРУТЫ, ШЕВРОНЫ",
+                    checked = UiPreferencesManager.animationsEnabled,
+                    onCheckedChange = { UiPreferencesManager.setAnimationsEnabled(context, it) }
+                )
+
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(NierBorderLight))
+
+                NierToggleRow(
+                    title = "Усиленный контраст рамок",
+                    subtitle = "1 DP → 2 DP BORDER",
+                    checked = UiPreferencesManager.thickBorders,
+                    onCheckedChange = { UiPreferencesManager.setThickBorders(context, it) }
+                )
+
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(NierBorderLight))
+
+                NierToggleRow(
+                    title = "Секунды в индикаторе свежести",
+                    subtitle = "ФОРМАТ ЧЧ:ММ:СС",
+                    checked = UiPreferencesManager.showSecondsInSync,
+                    onCheckedChange = { UiPreferencesManager.setShowSecondsInSync(context, it) }
+                )
+            }
+        }
+
+        // ── 03. ПЛОТНОСТЬ СПИСКОВ ─────────────────────────────────────────
+        SectionHeader(title = "[ 03 · ПЛОТНОСТЬ СПИСКОВ ]")
+
+        NierCard {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                ListDensityMode.entries.forEach { density ->
+                    val isSelected = density == UiPreferencesManager.listDensity
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(34.dp)
+                            .background(if (isSelected) NierBlue else NierPanelAlt)
+                            .border(
+                                width = 1.dp,
+                                color = if (isSelected) NierBlue else NierBorderLight,
+                                shape = RoundedCornerShape(0.dp)
+                            )
+                            .clickable { UiPreferencesManager.setListDensity(context, density) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = density.title,
+                            color = if (isSelected) Color.White else NierDark,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = RajdhaniFamily,
+                            letterSpacing = 0.8.sp
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+@Composable
+private fun NierToggleRow(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!checked) }
+            .padding(horizontal = 12.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                color = NierDark,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = RajdhaniFamily
+            )
+            Text(
+                text = subtitle,
+                color = NierDim,
+                fontSize = 9.5.sp,
+                fontFamily = ShareTechMonoFamily,
+                letterSpacing = 0.5.sp
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .size(width = 42.dp, height = 22.dp)
+                .background(if (checked) NierBlue.copy(alpha = 0.15f) else Color.Transparent)
+                .border(
+                    width = 1.dp,
+                    color = if (checked) NierBlue else NierBorderLight,
+                    shape = RoundedCornerShape(0.dp)
+                )
+                .padding(2.dp),
+            contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(16.dp)
+                    .background(if (checked) NierBlue else NierDim)
+            )
         }
     }
 }

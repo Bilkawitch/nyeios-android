@@ -12,12 +12,24 @@ import ru.nya.nyeios.ui.theme.NierThemeMode
 class ThemeManagerTest {
 
     @Test
-    fun `theme modes include regular, night and black`() {
+    fun `theme modes include regular, night, black and retro`() {
         val modes = NierThemeMode.entries
-        assertEquals(3, modes.size)
+        assertEquals(4, modes.size)
         assertEquals("regular", NierThemeMode.REGULAR.id)
         assertEquals("night", NierThemeMode.NIGHT.id)
         assertEquals("black", NierThemeMode.BLACK.id)
+        assertEquals("retro", NierThemeMode.RETRO.id)
+    }
+
+    @Test
+    fun `retro theme has authentic sand background and ink primary`() {
+        val bg = ru.nya.nyeios.ui.theme.NierPaletteRetro.bg
+        val dark = ru.nya.nyeios.ui.theme.NierPaletteRetro.dark
+        val blue = ru.nya.nyeios.ui.theme.NierPaletteRetro.blue
+
+        assertEquals(Color(0xFFDBD8C2), bg)
+        assertEquals(Color(0xFF2E2C25), dark)
+        assertEquals(Color(0xFF1B6ED1), blue)
     }
 
     @Test

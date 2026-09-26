@@ -72,113 +72,153 @@ object NierPaletteBlack {
     val magenta = Color(0xFFF06292)      // Floor navigation accent
 }
 
+object NierPaletteRetro {
+    // Authentic vintage terminal YoRHa palette from redesign mockup
+    val bg = Color(0xFFDBD8C2)          // Sand 200: main application canvas
+    val panel = Color(0xFFE7E4D0)       // Sand 100: primary panel, cards
+    val panelAlt = Color(0xFFF2F0E1)    // Sand 50: lighter card background
+    val surface = Color(0xFFCFCBB2)     // Sand 300: strip, table header, dividers
+    val dark = Color(0xFF2E2C25)        // Ink 900: primary deep ink text
+    val darkSecondary = Color(0xFF3A382F)// Ink 800: secondary ink
+    val border = Color(0xFF4A4740)      // Ink 700: heavy 1dp / 2dp border
+    val borderLight = Color(0xFF8D8873) // Ink 400: subtle border
+    val selection = Color(0xFF2E2C25)   // Ink 900: selected item block
+    val selectionText = Color(0xFFF2F0E1)// Sand 50: text on selection
+    val highlight = Color(0xFF736F5D)   // Ink 500: highlight
+    val dim = Color(0xFF736F5D)         // Ink 500: timestamps and telemetry
+    val blue = Color(0xFF1B6ED1)        // Signal blue: vibrant tactical accent
+    val green = Color(0xFF2C7D4E)       // OK green: success, live
+    val amber = Color(0xFFAC7415)       // Warn amber: caution, intermediate
+    val red = Color(0xFFA53525)         // Alert red: error, critical
+    val purple = Color(0xFF6A4A9C)      // Plum: secondary discipline
+    val magenta = Color(0xFFD946EF)     // Multi-floor magenta
+}
+
 // Dynamic properties reflecting active theme
 val NierBg: Color get() = when (ThemeManager.currentTheme) {
     NierThemeMode.REGULAR -> NierPaletteRegular.bg
     NierThemeMode.NIGHT -> NierPaletteNight.bg
     NierThemeMode.BLACK -> NierPaletteBlack.bg
+    NierThemeMode.RETRO -> NierPaletteRetro.bg
 }
 
 val NierPanel: Color get() = when (ThemeManager.currentTheme) {
     NierThemeMode.REGULAR -> NierPaletteRegular.panel
     NierThemeMode.NIGHT -> NierPaletteNight.panel
     NierThemeMode.BLACK -> NierPaletteBlack.panel
+    NierThemeMode.RETRO -> NierPaletteRetro.panel
 }
 
 val NierPanelAlt: Color get() = when (ThemeManager.currentTheme) {
     NierThemeMode.REGULAR -> NierPaletteRegular.panelAlt
     NierThemeMode.NIGHT -> NierPaletteNight.panelAlt
     NierThemeMode.BLACK -> NierPaletteBlack.panelAlt
+    NierThemeMode.RETRO -> NierPaletteRetro.panelAlt
 }
 
 val NierSurface: Color get() = when (ThemeManager.currentTheme) {
     NierThemeMode.REGULAR -> NierPaletteRegular.surface
     NierThemeMode.NIGHT -> NierPaletteNight.surface
     NierThemeMode.BLACK -> NierPaletteBlack.surface
+    NierThemeMode.RETRO -> NierPaletteRetro.surface
 }
 
 val NierDark: Color get() = when (ThemeManager.currentTheme) {
     NierThemeMode.REGULAR -> NierPaletteRegular.dark
     NierThemeMode.NIGHT -> NierPaletteNight.dark
     NierThemeMode.BLACK -> NierPaletteBlack.dark
+    NierThemeMode.RETRO -> NierPaletteRetro.dark
 }
 
 val NierDarkSecondary: Color get() = when (ThemeManager.currentTheme) {
     NierThemeMode.REGULAR -> NierPaletteRegular.darkSecondary
     NierThemeMode.NIGHT -> NierPaletteNight.darkSecondary
     NierThemeMode.BLACK -> NierPaletteBlack.darkSecondary
+    NierThemeMode.RETRO -> NierPaletteRetro.darkSecondary
 }
 
 val NierBorder: Color get() = when (ThemeManager.currentTheme) {
     NierThemeMode.REGULAR -> NierPaletteRegular.border
     NierThemeMode.NIGHT -> NierPaletteNight.border
     NierThemeMode.BLACK -> NierPaletteBlack.border
+    NierThemeMode.RETRO -> NierPaletteRetro.border
 }
 
 val NierBorderLight: Color get() = when (ThemeManager.currentTheme) {
     NierThemeMode.REGULAR -> NierPaletteRegular.borderLight
     NierThemeMode.NIGHT -> NierPaletteNight.borderLight
     NierThemeMode.BLACK -> NierPaletteBlack.borderLight
+    NierThemeMode.RETRO -> NierPaletteRetro.borderLight
 }
 
 val NierSelection: Color get() = when (ThemeManager.currentTheme) {
     NierThemeMode.REGULAR -> NierPaletteRegular.selection
     NierThemeMode.NIGHT -> NierPaletteNight.selection
     NierThemeMode.BLACK -> NierPaletteBlack.selection
+    NierThemeMode.RETRO -> NierPaletteRetro.selection
 }
 
 val NierSelectionText: Color get() = when (ThemeManager.currentTheme) {
     NierThemeMode.REGULAR -> NierPaletteRegular.selectionText
     NierThemeMode.NIGHT -> NierPaletteNight.selectionText
     NierThemeMode.BLACK -> NierPaletteBlack.selectionText
+    NierThemeMode.RETRO -> NierPaletteRetro.selectionText
 }
 
 val NierHighlight: Color get() = when (ThemeManager.currentTheme) {
     NierThemeMode.REGULAR -> NierPaletteRegular.highlight
     NierThemeMode.NIGHT -> NierPaletteNight.highlight
     NierThemeMode.BLACK -> NierPaletteBlack.highlight
+    NierThemeMode.RETRO -> NierPaletteRetro.highlight
 }
 
 val NierDim: Color get() = when (ThemeManager.currentTheme) {
     NierThemeMode.REGULAR -> NierPaletteRegular.dim
     NierThemeMode.NIGHT -> NierPaletteNight.dim
     NierThemeMode.BLACK -> NierPaletteBlack.dim
+    NierThemeMode.RETRO -> NierPaletteRetro.dim
 }
 
 val NierBlue: Color get() = when (ThemeManager.currentTheme) {
     NierThemeMode.REGULAR -> NierPaletteRegular.blue
     NierThemeMode.NIGHT -> NierPaletteNight.blue
     NierThemeMode.BLACK -> NierPaletteBlack.blue
+    NierThemeMode.RETRO -> NierPaletteRetro.blue
 }
 
 val NierGreen: Color get() = when (ThemeManager.currentTheme) {
     NierThemeMode.REGULAR -> NierPaletteRegular.green
     NierThemeMode.NIGHT -> NierPaletteNight.green
     NierThemeMode.BLACK -> NierPaletteBlack.green
+    NierThemeMode.RETRO -> NierPaletteRetro.green
 }
 
 val NierAmber: Color get() = when (ThemeManager.currentTheme) {
     NierThemeMode.REGULAR -> NierPaletteRegular.amber
     NierThemeMode.NIGHT -> NierPaletteNight.amber
     NierThemeMode.BLACK -> NierPaletteBlack.amber
+    NierThemeMode.RETRO -> NierPaletteRetro.amber
 }
 
 val NierRed: Color get() = when (ThemeManager.currentTheme) {
     NierThemeMode.REGULAR -> NierPaletteRegular.red
     NierThemeMode.NIGHT -> NierPaletteNight.red
     NierThemeMode.BLACK -> NierPaletteBlack.red
+    NierThemeMode.RETRO -> NierPaletteRetro.red
 }
 
 val NierPurple: Color get() = when (ThemeManager.currentTheme) {
     NierThemeMode.REGULAR -> NierPaletteRegular.purple
     NierThemeMode.NIGHT -> NierPaletteNight.purple
     NierThemeMode.BLACK -> NierPaletteBlack.purple
+    NierThemeMode.RETRO -> NierPaletteRetro.purple
 }
 
 val NierMagenta: Color get() = when (ThemeManager.currentTheme) {
     NierThemeMode.REGULAR -> NierPaletteRegular.magenta
     NierThemeMode.NIGHT -> NierPaletteNight.magenta
     NierThemeMode.BLACK -> NierPaletteBlack.magenta
+    NierThemeMode.RETRO -> NierPaletteRetro.magenta
 }
 
 // Compatibility Mappings
