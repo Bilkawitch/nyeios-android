@@ -81,6 +81,7 @@ import ru.nya.nyeios.data.model.CurriculumUiState
 import ru.nya.nyeios.data.model.FeedUiState
 import ru.nya.nyeios.data.model.ScheduleUiState
 import ru.nya.nyeios.ui.auth.LoginBottomSheet
+import ru.nya.nyeios.ui.auth.NycLoginGate
 import ru.nya.nyeios.ui.auth.LoginFullscreenGate
 import ru.nya.nyeios.ui.debug.NetworkLogsBottomSheet
 import ru.nya.nyeios.ui.curriculum.CurriculumScreen
@@ -744,14 +745,25 @@ class MainActivity : ComponentActivity() {
                             // Covers the entire content area (below TopAppBar, above BottomBar).
                             // NetworkLogsBottomSheet is still accessible via the title tap.
                             if (!authSession.isLoggedIn) {
-                                LoginFullscreenGate(
-                                    authSession = authSession,
-                                    isLoggingIn = isLoggingIn,
-                                    errorMessage = loginError,
-                                    onLogin = { u, p ->
-                                        scheduleViewModel.performLogin(u, p)
-                                    }
-                                )
+                                if (isNycModern) {
+                                    NycLoginGate(
+                                        authSession = authSession,
+                                        isLoggingIn = isLoggingIn,
+                                        errorMessage = loginError,
+                                        onLogin = { u, p ->
+                                            scheduleViewModel.performLogin(u, p)
+                                        }
+                                    )
+                                } else {
+                                    LoginFullscreenGate(
+                                        authSession = authSession,
+                                        isLoggingIn = isLoggingIn,
+                                        errorMessage = loginError,
+                                        onLogin = { u, p ->
+                                            scheduleViewModel.performLogin(u, p)
+                                        }
+                                    )
+                                }
                             }
 
                             if (isLoginSheetVisible) {
