@@ -600,6 +600,14 @@ fun DaySelectorRow(
                                 size = androidx.compose.ui.geometry.Size(size.width, 2.5.dp.toPx())
                             )
                         }
+                        // Today top indicator bar
+                        if (day.isToday) {
+                            drawRect(
+                                color = ru.nya.nyeios.ui.theme.NierBlue,
+                                topLeft = Offset(0f, 0f),
+                                size = androidx.compose.ui.geometry.Size(size.width, 2.5.dp.toPx())
+                            )
+                        }
                     },
                 contentAlignment = Alignment.Center
             ) {
