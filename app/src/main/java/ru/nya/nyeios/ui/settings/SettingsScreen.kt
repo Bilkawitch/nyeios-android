@@ -63,10 +63,13 @@ import ru.nya.nyeios.ui.theme.ShareTechMonoFamily
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import ru.nya.nyeios.data.model.UpdateInfo
+import ru.nya.nyeios.ui.update.UpdateViewModel
 
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
+    updateViewModel: UpdateViewModel? = null,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -76,7 +79,7 @@ fun SettingsScreen(
             .fillMaxSize()
             .background(NierBg)
     ) {
-        // Subtabs Selector (ОБЩЕЕ / ТЕМА)
+        // Subtabs Selector (ОБЩЕЕ / ТЕМА / ВЕРСИЯ)
         SettingsSubtabBar(
             currentSubtab = uiState.currentSubtab,
             onSelectSubtab = { viewModel.selectSubtab(it) }
@@ -101,6 +104,15 @@ fun SettingsScreen(
                 }
                 SettingsSubtab.THEME -> {
                     ThemeSettingsContent()
+                }
+                SettingsSubtab.VERSION -> {
+                    VersionSettingsContent(
+                        uiState = uiState,
+                        onCheckForUpdates = { viewModel.checkForUpdates() },
+                        onDownloadUpdate = { info ->
+                            updateViewModel?.downloadApk(info)
+                        }
+                    )
                 }
             }
         }
@@ -805,3 +817,286 @@ private fun NieROutlineButton(
         )
     }
 }
+
+@Composable
+private fun VersionSettingsContent(
+    uiState: SettingsUiState,
+    onCheckForUpdates: () -> Unit,
+    onDownloadUpdate: (UpdateInfo) -> Unit
+) {
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        // ── 01. СВЕДЕНИЯ О ВЕРСИИ СИСТЕМЫ ─────────────────────────────────
+        SectionHeader(title = "[ 01 · СВЕДЕНИЯ О ВЕРСИИ СИСТЕМЫ ]")
+
+        NierCard {
+            Column(
+                modifier = Modifier.padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(46.dp)
+                            .background(NierDark)
+                            .border(1.dp, NierBorderLight, RoundedCornerShape(0.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Ny",
+                            color = NierBg,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = RajdhaniFamily
+                        )
+                    }
+
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            text = "NyEIOS // EIOS CLIENT",
+                            color = NierDark,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = RajdhaniFamily,
+                            letterSpacing = 0.5.sp
+                        )
+                        Text(
+                            text = "ВЕРСИЯ: v${uiState.currentVersion.ifEmpty { "0.2.3" }} (BUILD 17)",
+                            color = NierDim,
+                            fontSize = 12.sp,
+                            fontFamily = ShareTechMonoFamily
+                        )
+
+                        val update = uiState.availableUpdate
+                        if (update != null) {
+                            Box(
+                                modifier = Modifier
+                                    .padding(top = 2.dp)
+                                    .background(NierAmber.copy(alpha = 0.15f))
+                                    .border(1.dp, NierAmber, RoundedCornerShape(0.dp))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "ДОСТУПНА v${update.version}",
+                                    color = NierAmber,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = RajdhaniFamily,
+                                    letterSpacing = 0.5.sp
+                                )
+                            }
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .padding(top = 2.dp)
+                                    .background(NierGreen.copy(alpha = 0.15f))
+                                    .border(1.dp, NierGreen, RoundedCornerShape(0.dp))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "АКТУАЛЬНАЯ ВЕРСИЯ",
+                                    color = NierGreen,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = RajdhaniFamily,
+                                    letterSpacing = 0.5.sp
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(NierBorderLight)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        val rem = uiState.githubRateLimit.remaining
+                        Text(
+                            text = "GITHUB API КВОТА: ${if (rem != null) "$rem/60" else "60/60"}",
+                            color = NierDim,
+                            fontSize = 10.sp,
+                            fontFamily = ShareTechMonoFamily
+                        )
+                        if (!uiState.updateCheckStatus.isNullOrEmpty()) {
+                            Text(
+                                text = uiState.updateCheckStatus,
+                                color = if (uiState.availableUpdate != null) NierAmber else NierDark,
+                                fontSize = 11.sp,
+                                fontFamily = ShareTechMonoFamily
+                            )
+                        }
+                    }
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NieROutlineButton(
+                            text = if (uiState.isCheckingUpdate) "ПРОВЕРКА..." else "ПРОВЕРИТЬ",
+                            enabled = !uiState.isCheckingUpdate,
+                            color = NierBlue,
+                            onClick = onCheckForUpdates
+                        )
+                        if (uiState.availableUpdate != null) {
+                            NieROutlineButton(
+                                text = "СКАЧАТЬ",
+                                color = NierGreen,
+                                onClick = { onDownloadUpdate(uiState.availableUpdate) }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── 02. ИСТОРИЯ ИЗМЕНЕНИЙ // CHANGELOG ────────────────────────────
+        SectionHeader(title = "[ 02 · ИСТОРИЯ ИЗМЕНЕНИЙ // CHANGELOG ]")
+
+        ChangelogHistory.releases.forEach { release ->
+            val isCurrentInstalled = release.version == uiState.currentVersion || (uiState.currentVersion.isEmpty() && release.isLatest)
+
+            NierCard {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    // Header row: version, tags, date
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "v${release.version}",
+                                color = NierDark,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = RajdhaniFamily
+                            )
+
+                            if (release.isLatest) {
+                                Box(
+                                    modifier = Modifier
+                                        .background(NierDark)
+                                        .padding(horizontal = 6.dp, vertical = 1.dp)
+                                ) {
+                                    Text(
+                                        text = "LATEST",
+                                        color = NierBg,
+                                        fontSize = 8.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = RajdhaniFamily,
+                                        letterSpacing = 0.5.sp
+                                    )
+                                }
+                            }
+
+                            if (isCurrentInstalled) {
+                                Box(
+                                    modifier = Modifier
+                                        .background(NierSelection)
+                                        .border(1.dp, NierDark, RoundedCornerShape(0.dp))
+                                        .padding(horizontal = 6.dp, vertical = 1.dp)
+                                ) {
+                                    Text(
+                                        text = "УСТАНОВЛЕНА",
+                                        color = NierSelectionText,
+                                        fontSize = 8.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = RajdhaniFamily,
+                                        letterSpacing = 0.5.sp
+                                    )
+                                }
+                            }
+                        }
+
+                        Text(
+                            text = release.releaseDate,
+                            color = NierDim,
+                            fontSize = 11.sp,
+                            fontFamily = ShareTechMonoFamily
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(NierBorderLight)
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        release.sections.forEach { section ->
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(
+                                    text = "■  ${section.title}",
+                                    color = NierDark,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = RajdhaniFamily,
+                                    letterSpacing = 0.6.sp
+                                )
+
+                                section.items.forEach { item ->
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(start = 6.dp),
+                                        verticalAlignment = Alignment.Top,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Text(
+                                            text = "—",
+                                            color = NierDim,
+                                            fontSize = 11.sp,
+                                            fontFamily = ShareTechMonoFamily
+                                        )
+                                        Text(
+                                            text = item,
+                                            color = NierDark,
+                                            fontSize = 11.sp,
+                                            fontFamily = ShareTechMonoFamily,
+                                            lineHeight = 15.sp,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+

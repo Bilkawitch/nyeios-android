@@ -614,7 +614,8 @@ class MainActivity : ComponentActivity() {
                                             onOpenLogin = { scheduleViewModel.showLoginSheet() }
                                         )
                                         3 -> SettingsScreen(
-                                            viewModel = settingsViewModel
+                                            viewModel = settingsViewModel,
+                                            updateViewModel = updateViewModel
                                         )
                                     }
                                 }

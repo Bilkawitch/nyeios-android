@@ -3,20 +3,24 @@ package ru.nya.nyeios.ui.settings
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import ru.nya.nyeios.data.model.UpdateInfo
 import ru.nya.nyeios.data.net.EiosLastGetInfo
 import ru.nya.nyeios.data.net.NetworkMetricsTracker
 import ru.nya.nyeios.data.net.PingResult
+import ru.nya.nyeios.data.update.AppVersionProvider
 import ru.nya.nyeios.data.update.GithubRateLimitState
 import ru.nya.nyeios.data.update.UpdateRepository
 
 enum class SettingsSubtab(val title: String) {
     GENERAL("ОБЩЕЕ"),
-    THEME("ТЕМА")
+    THEME("ТЕМА"),
+    VERSION("ВЕРСИЯ")
 }
 
 data class SettingsUiState(
@@ -29,7 +33,11 @@ data class SettingsUiState(
     val networkType: String = "НЕИЗВЕСТНО",
     val isVpnActive: Boolean = false,
     val isMeasuringPing: Boolean = false,
-    val isFetchingIp: Boolean = false
+    val isFetchingIp: Boolean = false,
+    val currentVersion: String = "",
+    val isCheckingUpdate: Boolean = false,
+    val updateCheckStatus: String? = null,
+    val availableUpdate: UpdateInfo? = null
 )
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
@@ -44,7 +52,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             externalIp = metricsTracker.externalIp.value,
             localIp = metricsTracker.getLocalIpAddress(),
             networkType = metricsTracker.getNetworkTypeName(),
-            isVpnActive = metricsTracker.isVpnActive()
+            isVpnActive = metricsTracker.isVpnActive(),
+            currentVersion = AppVersionProvider.getVersionName(application)
         )
     )
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
@@ -82,8 +91,60 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun selectSubtab(subtab: SettingsSubtab) {
         _uiState.update { it.copy(currentSubtab = subtab) }
-        if (subtab == SettingsSubtab.GENERAL) {
-            refreshLocalNetworkInfo()
+        when (subtab) {
+            SettingsSubtab.GENERAL -> refreshLocalNetworkInfo()
+            SettingsSubtab.VERSION -> {
+                val rateLimit = updateRepository.getSavedRateLimit()
+                val ver = AppVersionProvider.getVersionName(getApplication())
+                _uiState.update {
+                    it.copy(
+                        githubRateLimit = rateLimit,
+                        currentVersion = ver
+                    )
+                }
+            }
+            SettingsSubtab.THEME -> Unit
+        }
+    }
+
+    fun checkForUpdates() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _uiState.update {
+                it.copy(
+                    isCheckingUpdate = true,
+                    updateCheckStatus = "ПРОВЕРКА ОБНОВЛЕНИЙ НА GITHUB..."
+                )
+            }
+            try {
+                val update = updateRepository.checkForUpdate(forceCheck = true)
+                val rateLimit = updateRepository.getSavedRateLimit()
+                if (update != null) {
+                    _uiState.update {
+                        it.copy(
+                            isCheckingUpdate = false,
+                            availableUpdate = update,
+                            updateCheckStatus = "ДОСТУПНО ОБНОВЛЕНИЕ: v${update.version}",
+                            githubRateLimit = rateLimit
+                        )
+                    }
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            isCheckingUpdate = false,
+                            availableUpdate = null,
+                            updateCheckStatus = "УСТАНОВЛЕНА ПОСЛЕДНЯЯ ВЕРСИЯ (ОБНОВЛЕНИЙ НЕТ)",
+                            githubRateLimit = rateLimit
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isCheckingUpdate = false,
+                        updateCheckStatus = "ОШИБКА ПРОВЕРКИ: ${e.message}"
+                    )
+                }
+            }
         }
     }
 
