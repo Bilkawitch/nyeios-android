@@ -270,6 +270,11 @@ fun FeedScreen(
                 }
             }
 
+            FeedUiState.NotLoggedIn -> {
+                // Content is obscured by LoginFullscreenGate in MainActivity
+                Box(modifier = Modifier.fillMaxSize())
+            }
+
             is FeedUiState.Error -> {
                 Box(
                     modifier = Modifier

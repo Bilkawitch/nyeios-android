@@ -43,9 +43,29 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     val loginError: StateFlow<String?> = _loginError.asStateFlow()
 
     private var scheduleJob: kotlinx.coroutines.Job? = null
+    private var wasLoggedIn: Boolean = repository.authSession.value.isLoggedIn
 
     init {
-        loadSchedule(0, forceNetwork = false)
+        if (repository.authSession.value.isLoggedIn) {
+            loadSchedule(0, forceNetwork = false)
+        } else {
+            _uiState.value = ScheduleUiState.NotLoggedIn
+        }
+
+        // React to auth state changes
+        viewModelScope.launch {
+            authSession.collect { session ->
+                val isLoggedIn = session.isLoggedIn
+                if (isLoggedIn && !wasLoggedIn) {
+                    wasLoggedIn = true
+                    loadSchedule(0, forceNetwork = true)
+                } else if (!isLoggedIn && wasLoggedIn) {
+                    wasLoggedIn = false
+                    scheduleJob?.cancel()
+                    _uiState.value = ScheduleUiState.NotLoggedIn
+                }
+            }
+        }
     }
 
     private fun getInitialDayIndex(): Int {
@@ -54,6 +74,10 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun loadSchedule(offset: Int, forceNetwork: Boolean = false) {
+        if (!authSession.value.isLoggedIn) {
+            _uiState.value = ScheduleUiState.NotLoggedIn
+            return
+        }
         scheduleJob?.cancel()
         _weekOffset.value = offset
         scheduleJob = viewModelScope.launch {
@@ -129,8 +153,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
 
             result.onSuccess {
                 hideLoginSheet()
-                // Auto reload schedule with new session
-                refresh()
+                // Auth state change collector above will auto-trigger refresh
             }.onFailure { error ->
                 _loginError.value = error.localizedMessage ?: "Ошибка авторизации"
             }

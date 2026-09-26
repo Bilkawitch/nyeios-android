@@ -4,8 +4,10 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import ru.nya.nyeios.data.model.CurriculumTerm
 import ru.nya.nyeios.data.model.CurriculumUiState
@@ -22,12 +24,36 @@ class CurriculumViewModel(application: Application) : AndroidViewModel(applicati
     val selectedTermNum: StateFlow<Int?> = _selectedTermNum.asStateFlow()
 
     private var curriculumJob: kotlinx.coroutines.Job? = null
+    private var wasLoggedIn: Boolean = repository.authSession.value.isLoggedIn
+
+    private val authSession = repository.authSession
+        .stateIn(viewModelScope, SharingStarted.Eagerly, repository.authSession.value)
 
     init {
         loadCachedOnly()
+
+        // React to auth state changes
+        viewModelScope.launch {
+            authSession.collect { session ->
+                val isLoggedIn = session.isLoggedIn
+                if (!isLoggedIn && wasLoggedIn) {
+                    wasLoggedIn = false
+                    curriculumJob?.cancel()
+                    _uiState.value = CurriculumUiState.NotLoggedIn
+                } else if (isLoggedIn && !wasLoggedIn) {
+                    wasLoggedIn = true
+                    // User just logged in — load from cache first, then let them refresh
+                    loadCachedOnly()
+                }
+            }
+        }
     }
 
     private fun loadCachedOnly() {
+        if (!repository.authSession.value.isLoggedIn) {
+            _uiState.value = CurriculumUiState.NotLoggedIn
+            return
+        }
         val cached = repository.getCachedCurriculum()
         if (cached != null) {
             val chosenTermNum = cached.firstOrNull { it.isCurrent }?.termNum
@@ -40,9 +66,14 @@ class CurriculumViewModel(application: Application) : AndroidViewModel(applicati
                 isRefreshing = false
             )
         }
+        // If no cache and logged in, stay in Loading — user will refresh
     }
 
     fun loadCurriculum(forceNetwork: Boolean = false) {
+        if (!repository.isUserLoggedIn()) {
+            _uiState.value = CurriculumUiState.NotLoggedIn
+            return
+        }
         curriculumJob?.cancel()
         curriculumJob = viewModelScope.launch {
             val currentTerms = (_uiState.value as? CurriculumUiState.Success)?.terms

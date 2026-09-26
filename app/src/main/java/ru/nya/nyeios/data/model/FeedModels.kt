@@ -18,6 +18,7 @@ data class FeedPost(
 
 sealed interface FeedUiState {
     data object Loading : FeedUiState
+    data object NotLoggedIn : FeedUiState
     data class Success(
         val posts: List<FeedPost>,
         val isRefreshing: Boolean = false

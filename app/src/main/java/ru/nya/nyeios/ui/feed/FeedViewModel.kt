@@ -4,8 +4,10 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import ru.nya.nyeios.data.model.FeedUiState
 import ru.nya.nyeios.data.repository.EiosRepository
@@ -32,14 +34,43 @@ class FeedViewModel(application: Application) : AndroidViewModel(application) {
     val isDownloadsSheetVisible: StateFlow<Boolean> = _isDownloadsSheetVisible.asStateFlow()
 
     private var feedJob: kotlinx.coroutines.Job? = null
+    private var wasLoggedIn: Boolean = repository.authSession.value.isLoggedIn
+
+    private val authSession = repository.authSession
+        .stateIn(viewModelScope, SharingStarted.Eagerly, repository.authSession.value)
 
     init {
         loadCachedOnly()
+
+        // React to auth state changes
+        viewModelScope.launch {
+            authSession.collect { session ->
+                val isLoggedIn = session.isLoggedIn
+                if (!isLoggedIn && wasLoggedIn) {
+                    wasLoggedIn = false
+                    feedJob?.cancel()
+                    // Keep cached posts in Success but update wasLoggedIn flag
+                    val cached = (_uiState.value as? FeedUiState.Success)?.posts
+                    if (cached == null) {
+                        _uiState.value = FeedUiState.NotLoggedIn
+                    }
+                } else if (isLoggedIn && !wasLoggedIn) {
+                    wasLoggedIn = true
+                    // When user logs in, stay with cached view — they'll sync manually
+                }
+            }
+        }
     }
 
     private fun loadCachedOnly() {
         val cached = repository.getCachedFeed()
-        _uiState.value = FeedUiState.Success(cached ?: emptyList())
+        if (cached != null && cached.isNotEmpty()) {
+            _uiState.value = FeedUiState.Success(cached)
+        } else if (!repository.authSession.value.isLoggedIn) {
+            _uiState.value = FeedUiState.NotLoggedIn
+        } else {
+            _uiState.value = FeedUiState.Success(emptyList())
+        }
     }
 
     fun showDownloadsSheet() {
@@ -102,6 +133,7 @@ class FeedViewModel(application: Application) : AndroidViewModel(application) {
     val showSyncConfirmationDialog: StateFlow<Boolean> = _showSyncConfirmationDialog.asStateFlow()
 
     fun requestSyncFeed() {
+        if (!repository.isUserLoggedIn()) return
         _showSyncConfirmationDialog.value = true
     }
 
@@ -122,6 +154,10 @@ class FeedViewModel(application: Application) : AndroidViewModel(application) {
     fun isUserLoggedIn(): Boolean = repository.isUserLoggedIn()
 
     fun loadFeed(forceNetwork: Boolean = false) {
+        if (!repository.isUserLoggedIn()) {
+            _uiState.value = FeedUiState.NotLoggedIn
+            return
+        }
         feedJob?.cancel()
         feedJob = viewModelScope.launch {
             val currentPosts = (_uiState.value as? FeedUiState.Success)?.posts

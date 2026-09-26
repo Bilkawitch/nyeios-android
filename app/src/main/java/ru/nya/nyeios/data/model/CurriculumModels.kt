@@ -32,6 +32,7 @@ data class CurriculumTerm(
 
 sealed interface CurriculumUiState {
     data object Loading : CurriculumUiState
+    data object NotLoggedIn : CurriculumUiState
     data class Success(
         val terms: List<CurriculumTerm>,
         val selectedTermNum: Int,

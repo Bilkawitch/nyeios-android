@@ -88,6 +88,11 @@ fun CurriculumScreen(
                 }
             }
 
+            CurriculumUiState.NotLoggedIn -> {
+                // Content is obscured by LoginFullscreenGate in MainActivity
+                Box(modifier = Modifier.fillMaxSize())
+            }
+
             is CurriculumUiState.Error -> {
                 Box(
                     modifier = Modifier

@@ -80,6 +80,7 @@ import ru.nya.nyeios.data.model.CurriculumUiState
 import ru.nya.nyeios.data.model.FeedUiState
 import ru.nya.nyeios.data.model.ScheduleUiState
 import ru.nya.nyeios.ui.auth.LoginBottomSheet
+import ru.nya.nyeios.ui.auth.LoginFullscreenGate
 import ru.nya.nyeios.ui.debug.NetworkLogsBottomSheet
 import ru.nya.nyeios.ui.curriculum.CurriculumScreen
 import ru.nya.nyeios.ui.curriculum.CurriculumViewModel
@@ -176,7 +177,8 @@ class MainActivity : ComponentActivity() {
                     val syncState = ru.nya.nyeios.ui.common.SyncStatusUtils.getSyncState(lastSyncTime, currentTimeMs)
                     val isRefreshBlinking = syncState == ru.nya.nyeios.ui.common.SyncState.STALE && !isRefreshing
 
-                    LaunchedEffect(currentTab) {
+                    LaunchedEffect(currentTab, authSession.isLoggedIn) {
+                        if (!authSession.isLoggedIn) return@LaunchedEffect
                         when (currentTab) {
                             1 -> if (feedUiState !is FeedUiState.Success) feedViewModel.loadFeed(forceNetwork = false)
                             2 -> if (curriculumUiState !is CurriculumUiState.Success) curriculumViewModel.loadCurriculum(forceNetwork = false)
@@ -623,6 +625,20 @@ class MainActivity : ComponentActivity() {
                                     .align(Alignment.BottomCenter)
                                     .padding(bottom = 8.dp)
                             )
+
+                            // Fullscreen login gate — shown when user is not authenticated.
+                            // Covers the entire content area (below TopAppBar, above BottomBar).
+                            // NetworkLogsBottomSheet is still accessible via the title tap.
+                            if (!authSession.isLoggedIn) {
+                                LoginFullscreenGate(
+                                    authSession = authSession,
+                                    isLoggingIn = isLoggingIn,
+                                    errorMessage = loginError,
+                                    onLogin = { u, p ->
+                                        scheduleViewModel.performLogin(u, p)
+                                    }
+                                )
+                            }
 
                             if (isLoginSheetVisible) {
                                 LoginBottomSheet(

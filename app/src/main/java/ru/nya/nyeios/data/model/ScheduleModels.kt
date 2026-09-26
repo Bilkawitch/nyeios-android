@@ -46,6 +46,7 @@ data class AuthSession(
 
 sealed interface ScheduleUiState {
     data object Loading : ScheduleUiState
+    data object NotLoggedIn : ScheduleUiState
     data class Success(
         val schedule: WeekSchedule,
         val isRefreshing: Boolean = false

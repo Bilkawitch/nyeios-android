@@ -193,6 +193,11 @@ fun ScheduleScreen(
                         }
                     }
 
+                    is ScheduleUiState.NotLoggedIn -> {
+                        // Content is obscured by LoginFullscreenGate in MainActivity
+                        Box(modifier = Modifier.fillMaxSize())
+                    }
+
                     is ScheduleUiState.Error -> {
                         Box(
                             modifier = Modifier
