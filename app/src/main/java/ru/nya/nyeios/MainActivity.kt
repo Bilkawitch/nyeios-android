@@ -84,6 +84,7 @@ import ru.nya.nyeios.ui.auth.LoginBottomSheet
 import ru.nya.nyeios.ui.auth.NycLoginGate
 import ru.nya.nyeios.ui.auth.LoginFullscreenGate
 import ru.nya.nyeios.ui.debug.NetworkLogsBottomSheet
+import ru.nya.nyeios.ui.debug.NycLogsSheet
 import ru.nya.nyeios.ui.curriculum.CurriculumScreen
 import ru.nya.nyeios.ui.curriculum.NycCurriculumScreen
 import ru.nya.nyeios.ui.curriculum.CurriculumViewModel
@@ -814,10 +815,17 @@ class MainActivity : ComponentActivity() {
                             }
 
                             if (isNetworkLogsSheetVisible) {
-                                NetworkLogsBottomSheet(
-                                    onDismiss = { isNetworkLogsSheetVisible = false },
-                                    updateViewModel = updateViewModel
-                                )
+                                if (isNycModern) {
+                                    NycLogsSheet(
+                                        onDismiss = { isNetworkLogsSheetVisible = false },
+                                        updateViewModel = updateViewModel
+                                    )
+                                } else {
+                                    NetworkLogsBottomSheet(
+                                        onDismiss = { isNetworkLogsSheetVisible = false },
+                                        updateViewModel = updateViewModel
+                                    )
+                                }
                             }
                         }
                     }
