@@ -341,6 +341,12 @@ class MainActivity : ComponentActivity() {
                                                                         }
                                                                         withStyle(SpanStyle(color = ru.nya.nyeios.ui.theme.NierDim)) {
                                                                             append(syncText)
+                                                                            if (currentTab == 1) {
+                                                                                val postsCount = (feedUiState as? ru.nya.nyeios.data.model.FeedUiState.Success)?.posts?.size ?: 0
+                                                                                if (postsCount > 0) {
+                                                                                    append(" | $postsCount ЗАПИСЕЙ")
+                                                                                }
+                                                                            }
                                                                         }
                                                                     },
                                                                     fontSize = 9.sp,

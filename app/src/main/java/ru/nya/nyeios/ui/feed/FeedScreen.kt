@@ -38,11 +38,14 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Warning
+import ru.nya.nyeios.ui.common.SegmentedMeter
+import ru.nya.nyeios.ui.theme.UiPreferencesManager
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -547,54 +550,79 @@ fun FeedScreen(
                             }
                         } else {
                             item {
+                                val postsCount = uiState.posts.size
+                                val lastSyncTimeState by (feedViewModel?.lastSyncTime ?: remember { MutableStateFlow(0L).asStateFlow() }).collectAsState()
+                                val lastSyncTime = if (lastSyncTimeState > 0L) lastSyncTimeState else (feedViewModel?.getLastSyncTime() ?: 0L)
+                                val syncTimeString = remember(lastSyncTime, UiPreferencesManager.showSecondsInSync) {
+                                    if (lastSyncTime > 0L) {
+                                        val sdf = if (UiPreferencesManager.showSecondsInSync) {
+                                            java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault())
+                                        } else {
+                                            java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+                                        }
+                                        "СИНХР. ${sdf.format(java.util.Date(lastSyncTime))}"
+                                    } else {
+                                        "СИНХР. 11:02"
+                                    }
+                                }
+
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .background(ru.nya.nyeios.ui.theme.NierPanelAlt)
-                                        .border(1.dp, ru.nya.nyeios.ui.theme.NierBorderLight)
-                                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                                        .background(ru.nya.nyeios.ui.theme.NierSurface)
+                                        .border(UiPreferencesManager.borderWidth, ru.nya.nyeios.ui.theme.NierBorder)
+                                        .padding(horizontal = 10.dp, vertical = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    Box(
+                                        modifier = Modifier
+                                            .size(34.dp)
+                                            .background(ru.nya.nyeios.ui.theme.NierPanel)
+                                            .border(1.dp, ru.nya.nyeios.ui.theme.NierBorder),
+                                        contentAlignment = Alignment.Center
                                     ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(32.dp)
-                                                .background(ru.nya.nyeios.ui.theme.NierGreen.copy(alpha = 0.15f))
-                                                .border(1.dp, ru.nya.nyeios.ui.theme.NierGreen),
-                                            contentAlignment = Alignment.Center
+                                        Icon(
+                                            imageVector = Icons.Default.Folder,
+                                            contentDescription = null,
+                                            tint = ru.nya.nyeios.ui.theme.NierDark,
+                                            modifier = Modifier.size(17.dp)
+                                        )
+                                    }
+
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "КЭШ ЛЕНТЫ · $postsCount",
+                                            fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 10.sp,
+                                            letterSpacing = 1.2.sp,
+                                            color = ru.nya.nyeios.ui.theme.NierDark
+                                        )
+                                        Row(
+                                            modifier = Modifier.padding(top = 3.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
-                                            Icon(
-                                                imageVector = Icons.Default.CloudSync,
-                                                contentDescription = null,
-                                                tint = ru.nya.nyeios.ui.theme.NierGreen,
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                        }
-                                        Column {
-                                            Text(
-                                                text = "ЖИВАЯ ЛЕНТА ЭИОС",
-                                                color = ru.nya.nyeios.ui.theme.NierDark,
-                                                fontSize = 13.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
-                                                letterSpacing = 0.5.sp
+                                            SegmentedMeter(
+                                                progress = 0.82f,
+                                                activeColor = ru.nya.nyeios.ui.theme.NierGreen,
+                                                segments = 16,
+                                                height = 5.dp,
+                                                modifier = Modifier.width(96.dp)
                                             )
                                             Text(
-                                                text = "Сохранено объявлений: ${uiState.posts.size}",
-                                                color = ru.nya.nyeios.ui.theme.NierDim,
-                                                fontSize = 11.sp,
-                                                fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily
+                                                text = syncTimeString,
+                                                fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                                                fontSize = 9.sp,
+                                                color = ru.nya.nyeios.ui.theme.NierDim
                                             )
                                         }
                                     }
 
                                     Box(
                                         modifier = Modifier
-                                            .border(1.dp, ru.nya.nyeios.ui.theme.NierGreen)
+                                            .border(1.dp, ru.nya.nyeios.ui.theme.NierBlue)
                                             .background(Color.Transparent)
                                             .clickable {
                                                 if (!isUserLoggedIn) {
@@ -613,13 +641,13 @@ fun FeedScreen(
                                             Icon(
                                                 imageVector = Icons.Default.Refresh,
                                                 contentDescription = null,
-                                                tint = ru.nya.nyeios.ui.theme.NierGreen,
+                                                tint = ru.nya.nyeios.ui.theme.NierBlue,
                                                 modifier = Modifier.size(13.dp)
                                             )
                                             Text(
                                                 text = "ОБНОВИТЬ",
-                                                color = ru.nya.nyeios.ui.theme.NierGreen,
-                                                fontSize = 11.sp,
+                                                color = ru.nya.nyeios.ui.theme.NierBlue,
+                                                fontSize = 10.5.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
                                                 letterSpacing = 0.5.sp

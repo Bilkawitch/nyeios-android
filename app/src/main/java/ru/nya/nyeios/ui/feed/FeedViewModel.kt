@@ -33,6 +33,16 @@ class FeedViewModel(application: Application) : AndroidViewModel(application) {
     private val _isDownloadsSheetVisible = MutableStateFlow(false)
     val isDownloadsSheetVisible: StateFlow<Boolean> = _isDownloadsSheetVisible.asStateFlow()
 
+    val lastSyncTime: StateFlow<Long> = repository.lastSyncTime
+
+    fun getLastSyncTime(): Long {
+        val t = repository.lastSyncTime.value
+        if (t > 0L) return t
+        val cacheFile = File(getApplication<Application>().cacheDir, "feed_cache.json")
+        if (cacheFile.exists()) return cacheFile.lastModified()
+        return 0L
+    }
+
     private var feedJob: kotlinx.coroutines.Job? = null
     private var wasLoggedIn: Boolean = repository.authSession.value.isLoggedIn
 

@@ -23,8 +23,12 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material.icons.filled.Share
+import ru.nya.nyeios.ui.common.SegmentedMeter
+import ru.nya.nyeios.ui.theme.UiPreferencesManager
+import ru.nya.nyeios.ui.theme.NierSelectionText
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -93,6 +97,26 @@ fun DownloadsBottomSheet(
         downloadStates.filterValues { it is DownloadState.Downloading }
     }
 
+    val storageStats = remember(downloadedFiles) {
+        try {
+            val stat = android.os.StatFs(android.os.Environment.getDataDirectory().path)
+            val blockSize = stat.blockSizeLong
+            val totalBlocks = stat.blockCountLong
+            val availableBlocks = stat.availableBlocksLong
+            val totalBytesFs = totalBlocks * blockSize
+            val appDownloadsBytes = downloadedFiles.sumOf { it.sizeBytes }
+            val usedMb = (appDownloadsBytes / (1024L * 1024L)).coerceAtLeast(1)
+            val totalGb = (totalBytesFs / (1024L * 1024L * 1024L)).coerceAtLeast(2)
+            val ratio = (usedMb.toFloat() / (totalGb * 1024f)).coerceIn(0.04f, 0.95f)
+            Triple(usedMb, totalGb, ratio)
+        } catch (_: Exception) {
+            Triple(128L, 2L, 0.26f)
+        }
+    }
+
+    var selectedFilter by remember { mutableStateOf("ВСЕ") }
+    val filterChips = remember { listOf("ВСЕ", "PDF", "DOCX", "MP4", "XLSX") }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
@@ -113,90 +137,161 @@ fun DownloadsBottomSheet(
                 .padding(horizontal = 14.dp)
                 .padding(bottom = 28.dp)
         ) {
-            // Header
+            // Header (Screenshot 4)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 6.dp),
+                    .padding(bottom = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(28.dp)
+                            .size(38.dp)
                             .background(NierDark),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.FileDownload,
+                            imageVector = Icons.Default.Folder,
                             contentDescription = null,
                             tint = NierBg,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(19.dp)
                         )
                     }
 
-                    Text(
-                        text = "ЗАГРУЗКИ",
-                        color = NierDark,
-                        fontFamily = RajdhaniFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 17.sp,
-                        letterSpacing = 1.sp
-                    )
+                    Column {
+                        Text(
+                            text = "Менеджер загрузок",
+                            color = NierDark,
+                            fontFamily = RajdhaniFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                        Text(
+                            text = "ЛОКАЛЬНОЕ ХРАНИЛИЩЕ ЭИОС · ${downloadedFiles.size} ФАЙЛОВ",
+                            color = NierDim,
+                            fontFamily = ShareTechMonoFamily,
+                            fontSize = 9.sp,
+                            letterSpacing = 1.sp
+                        )
+                    }
+                }
 
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
                     if (downloadedFiles.isNotEmpty()) {
                         Box(
                             modifier = Modifier
-                                .background(NierBlue)
-                                .padding(horizontal = 6.dp, vertical = 1.dp)
+                                .border(1.dp, NierRed)
+                                .background(Color.Transparent)
+                                .clickable { showClearConfirm = true }
+                                .padding(horizontal = 7.dp, vertical = 5.dp),
+                            contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "${downloadedFiles.size}",
-                                color = Color.White,
-                                fontFamily = RajdhaniFamily,
+                                text = "ОЧИСТИТЬ",
+                                color = NierRed,
+                                fontFamily = ShareTechMonoFamily,
+                                fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp
+                                letterSpacing = 0.5.sp
                             )
                         }
                     }
-                }
 
-                if (downloadedFiles.isNotEmpty()) {
                     Box(
                         modifier = Modifier
-                            .border(1.dp, NierRed)
-                            .background(Color.Transparent)
-                            .clickable { showClearConfirm = true }
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                            .size(32.dp)
+                            .border(1.dp, NierBorderLight)
+                            .clickable { onDismiss() },
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "ОЧИСТИТЬ ВСЁ",
-                            color = NierRed,
-                            fontFamily = ShareTechMonoFamily,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Закрыть",
+                            tint = NierDark,
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }
             }
 
-            if (downloadedFiles.isNotEmpty()) {
-                Text(
-                    text = "ЛОКАЛЬНОЕ ХРАНИЛИЩЕ // ${downloadManager.formatFileSize(totalBytes)} ИСПОЛЬЗОВАНО",
-                    color = NierDim,
-                    fontFamily = ShareTechMonoFamily,
-                    fontSize = 10.sp,
-                    modifier = Modifier.padding(bottom = 10.dp)
-                )
-            } else {
-                Spacer(modifier = Modifier.height(10.dp))
+            // Storage Strip (Screenshot 4)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(NierPanelAlt)
+                    .border(UiPreferencesManager.borderWidth, NierBorderLight)
+                    .padding(horizontal = 12.dp, vertical = 9.dp)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "ЗАНЯТО НА УСТРОЙСТВЕ",
+                            fontFamily = ShareTechMonoFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 9.sp,
+                            letterSpacing = 1.2.sp,
+                            color = NierDim
+                        )
+                        Text(
+                            text = "${storageStats.first} МБ / ${storageStats.second} ГБ",
+                            fontFamily = ShareTechMonoFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp,
+                            color = NierDark
+                        )
+                    }
+
+                    SegmentedMeter(
+                        progress = storageStats.third,
+                        activeColor = NierDark,
+                        inactiveColor = NierDark.copy(alpha = 0.15f),
+                        segments = 36,
+                        height = 7.dp
+                    )
+                }
             }
+
+            // Filter Chips (Screenshot 4)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                filterChips.forEach { chip ->
+                    val isSelected = chip == selectedFilter
+                    Box(
+                        modifier = Modifier
+                            .background(if (isSelected) NierDark else Color.Transparent)
+                            .border(1.dp, if (isSelected) NierDark else NierBorderLight)
+                            .clickable { selectedFilter = chip }
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = chip,
+                            fontFamily = ShareTechMonoFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 9.5.sp,
+                            letterSpacing = 1.sp,
+                            color = if (isSelected) NierSelectionText else NierDark
+                        )
+                    }
+                }
+            }
+
 
             // Active Downloads Section
             if (activeDownloads.isNotEmpty()) {
@@ -277,13 +372,29 @@ fun DownloadsBottomSheet(
                         )
                     }
                 }
-            } else {
+                val filteredFiles = remember(downloadedFiles, selectedFilter) {
+                    if (selectedFilter == "ВСЕ") {
+                        downloadedFiles
+                    } else {
+                        downloadedFiles.filter { item ->
+                            val ext = item.file.extension.uppercase()
+                            when (selectedFilter) {
+                                "PDF" -> ext == "PDF"
+                                "DOCX" -> ext in listOf("DOCX", "DOC")
+                                "MP4" -> ext in listOf("MP4", "MOV", "MKV", "AVI")
+                                "XLSX" -> ext in listOf("XLSX", "XLS")
+                                else -> true
+                            }
+                        }
+                    }
+                }
+
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     itemsIndexed(
-                        items = downloadedFiles,
+                        items = filteredFiles,
                         key = { _, item -> item.file.absolutePath }
                     ) { index, item ->
                         DownloadedFileItem(
