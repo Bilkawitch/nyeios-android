@@ -43,6 +43,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ru.nya.nyeios.data.model.UpdateInfo
 import ru.nya.nyeios.data.net.EiosLastGetInfo
+import ru.nya.nyeios.data.net.EndpointHealthItem
+import ru.nya.nyeios.data.net.EndpointStatus
 import ru.nya.nyeios.data.net.PingResult
 import ru.nya.nyeios.ui.theme.NycCyan
 import ru.nya.nyeios.ui.theme.NycLed
@@ -64,6 +66,7 @@ import java.util.Locale
 
 // Mockup fixed tokens.
 private val nycText = Color(0xFFDBE4F0)
+private val nycBody = Color(0xFFB9C4D4)
 private val nycMuted = Color(0xFF8794A7)
 private val nycFaint = Color(0xFF5B6A7E)
 private val nycGreen = Color(0xFF46E08C)
@@ -91,7 +94,8 @@ fun NycSettingsScreen(
                         uiState = uiState,
                         onMeasurePing = { viewModel.measurePing() },
                         onRefreshIp = { viewModel.fetchExternalIp() },
-                        onRefreshAll = { viewModel.refreshDiagnostics() }
+                        onRefreshAll = { viewModel.refreshDiagnostics() },
+                        onCheckEndpoints = { viewModel.checkEndpoints() }
                     )
                 }
                 SettingsSubtab.THEME -> {
@@ -203,7 +207,8 @@ private fun NycGeneralContent(
     uiState: SettingsUiState,
     onMeasurePing: () -> Unit,
     onRefreshIp: () -> Unit,
-    onRefreshAll: () -> Unit
+    onRefreshAll: () -> Unit,
+    onCheckEndpoints: () -> Unit
 ) {
     val scrollState = rememberScrollState()
 
@@ -368,6 +373,48 @@ private fun NycGeneralContent(
         // Last GET card.
         NycSetCard {
             NycGetRow(getInfo = uiState.lastGetInfo)
+        }
+
+        // Endpoints diagnostics card.
+        NycSetCard {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "ДИАГНОСТИКА ЭНДПОИНТОВ",
+                        fontFamily = NycMonoFamily,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 8.sp,
+                        letterSpacing = 1.5.sp,
+                        color = nycFaint
+                    )
+                    Text(
+                        text = "Состояние разделов портала",
+                        fontFamily = NycSansFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        color = nycText,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
+                NycMiniButton(
+                    text = if (uiState.isCheckingEndpoints) "ПРОВЕРКА..." else "ПРОВЕРИТЬ",
+                    icon = Icons.Default.Sync,
+                    enabled = !uiState.isCheckingEndpoints,
+                    onClick = onCheckEndpoints
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                uiState.endpointsHealth.forEach { ep ->
+                    NycEndpointHealthRow(item = ep)
+                }
+            }
         }
 
         NycSecHdr("[ 02 · ЛИМИТ ЗАПРОСОВ GITHUB API ]")
@@ -803,6 +850,98 @@ private fun NycGetRow(getInfo: EiosLastGetInfo) {
                 maxLines = 1,
                 modifier = Modifier.padding(top = 6.dp)
             )
+        }
+    }
+}
+
+@Composable
+private fun NycEndpointHealthRow(item: EndpointHealthItem) {
+    val (statusColor, statusBadge) = when (item.status) {
+        EndpointStatus.IDLE -> Pair(nycFaint, "НЕ ПРОВЕРЯЛСЯ")
+        EndpointStatus.CHECKING -> Pair(NycCyan, "ПРОВЕРКА...")
+        EndpointStatus.OK -> Pair(nycGreen, "ДОСТУПЕН")
+        EndpointStatus.DEGRADED -> Pair(nycAmber, "200 СБОЙ / ПУСТО")
+        EndpointStatus.AUTH_REQUIRED -> Pair(nycAmber, "ТРЕБУЕТСЯ ВХОД")
+        EndpointStatus.ERROR -> Pair(nycRed, "ОШИБКА")
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color(150, 185, 235, alpha = 7))
+            .border(1.dp, Color(150, 185, 235, alpha = 13), RoundedCornerShape(8.dp))
+            .padding(8.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                    Text(
+                        text = item.name,
+                        fontFamily = NycSansFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.5.sp,
+                        color = nycText
+                    )
+                    Text(
+                        text = item.path,
+                        fontFamily = NycMonoFamily,
+                        fontSize = 9.5.sp,
+                        color = nycFaint
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(statusColor.copy(alpha = 0.12f))
+                        .border(1.dp, statusColor.copy(alpha = 0.28f), RoundedCornerShape(4.dp))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = statusBadge,
+                        fontFamily = NycMonoFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 8.sp,
+                        letterSpacing = 0.5.sp,
+                        color = statusColor,
+                        maxLines = 1
+                    )
+                }
+            }
+
+            if (item.message != null || item.latencyMs != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = item.message ?: "",
+                        fontFamily = NycMonoFamily,
+                        fontSize = 9.sp,
+                        color = when (item.status) {
+                            EndpointStatus.ERROR -> nycRed
+                            EndpointStatus.DEGRADED -> nycAmber
+                            else -> nycBody
+                        },
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                    if (item.latencyMs != null) {
+                        Text(
+                            text = "${item.latencyMs} мс",
+                            fontFamily = NycMonoFamily,
+                            fontSize = 8.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = nycMuted
+                        )
+                    }
+                }
+            }
         }
     }
 }

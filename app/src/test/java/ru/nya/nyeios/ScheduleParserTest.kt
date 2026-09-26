@@ -167,4 +167,86 @@ class ScheduleParserTest {
         val schedule = ScheduleParser.parse(loginHtml, offsetWeeks = 0, "21.09.2026", "27.09.2026")
         org.junit.Assert.assertNull(schedule)
     }
+
+    @Test
+    fun testServerErrorDoesNotReturnEmptySchedule() {
+        val serverErrorHtml = """
+            <!DOCTYPE html>
+            <html>
+            <head><title>Расписание</title></head>
+            <body>
+                <div id="workarea">
+                    <div id="workarea-content">
+                        <div class="workarea-content-paddings">
+                            <p><font class="errortext">Отсутствует соединение с сервером. Повторите попытку позднее</font></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="menu">
+                    <a href="/eios/contacts/timetable/">Расписание</a>
+                </div>
+            </body>
+            </html>
+        """.trimIndent()
+
+        val errMsg = ScheduleParser.extractErrorMessage(serverErrorHtml)
+        assertEquals("Отсутствует соединение с сервером. Повторите попытку позднее", errMsg)
+
+        // Must NOT return empty week schedule! Must return null on server error.
+        val schedule = ScheduleParser.parse(serverErrorHtml, offsetWeeks = 0, "21.09.2026", "27.09.2026")
+        org.junit.Assert.assertNull(schedule)
+    }
+
+    @Test
+    fun testGenericBitrixPageReturnsNull() {
+        val genericBitrixHtml = """
+            <!DOCTYPE html>
+            <html>
+            <head><title>Страница</title></head>
+            <body>
+                <div class="workarea-content">
+                    <h2>Информация</h2>
+                    <p>Какой-то контент</p>
+                </div>
+                <a href="/eios/contacts/timetable/">Ссылка на расписание</a>
+            </body>
+            </html>
+        """.trimIndent()
+
+        val schedule = ScheduleParser.parse(genericBitrixHtml, offsetWeeks = 0, "21.09.2026", "27.09.2026")
+        org.junit.Assert.assertNull(schedule)
+    }
+
+    @Test
+    fun testTableWithoutTheadParsesCorrectly() {
+        val tableHtml = """
+            <!DOCTYPE html>
+            <html>
+            <body>
+                <table class="schedule-table">
+                    <tr>
+                        <th>Время</th>
+                        <th>Понедельник 21.09</th>
+                    </tr>
+                    <tr>
+                        <td>1 пара 08:30 - 10:00</td>
+                        <td>
+                            <table class="schedule-cell">
+                                <tr><td>Философия</td><td>301</td></tr>
+                                <tr><td>Кузнецов К.К.</td><td>Лекция</td></tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+        """.trimIndent()
+
+        val schedule = ScheduleParser.parse(tableHtml, offsetWeeks = 0, "21.09.2026", "27.09.2026")
+        assertNotNull(schedule)
+        assertEquals(1, schedule!!.days.size)
+        assertEquals(1, schedule.days[0].lessons.size)
+        assertEquals("Философия", schedule.days[0].lessons[0].subject)
+        assertEquals("301", schedule.days[0].lessons[0].room)
+    }
 }

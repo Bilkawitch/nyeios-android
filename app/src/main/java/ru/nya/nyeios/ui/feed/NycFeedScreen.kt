@@ -209,12 +209,12 @@ fun NycFeedScreen(
                                 .padding(20.dp)
                         ) {
                             Text(
-                                text = "НЕ УДАЛОСЬ ЗАГРУЗИТЬ ЛЕНТУ",
+                                text = "СИСТЕМНОЕ ОПОВЕЩЕНИЕ",
                                 fontFamily = NycSansFamily,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp,
+                                fontSize = 11.sp,
                                 letterSpacing = 1.sp,
-                                color = nycText
+                                color = nycRed
                             )
                             Text(
                                 text = uiState.message,

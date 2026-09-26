@@ -12,6 +12,7 @@ enum class NetworkLogLevel {
     REQUEST,
     RESPONSE,
     SUCCESS,
+    WARNING,
     ERROR
 }
 
@@ -21,7 +22,8 @@ data class NetworkLogEntry(
     val level: NetworkLogLevel,
     val tag: String,
     val message: String,
-    val details: String? = null
+    val details: String? = null,
+    val isDegraded: Boolean = false
 )
 
 object NetworkLogger {
@@ -32,13 +34,20 @@ object NetworkLogger {
     val logs: StateFlow<List<NetworkLogEntry>> = _logs.asStateFlow()
 
     @Synchronized
-    fun log(level: NetworkLogLevel, tag: String, message: String, details: String? = null) {
+    fun log(
+        level: NetworkLogLevel,
+        tag: String,
+        message: String,
+        details: String? = null,
+        isDegraded: Boolean = false
+    ) {
         val entry = NetworkLogEntry(
             timestamp = timeFormat.format(Date()),
             level = level,
             tag = tag,
             message = message,
-            details = details
+            details = details,
+            isDegraded = isDegraded
         )
         val current = _logs.value.toMutableList()
         current.add(0, entry) // Newest at the top
@@ -68,10 +77,41 @@ object NetworkLogger {
         )
     }
 
-    fun logResponse(code: Int, message: String, url: String, durationMs: Long, details: String? = null) {
-        val level = if (code in 200..399) NetworkLogLevel.RESPONSE else NetworkLogLevel.ERROR
+    fun logResponse(
+        code: Int,
+        message: String,
+        url: String,
+        durationMs: Long,
+        details: String? = null,
+        isDegraded: Boolean = false,
+        degradedReason: String? = null
+    ) {
+        val level = when {
+            isDegraded -> NetworkLogLevel.WARNING
+            code in 200..399 -> NetworkLogLevel.RESPONSE
+            else -> NetworkLogLevel.ERROR
+        }
+        val tag = when {
+            isDegraded -> "200 ПУСТО"
+            else -> "HTTP $code"
+        }
+        val msg = when {
+            isDegraded && !degradedReason.isNullOrBlank() ->
+                "Сервер ответил $code $message (${durationMs} мс) — [СБОЙ: $degradedReason]"
+            isDegraded ->
+                "Сервер ответил $code $message (${durationMs} мс) — [ПУСТАЯ СТРАНИЦА / СБОЙ 1С]"
+            else ->
+                "Сервер ответил $code $message (${durationMs} мс)"
+        }
         val detailsStr = buildString {
-            append("Код: ").append(code).append(" ").append(message).append("\n")
+            append("Код: ").append(code).append(" ").append(message)
+            if (isDegraded) {
+                append(" (ПУСТАЯ СТРАНИЦА / СБОЙ СЕРВЕРА)")
+            }
+            append("\n")
+            if (isDegraded && !degradedReason.isNullOrBlank()) {
+                append("Диагностика: ").append(degradedReason).append("\n")
+            }
             append("Время ответа: ").append(durationMs).append(" мс\n")
             append("URL: ").append(url).append("\n")
             if (!details.isNullOrEmpty()) {
@@ -80,9 +120,10 @@ object NetworkLogger {
         }
         log(
             level = level,
-            tag = "HTTP $code",
-            message = "Сервер ответил $code $message (${durationMs} мс)",
-            details = detailsStr.trim()
+            tag = tag,
+            message = msg,
+            details = detailsStr.trim(),
+            isDegraded = isDegraded
         )
     }
 

@@ -72,6 +72,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import ru.nya.nyeios.data.model.UpdateInfo
+import ru.nya.nyeios.data.net.EndpointHealthItem
+import ru.nya.nyeios.data.net.EndpointStatus
 import ru.nya.nyeios.ui.update.UpdateViewModel
 
 @Composable
@@ -107,7 +109,8 @@ fun SettingsScreen(
                         uiState = uiState,
                         onMeasurePing = { viewModel.measurePing() },
                         onRefreshIp = { viewModel.fetchExternalIp() },
-                        onRefreshAll = { viewModel.refreshDiagnostics() }
+                        onRefreshAll = { viewModel.refreshDiagnostics() },
+                        onCheckEndpoints = { viewModel.checkEndpoints() }
                     )
                 }
                 SettingsSubtab.THEME -> {
@@ -185,7 +188,8 @@ private fun GeneralSettingsContent(
     uiState: SettingsUiState,
     onMeasurePing: () -> Unit,
     onRefreshIp: () -> Unit,
-    onRefreshAll: () -> Unit
+    onRefreshAll: () -> Unit,
+    onCheckEndpoints: () -> Unit
 ) {
     val scrollState = rememberScrollState()
 
@@ -297,6 +301,53 @@ private fun GeneralSettingsContent(
 
                 // Last GET timing
                 LastGetRow(getInfo = uiState.lastGetInfo)
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(NierBorderLight)
+                )
+
+                // Endpoints Diagnostics Section
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "ДИАГНОСТИКА ЭНДПОИНТОВ",
+                            color = NierDim,
+                            fontSize = 10.sp,
+                            fontFamily = RajdhaniFamily,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
+                        )
+                        Text(
+                            text = "Проверка доступности разделов сайта",
+                            color = NierDarkSecondary,
+                            fontSize = 11.sp,
+                            fontFamily = RajdhaniFamily
+                        )
+                    }
+
+                    NieROutlineButton(
+                        text = if (uiState.isCheckingEndpoints) "ПРОВЕРКА..." else "ПРОВЕРИТЬ",
+                        enabled = !uiState.isCheckingEndpoints,
+                        color = NierBlue,
+                        onClick = onCheckEndpoints
+                    )
+                }
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    uiState.endpointsHealth.forEach { ep ->
+                        EndpointHealthRow(item = ep)
+                    }
+                }
             }
         }
 
@@ -898,6 +949,95 @@ private fun LastGetRow(getInfo: EiosLastGetInfo) {
                 fontSize = 12.sp,
                 fontFamily = ShareTechMonoFamily
             )
+        }
+    }
+}
+
+@Composable
+private fun EndpointHealthRow(item: EndpointHealthItem) {
+    val (statusColor, statusBadge) = when (item.status) {
+        EndpointStatus.IDLE -> Pair(NierDim, "НЕ ПРОВЕРЯЛСЯ")
+        EndpointStatus.CHECKING -> Pair(NierBlue, "ПРОВЕРКА...")
+        EndpointStatus.OK -> Pair(NierGreen, "ДОСТУПЕН")
+        EndpointStatus.DEGRADED -> Pair(NierAmber, "200 СБОЙ / ПУСТО")
+        EndpointStatus.AUTH_REQUIRED -> Pair(NierAmber, "ТРЕБУЕТСЯ ВХОД")
+        EndpointStatus.ERROR -> Pair(NierRed, "ОШИБКА")
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(NierPanelAlt)
+            .border(0.5.dp, NierBorderLight)
+            .padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                Text(
+                    text = item.name,
+                    fontFamily = RajdhaniFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    color = NierDark
+                )
+                Text(
+                    text = item.path,
+                    fontFamily = ShareTechMonoFamily,
+                    fontSize = 10.sp,
+                    color = NierDim
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .background(statusColor.copy(alpha = 0.15f))
+                    .border(0.5.dp, statusColor)
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+            ) {
+                Text(
+                    text = statusBadge,
+                    fontSize = 9.sp,
+                    fontFamily = RajdhaniFamily,
+                    fontWeight = FontWeight.Bold,
+                    color = statusColor,
+                    letterSpacing = 0.5.sp,
+                    maxLines = 1
+                )
+            }
+        }
+
+        if (item.message != null || item.latencyMs != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = item.message ?: "",
+                    fontFamily = ShareTechMonoFamily,
+                    fontSize = 10.sp,
+                    color = when (item.status) {
+                        EndpointStatus.ERROR -> NierRed
+                        EndpointStatus.DEGRADED -> NierAmber
+                        else -> NierDarkSecondary
+                    },
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+                if (item.latencyMs != null) {
+                    Text(
+                        text = "${item.latencyMs} мс",
+                        fontFamily = ShareTechMonoFamily,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = NierDim
+                    )
+                }
+            }
         }
     }
 }

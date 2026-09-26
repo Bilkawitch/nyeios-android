@@ -95,6 +95,8 @@ private val codeMs = Regex("""Время ответа:\s*(\d+)\s*мс""")
 private val urlLine = Regex("""URL:\s*(\S+)""")
 private val schemeHost = Regex("""^[a-zA-Z][a-zA-Z0-9+.-]*://[^/]+""")
 
+private val nycAmber = Color(0xFFF59E0B)
+
 internal data class NycLogRow(
     val method: String,
     val methodColor: Color,
@@ -102,14 +104,18 @@ internal data class NycLogRow(
     val code: Int?,
     val ms: Long?,
     val time: String,
-    val isBad: Boolean
+    val isBad: Boolean,
+    val isDegraded: Boolean = false,
+    val badgeText: String? = null
 )
 
 internal fun deriveRow(entry: NetworkLogEntry): NycLogRow {
     val tag = entry.tag.uppercase().removePrefix("HTTP ").trim()
+    val isDegraded = entry.isDegraded || entry.level == NetworkLogLevel.WARNING || tag.contains("ПУСТО") || tag.contains("СБОЙ")
     val (method, methodColor) = when {
         codeGet.containsMatchIn(tag) -> "GET" to NycCyan
         codePost.containsMatchIn(tag) -> "POST" to nycViolet
+        isDegraded -> "GET" to nycAmber
         entry.level == NetworkLogLevel.ERROR -> (tag.ifEmpty { "ERR" }) to nycRed
         else -> (tag.ifEmpty { "LOG" }) to nycMuted
     }
@@ -122,10 +128,12 @@ internal fun deriveRow(entry: NetworkLogEntry): NycLogRow {
     val ms = codeMs.find(entry.details ?: "")?.groupValues?.getOrNull(1)?.toLongOrNull()
     val time = entry.timestamp.take(8)
     val isBad = (code != null && code >= 500) || entry.level == NetworkLogLevel.ERROR
-    return NycLogRow(method, methodColor, path, code, ms, time, isBad)
+    val badgeText = if (isDegraded) "200 ПУСТО" else code?.toString()
+    return NycLogRow(method, methodColor, path, code, ms, time, isBad, isDegraded, badgeText)
 }
 
-internal fun codeColor(code: Int?): Color = when {
+internal fun codeColor(code: Int?, isDegraded: Boolean = false): Color = when {
+    isDegraded -> nycAmber
     code == null -> nycFaint
     code in 200..299 -> nycGreen
     code in 300..399 -> nycBlue
@@ -467,18 +475,19 @@ private fun NycLogEntryRow(entry: NetworkLogEntry, row: NycLogRow) {
                 modifier = Modifier.weight(1f)
             )
 
-            if (row.code != null) {
-                val cc = codeColor(row.code)
+            if (row.code != null || row.isDegraded) {
+                val cc = codeColor(row.code, row.isDegraded)
+                val badge = row.badgeText ?: "${row.code}"
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
-                        .background(cc.copy(alpha = 0.09f))
-                        .border(1.dp, cc.copy(alpha = 0.22f), RoundedCornerShape(6.dp))
+                        .background(cc.copy(alpha = if (row.isDegraded) 0.18f else 0.09f))
+                        .border(1.dp, cc.copy(alpha = if (row.isDegraded) 0.40f else 0.22f), RoundedCornerShape(6.dp))
                         .padding(horizontal = 6.dp, vertical = 3.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "${row.code}",
+                        text = badge,
                         fontFamily = NycMonoFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 8.5.sp,

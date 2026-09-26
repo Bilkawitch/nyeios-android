@@ -374,12 +374,13 @@ fun DownloadsBottomSheet(
                         )
                     }
                 }
+            } else if (downloadedFiles.isNotEmpty()) {
                 val filteredFiles = remember(downloadedFiles, selectedFilter) {
                     if (selectedFilter == "ВСЕ") {
                         downloadedFiles
                     } else {
                         downloadedFiles.filter { item ->
-                            val ext = item.file.extension.uppercase()
+                            val ext = item.file.extension.ifEmpty { item.name.substringAfterLast('.', "") }.uppercase()
                             when (selectedFilter) {
                                 "PDF" -> ext == "PDF"
                                 "DOCX" -> ext in listOf("DOCX", "DOC")
@@ -391,23 +392,45 @@ fun DownloadsBottomSheet(
                     }
                 }
 
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    itemsIndexed(
-                        items = filteredFiles,
-                        key = { _, item -> item.file.absolutePath }
-                    ) { index, item ->
-                        DownloadedFileItem(
-                            item = item,
-                            isAlt = index % 2 == 1,
-                            onOpen = { onOpenFile(item.file) },
-                            onShare = { onShareFile(item.file) },
-                            onSaveToDownloads = { onSaveToDownloads(item.file) },
-                            onDelete = { onDeleteFile(item.file) },
-                            downloadManager = downloadManager
+                if (filteredFiles.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, NierBorderLight)
+                            .background(NierPanelAlt)
+                            .padding(vertical = 28.dp, horizontal = 16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "НЕТ ФАЙЛОВ В КАТЕГОРИИ \"$selectedFilter\"",
+                            color = NierDim,
+                            fontFamily = ShareTechMonoFamily,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp
                         )
+                    }
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f, fill = false)
+                    ) {
+                        itemsIndexed(
+                            items = filteredFiles,
+                            key = { _, item -> item.file.absolutePath }
+                        ) { index, item ->
+                            DownloadedFileItem(
+                                item = item,
+                                isAlt = index % 2 == 1,
+                                onOpen = { onOpenFile(item.file) },
+                                onShare = { onShareFile(item.file) },
+                                onSaveToDownloads = { onSaveToDownloads(item.file) },
+                                onDelete = { onDeleteFile(item.file) },
+                                downloadManager = downloadManager
+                            )
+                        }
                     }
                 }
             }
@@ -572,8 +595,10 @@ private fun DownloadedFileItem(
             lower.endsWith(".pdf") -> Pair(NierRed, "PDF")
             lower.endsWith(".docx") || lower.endsWith(".doc") -> Pair(NierBlue, "DOC")
             lower.endsWith(".xlsx") || lower.endsWith(".xls") -> Pair(NierGreen, "XLS")
+            lower.endsWith(".mp4") || lower.endsWith(".mov") || lower.endsWith(".mkv") || lower.endsWith(".avi") -> Pair(NierPurple, "MP4")
             lower.endsWith(".zip") || lower.endsWith(".rar") || lower.endsWith(".7z") -> Pair(NierAmber, "ZIP")
-            lower.endsWith(".ppt") || lower.endsWith(".pptx") -> Pair(NierPurple, "PPT")
+            lower.endsWith(".ppt") || lower.endsWith(".pptx") -> Pair(NierAmber, "PPT")
+            lower.endsWith(".mp3") || lower.endsWith(".wav") || lower.endsWith(".ogg") -> Pair(NierBlue, "MP3")
             else -> Pair(NierDarkSecondary, "FILE")
         }
     }

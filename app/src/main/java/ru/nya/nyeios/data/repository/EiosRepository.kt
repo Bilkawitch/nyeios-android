@@ -31,6 +31,8 @@ import ru.nya.nyeios.data.model.FeedSyncProgress
 import ru.nya.nyeios.data.model.FeedSyncStage
 import ru.nya.nyeios.data.model.UserProfile
 import ru.nya.nyeios.data.model.WeekSchedule
+import ru.nya.nyeios.data.net.EndpointHealthItem
+import ru.nya.nyeios.data.net.EndpointStatus
 import ru.nya.nyeios.data.net.NetworkLogger
 import ru.nya.nyeios.data.net.NetworkLogLevel
 import ru.nya.nyeios.data.net.NetworkMetricsTracker
@@ -113,6 +115,8 @@ class EiosRepository(private val context: Context) {
 
     companion object {
         const val BROWSER_USER_AGENT = "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36"
+        const val ERROR_SERVER_EMPTY_OR_DOWN = "Ошибка со стороны сервера, сервер вернул пустую страницу. Попробуйте позже, может починят"
+        const val ERROR_NO_CONNECTION = "Ошибка со стороны сервера... или вашего интернета. Сайт никак не отреагировал"
 
         @Volatile
         private var INSTANCE: EiosRepository? = null
@@ -200,12 +204,38 @@ class EiosRepository(private val context: Context) {
                     if (cl > 0) append("Размер ответа: $cl байт\n")
                 }
 
+                var isDegraded200 = false
+                var degradedReason: String? = null
+                if (response.code == 200) {
+                    val contentType = response.header("Content-Type") ?: ""
+                    if (contentType.isEmpty() || contentType.contains("text/html", ignoreCase = true)) {
+                        try {
+                            val peek = response.peekBody(65536L).string()
+                            val errText = ScheduleParser.extractErrorMessage(peek)
+                            if (errText != null) {
+                                isDegraded200 = true
+                                degradedReason = "Сбой сервера: $errText"
+                            } else if (peek.contains("Отсутствует соединение с сервером", ignoreCase = true)) {
+                                isDegraded200 = true
+                                degradedReason = "Отсутствует соединение со службой 1С"
+                            } else if (finalReq.url.encodedPath.contains("timetable") &&
+                                !peek.contains("schedule-table") && !peek.contains("bx_auth_serv")
+                            ) {
+                                isDegraded200 = true
+                                degradedReason = "Пустая страница расписания (таблица отсутствует)"
+                            }
+                        } catch (_: Exception) {}
+                    }
+                }
+
                 NetworkLogger.logResponse(
                     code = response.code,
                     message = response.message.ifEmpty { "HTTP/${response.protocol}" },
                     url = finalReq.url.toString(),
                     durationMs = tookMs,
-                    details = details.trim().ifEmpty { null }
+                    details = details.trim().ifEmpty { null },
+                    isDegraded = isDegraded200,
+                    degradedReason = degradedReason
                 )
 
                 if (finalReq.method.equals("GET", ignoreCase = true) && finalReq.url.host.contains("gukolomna.ru")) {
@@ -561,7 +591,8 @@ class EiosRepository(private val context: Context) {
                         val cached = gson.fromJson(currentCacheFile.readText(), WeekSchedule::class.java)
                         if (cached != null) return@withLock Result.success(sanitizeCachedSchedule(cached))
                     }
-                    return@withLock Result.failure(Exception("Ошибка сервера: HTTP ${response.code}"))
+                    val msg = if (response.code in 500..599) ERROR_SERVER_EMPTY_OR_DOWN else "Ошибка сервера: HTTP ${response.code}"
+                    return@withLock Result.failure(Exception(msg))
                 }
 
                 val html = response.body?.string() ?: ""
@@ -577,26 +608,43 @@ class EiosRepository(private val context: Context) {
 
                 val schedule = ScheduleParser.parse(html, offsetWeeks, startDCurrent, endDCurrent)
                 if (schedule != null) {
-                    try {
-                        currentCacheFile.writeText(gson.toJson(schedule))
-                    } catch (e: Exception) {
-                        // Ignore cache write error
+                    val isAllDaysEmpty = schedule.days.all { it.lessons.isEmpty() }
+                    val shouldOverwrite = if (isAllDaysEmpty && currentCacheFile.exists()) {
+                        try {
+                            val cached = gson.fromJson(currentCacheFile.readText(), WeekSchedule::class.java)
+                            cached == null || cached.days.all { it.lessons.isEmpty() }
+                        } catch (_: Exception) {
+                            true
+                        }
+                    } else {
+                        true
+                    }
+
+                    if (shouldOverwrite) {
+                        try {
+                            currentCacheFile.writeText(gson.toJson(schedule))
+                        } catch (e: Exception) {
+                            // Ignore cache write error
+                        }
                     }
                     updateLastSyncTime()
                     Result.success(schedule)
                 } else {
                     if (currentCacheFile.exists()) {
                         val cached = gson.fromJson(currentCacheFile.readText(), WeekSchedule::class.java)
-                        if (cached != null) return@withLock Result.success(sanitizeCachedSchedule(cached))
+                        if (cached != null) {
+                            NetworkLogger.logInfo("SCHEDULE", "Сетевая ошибка расписания, данные взяты из локального кэша")
+                            return@withLock Result.success(sanitizeCachedSchedule(cached))
+                        }
                     }
-                    Result.failure(Exception("Не удалось разобрать страницу расписания."))
+                    Result.failure(Exception(ERROR_SERVER_EMPTY_OR_DOWN))
                 }
             } catch (e: Exception) {
                 if (currentCacheFile.exists()) {
                     val cached = gson.fromJson(currentCacheFile.readText(), WeekSchedule::class.java)
                     if (cached != null) return@withLock Result.success(sanitizeCachedSchedule(cached))
                 }
-                Result.failure(Exception("Сетевая ошибка: ${e.localizedMessage ?: e.message}"))
+                Result.failure(Exception(ERROR_NO_CONNECTION))
             }
         }
     }
@@ -731,10 +779,11 @@ class EiosRepository(private val context: Context) {
 
                 val response = call.execute()
                 if (!response.isSuccessful) {
-                    throw Exception("Сервер вернул HTTP ${response.code}")
+                    val msg = if (response.code in 500..599) ERROR_SERVER_EMPTY_OR_DOWN else "Сервер вернул HTTP ${response.code}"
+                    throw Exception(msg)
                 }
 
-                val body = response.body ?: throw Exception("Сервер вернул пустой ответ")
+                val body = response.body ?: throw Exception(ERROR_SERVER_EMPTY_OR_DOWN)
                 val totalLength = body.contentLength()
                 val inputStream = body.byteStream()
                 val out = java.io.ByteArrayOutputStream()
@@ -803,6 +852,10 @@ class EiosRepository(private val context: Context) {
                 val html = out.toString("UTF-8")
                 updateProfileIfFound(html)
 
+                if (ScheduleParser.isAuthRequired(html)) {
+                    throw Exception("Сессия завершена. Требуется авторизация в ЭИОС.")
+                }
+
                 val posts = FeedParser.parse(html, maxPosts = maxPosts)
                 if (posts.isNotEmpty()) {
                     try {
@@ -810,9 +863,14 @@ class EiosRepository(private val context: Context) {
                     } catch (e: Exception) {
                         // ignore write failure
                     }
+                    updateLastSyncTime()
+                } else {
+                    val hasErr = html.contains("errortext") || html.contains("Отсутствует соединение") || html.length < 500
+                    if (hasErr) {
+                        throw Exception(ERROR_SERVER_EMPTY_OR_DOWN)
+                    }
+                    updateLastSyncTime()
                 }
-
-                updateLastSyncTime()
 
                 val totalElapsed = ((System.currentTimeMillis() - startTime) / 1000).toInt()
                 val durationStr = formatDuration(totalElapsed)
@@ -839,10 +897,15 @@ class EiosRepository(private val context: Context) {
                         e.message?.contains("canceled", ignoreCase = true) == true ||
                         activeFeedCall.get()?.isCanceled() == true
 
-                val errText = if (isCancelled) {
-                    "Синхронизация отменена пользователем"
-                } else {
-                    "Ошибка синхронизации: ${e.localizedMessage ?: e.message}"
+                val isNetworkDown = (e is java.io.IOException || e is java.net.SocketTimeoutException || e is java.net.UnknownHostException) &&
+                        !isCancelled && e.message != ERROR_SERVER_EMPTY_OR_DOWN
+
+                val errText = when {
+                    isCancelled -> "Синхронизация отменена пользователем"
+                    e.message == ERROR_SERVER_EMPTY_OR_DOWN -> ERROR_SERVER_EMPTY_OR_DOWN
+                    e.message == "Сессия завершена. Требуется авторизация в ЭИОС." -> e.message!!
+                    isNetworkDown -> ERROR_NO_CONNECTION
+                    else -> e.localizedMessage ?: ERROR_NO_CONNECTION
                 }
 
                 _feedSyncProgress.value = FeedSyncProgress(
@@ -992,11 +1055,20 @@ class EiosRepository(private val context: Context) {
                         val cached: List<CurriculumTerm>? = gson.fromJson(cacheFile.readText(), listType)
                         if (!cached.isNullOrEmpty()) return@withLock Result.success(cached)
                     }
-                    return@withLock Result.failure(Exception("Ошибка сервера БРС: HTTP ${response.code}"))
+                    val msg = if (response.code in 500..599) ERROR_SERVER_EMPTY_OR_DOWN else "Ошибка сервера БРС: HTTP ${response.code}"
+                    return@withLock Result.failure(Exception(msg))
                 }
 
                 val html = response.body?.string() ?: ""
                 updateProfileIfFound(html)
+
+                if (ScheduleParser.isAuthRequired(html)) {
+                    if (cacheFile.exists()) {
+                        val cached: List<CurriculumTerm>? = gson.fromJson(cacheFile.readText(), listType)
+                        if (!cached.isNullOrEmpty()) return@withLock Result.success(cached)
+                    }
+                    return@withLock Result.failure(Exception("Сессия завершена. Требуется авторизация в ЭИОС."))
+                }
 
                 val terms = CurriculumParser.parse(html)
                 if (terms.isNotEmpty()) {
@@ -1012,14 +1084,14 @@ class EiosRepository(private val context: Context) {
                         val cached: List<CurriculumTerm>? = gson.fromJson(cacheFile.readText(), listType)
                         if (!cached.isNullOrEmpty()) return@withLock Result.success(cached)
                     }
-                    Result.failure(Exception("Не удалось загрузить успеваемость. Проверьте авторизацию."))
+                    Result.failure(Exception(ERROR_SERVER_EMPTY_OR_DOWN))
                 }
             } catch (e: Exception) {
                 if (cacheFile.exists()) {
                     val cached: List<CurriculumTerm>? = gson.fromJson(cacheFile.readText(), listType)
                     if (!cached.isNullOrEmpty()) return@withLock Result.success(cached)
                 }
-                Result.failure(Exception("Сетевая ошибка успеваемости: ${e.localizedMessage ?: e.message}"))
+                Result.failure(Exception(ERROR_NO_CONNECTION))
             }
         }
     }
@@ -1078,6 +1150,266 @@ class EiosRepository(private val context: Context) {
             Result.success(targetFile)
         } catch (e: Exception) {
             Result.failure(Exception("Не удалось скачать файл: ${e.localizedMessage ?: e.message}"))
+        }
+    }
+
+    /**
+     * Выполняет диагностическую проверку ключевых эндпоинтов портала (Расписание, Лента, БРС).
+     * Вызывается строго вручную по нажатию кнопки пользователем.
+     */
+    suspend fun checkEndpointsHealth(): List<EndpointHealthItem> = withContext(Dispatchers.IO) {
+        val results = mutableListOf<EndpointHealthItem>()
+        results.add(checkTimetableEndpoint())
+        results.add(checkFeedEndpoint())
+        results.add(checkCurriculumEndpoint())
+        results
+    }
+
+    private fun checkTimetableEndpoint(): EndpointHealthItem {
+        val start = System.currentTimeMillis()
+        val url = "https://eios.gukolomna.ru/eios/contacts/timetable/"
+        try {
+            val req = Request.Builder().url(url).build()
+            val resp = okHttpClient.newCall(req).execute()
+            val latency = System.currentTimeMillis() - start
+            val code = resp.code
+            val body = resp.body?.string() ?: ""
+            val errText = ScheduleParser.extractErrorMessage(body)
+
+            return when {
+                !resp.isSuccessful -> {
+                    EndpointHealthItem(
+                        id = "timetable",
+                        name = "РАСПИСАНИЕ",
+                        path = "/eios/contacts/timetable/",
+                        status = EndpointStatus.ERROR,
+                        httpCode = code,
+                        latencyMs = latency,
+                        message = "Ошибка HTTP $code"
+                    )
+                }
+                errText != null -> {
+                    EndpointHealthItem(
+                        id = "timetable",
+                        name = "РАСПИСАНИЕ",
+                        path = "/eios/contacts/timetable/",
+                        status = EndpointStatus.DEGRADED,
+                        httpCode = code,
+                        latencyMs = latency,
+                        message = "200 ОК, но сбой 1С: $errText"
+                    )
+                }
+                body.contains("Отсутствует соединение с сервером") -> {
+                    EndpointHealthItem(
+                        id = "timetable",
+                        name = "РАСПИСАНИЕ",
+                        path = "/eios/contacts/timetable/",
+                        status = EndpointStatus.DEGRADED,
+                        httpCode = code,
+                        latencyMs = latency,
+                        message = "200 ОК, но служба 1С недоступна"
+                    )
+                }
+                body.contains("schedule-table") -> {
+                    EndpointHealthItem(
+                        id = "timetable",
+                        name = "РАСПИСАНИЕ",
+                        path = "/eios/contacts/timetable/",
+                        status = EndpointStatus.OK,
+                        httpCode = code,
+                        latencyMs = latency,
+                        message = "200 ОК · Таблица доступна"
+                    )
+                }
+                else -> {
+                    EndpointHealthItem(
+                        id = "timetable",
+                        name = "РАСПИСАНИЕ",
+                        path = "/eios/contacts/timetable/",
+                        status = EndpointStatus.DEGRADED,
+                        httpCode = code,
+                        latencyMs = latency,
+                        message = "200 ОК, но пустая страница (нет таблицы)"
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            return EndpointHealthItem(
+                id = "timetable",
+                name = "РАСПИСАНИЕ",
+                path = "/eios/contacts/timetable/",
+                status = EndpointStatus.ERROR,
+                latencyMs = System.currentTimeMillis() - start,
+                message = "Нет связи с сервером"
+            )
+        }
+    }
+
+    private fun checkFeedEndpoint(): EndpointHealthItem {
+        val start = System.currentTimeMillis()
+        val url = "https://eios.gukolomna.ru/eios/"
+        try {
+            val req = Request.Builder().url(url).build()
+            val resp = okHttpClient.newCall(req).execute()
+            val latency = System.currentTimeMillis() - start
+            val code = resp.code
+            val body = resp.body?.string() ?: ""
+
+            return when {
+                !resp.isSuccessful -> {
+                    EndpointHealthItem(
+                        id = "feed",
+                        name = "ЖИВАЯ ЛЕНТА",
+                        path = "/eios/",
+                        status = EndpointStatus.ERROR,
+                        httpCode = code,
+                        latencyMs = latency,
+                        message = "Ошибка HTTP $code"
+                    )
+                }
+                body.contains("errortext") -> {
+                    val errText = ScheduleParser.extractErrorMessage(body) ?: "Ошибка Битрикс"
+                    EndpointHealthItem(
+                        id = "feed",
+                        name = "ЖИВАЯ ЛЕНТА",
+                        path = "/eios/",
+                        status = EndpointStatus.DEGRADED,
+                        httpCode = code,
+                        latencyMs = latency,
+                        message = "200 ОК, но ошибка: $errText"
+                    )
+                }
+                body.contains("feed-post-block") || body.contains("feed-wrap") || body.contains("workarea") -> {
+                    EndpointHealthItem(
+                        id = "feed",
+                        name = "ЖИВАЯ ЛЕНТА",
+                        path = "/eios/",
+                        status = EndpointStatus.OK,
+                        httpCode = code,
+                        latencyMs = latency,
+                        message = "200 ОК · Работает штатно"
+                    )
+                }
+                body.contains("bx_auth_serv") || ScheduleParser.isAuthRequired(body) -> {
+                    EndpointHealthItem(
+                        id = "feed",
+                        name = "ЖИВАЯ ЛЕНТА",
+                        path = "/eios/",
+                        status = EndpointStatus.AUTH_REQUIRED,
+                        httpCode = code,
+                        latencyMs = latency,
+                        message = "200 ОК · Требуется авторизация"
+                    )
+                }
+                else -> {
+                    EndpointHealthItem(
+                        id = "feed",
+                        name = "ЖИВАЯ ЛЕНТА",
+                        path = "/eios/",
+                        status = EndpointStatus.OK,
+                        httpCode = code,
+                        latencyMs = latency,
+                        message = "200 ОК · Страница получена"
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            return EndpointHealthItem(
+                id = "feed",
+                name = "ЖИВАЯ ЛЕНТА",
+                path = "/eios/",
+                status = EndpointStatus.ERROR,
+                latencyMs = System.currentTimeMillis() - start,
+                message = "Нет связи с сервером"
+            )
+        }
+    }
+
+    private fun checkCurriculumEndpoint(): EndpointHealthItem {
+        val start = System.currentTimeMillis()
+        val currid = _userProfile.value.currid
+        val userId = _userProfile.value.userId
+        val urlBuilder = StringBuilder("https://eios.gukolomna.ru/eios/contacts/curriculum/")
+        val params = mutableListOf<String>()
+        if (currid.isNotEmpty()) params.add("currid=$currid")
+        if (userId.isNotEmpty()) params.add("user_id=$userId")
+        if (params.isNotEmpty()) urlBuilder.append("?").append(params.joinToString("&"))
+        val url = urlBuilder.toString()
+
+        try {
+            val req = Request.Builder().url(url).build()
+            val resp = okHttpClient.newCall(req).execute()
+            val latency = System.currentTimeMillis() - start
+            val code = resp.code
+            val body = resp.body?.string() ?: ""
+
+            return when {
+                !resp.isSuccessful -> {
+                    EndpointHealthItem(
+                        id = "curriculum",
+                        name = "УСПЕВАЕМОСТЬ (БРС)",
+                        path = "/eios/contacts/curriculum/",
+                        status = EndpointStatus.ERROR,
+                        httpCode = code,
+                        latencyMs = latency,
+                        message = "Ошибка HTTP $code"
+                    )
+                }
+                body.contains("errortext") -> {
+                    val errText = ScheduleParser.extractErrorMessage(body) ?: "Ошибка Битрикс"
+                    EndpointHealthItem(
+                        id = "curriculum",
+                        name = "УСПЕВАЕМОСТЬ (БРС)",
+                        path = "/eios/contacts/curriculum/",
+                        status = EndpointStatus.DEGRADED,
+                        httpCode = code,
+                        latencyMs = latency,
+                        message = "200 ОК, но ошибка: $errText"
+                    )
+                }
+                body.contains("bx_auth_serv") || ScheduleParser.isAuthRequired(body) -> {
+                    EndpointHealthItem(
+                        id = "curriculum",
+                        name = "УСПЕВАЕМОСТЬ (БРС)",
+                        path = "/eios/contacts/curriculum/",
+                        status = EndpointStatus.AUTH_REQUIRED,
+                        httpCode = code,
+                        latencyMs = latency,
+                        message = "200 ОК · Требуется авторизация"
+                    )
+                }
+                body.contains("curriculum") || body.contains("Семестр") || body.contains("таблица") || body.contains("table") -> {
+                    EndpointHealthItem(
+                        id = "curriculum",
+                        name = "УСПЕВАЕМОСТЬ (БРС)",
+                        path = "/eios/contacts/curriculum/",
+                        status = EndpointStatus.OK,
+                        httpCode = code,
+                        latencyMs = latency,
+                        message = "200 ОК · Работает штатно"
+                    )
+                }
+                else -> {
+                    EndpointHealthItem(
+                        id = "curriculum",
+                        name = "УСПЕВАЕМОСТЬ (БРС)",
+                        path = "/eios/contacts/curriculum/",
+                        status = EndpointStatus.OK,
+                        httpCode = code,
+                        latencyMs = latency,
+                        message = "200 ОК · Страница получена"
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            return EndpointHealthItem(
+                id = "curriculum",
+                name = "УСПЕВАЕМОСТЬ (БРС)",
+                path = "/eios/contacts/curriculum/",
+                status = EndpointStatus.ERROR,
+                latencyMs = System.currentTimeMillis() - start,
+                message = "Нет связи с сервером"
+            )
         }
     }
 }

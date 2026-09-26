@@ -11,8 +11,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ru.nya.nyeios.data.model.UpdateInfo
 import ru.nya.nyeios.data.net.EiosLastGetInfo
+import ru.nya.nyeios.data.net.EndpointHealthItem
+import ru.nya.nyeios.data.net.EndpointStatus
 import ru.nya.nyeios.data.net.NetworkMetricsTracker
 import ru.nya.nyeios.data.net.PingResult
+import ru.nya.nyeios.data.repository.EiosRepository
 import ru.nya.nyeios.data.update.AppVersionProvider
 import ru.nya.nyeios.data.update.GithubRateLimitState
 import ru.nya.nyeios.data.update.UpdateRepository
@@ -34,6 +37,12 @@ data class SettingsUiState(
     val isVpnActive: Boolean = false,
     val isMeasuringPing: Boolean = false,
     val isFetchingIp: Boolean = false,
+    val isCheckingEndpoints: Boolean = false,
+    val endpointsHealth: List<EndpointHealthItem> = listOf(
+        EndpointHealthItem("timetable", "РАСПИСАНИЕ", "/eios/contacts/timetable/"),
+        EndpointHealthItem("feed", "ЖИВАЯ ЛЕНТА", "/eios/"),
+        EndpointHealthItem("curriculum", "УСПЕВАЕМОСТЬ (БРС)", "/eios/contacts/curriculum/")
+    ),
     val currentVersion: String = "",
     val isCheckingUpdate: Boolean = false,
     val updateCheckStatus: String? = null,
@@ -44,6 +53,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     private val metricsTracker = NetworkMetricsTracker.getInstance(application)
     private val updateRepository = UpdateRepository.getInstance(application)
+    private val eiosRepository = EiosRepository.getInstance(application)
 
     private val _uiState = MutableStateFlow(
         SettingsUiState(
@@ -167,6 +177,28 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _uiState.update { it.copy(isFetchingIp = true) }
             metricsTracker.fetchExternalIp()
             _uiState.update { it.copy(isFetchingIp = false) }
+        }
+    }
+
+    /**
+     * Ручная проверка доступности основных эндпоинтов (Расписание, Лента, БРС).
+     * Запускается только по явному нажатию кнопки пользователем.
+     */
+    fun checkEndpoints() {
+        viewModelScope.launch {
+            _uiState.update { state ->
+                state.copy(
+                    isCheckingEndpoints = true,
+                    endpointsHealth = state.endpointsHealth.map { it.copy(status = EndpointStatus.CHECKING) }
+                )
+            }
+            val results = eiosRepository.checkEndpointsHealth()
+            _uiState.update {
+                it.copy(
+                    isCheckingEndpoints = false,
+                    endpointsHealth = results
+                )
+            }
         }
     }
 

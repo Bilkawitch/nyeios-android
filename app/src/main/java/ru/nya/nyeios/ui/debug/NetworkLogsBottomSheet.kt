@@ -408,6 +408,7 @@ private fun LogEntryCard(entry: NetworkLogEntry, isAlt: Boolean) {
         NetworkLogLevel.REQUEST -> Pair(NierBlue, entry.tag.ifEmpty { "REQ" })
         NetworkLogLevel.RESPONSE -> Pair(NierGreen, entry.tag.ifEmpty { "RES" })
         NetworkLogLevel.SUCCESS -> Pair(NierGreen, entry.tag.ifEmpty { "OK" })
+        NetworkLogLevel.WARNING -> Pair(NierAmber, entry.tag.ifEmpty { "200 ПУСТО" })
         NetworkLogLevel.ERROR -> Pair(NierRed, entry.tag.ifEmpty { "ERR" })
         NetworkLogLevel.INFO -> Pair(NierAmber, entry.tag.ifEmpty { "INFO" })
     }
@@ -450,7 +451,11 @@ private fun LogEntryCard(entry: NetworkLogEntry, isAlt: Boolean) {
                 fontSize = 11.sp,
                 fontFamily = ShareTechMonoFamily,
                 fontWeight = FontWeight.Bold,
-                color = if (entry.level == NetworkLogLevel.ERROR) NierRed else NierDark,
+                color = when (entry.level) {
+                    NetworkLogLevel.ERROR -> NierRed
+                    NetworkLogLevel.WARNING -> NierAmber
+                    else -> NierDark
+                },
                 maxLines = if (isExpanded) Int.MAX_VALUE else 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)

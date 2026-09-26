@@ -20,18 +20,35 @@ object ScheduleParser {
                 (html.contains("USER_LOGIN") && html.contains("USER_PASSWORD"))
     }
 
-    fun parse(html: String, offsetWeeks: Int = 0, startDateStr: String = "", endDateStr: String = ""): WeekSchedule? {
+    fun extractErrorMessage(html: String): String? {
         val doc = Jsoup.parse(html)
+        val errorEl = doc.selectFirst(".errortext")
+            ?: doc.selectFirst("font.errortext")
+            ?: doc.selectFirst(".error")
+        val text = errorEl?.text()?.trim()
+        if (!text.isNullOrEmpty()) return text
+
+        if (html.contains("Отсутствует соединение с сервером")) {
+            return "Отсутствует соединение с сервером. Повторите попытку позднее"
+        }
+        return null
+    }
+
+    fun parse(html: String, offsetWeeks: Int = 0, startDateStr: String = "", endDateStr: String = ""): WeekSchedule? {
+        if (isAuthRequired(html)) return null
+
+        val doc = Jsoup.parse(html)
+
+        // If the page contains an explicit server error, it is not a valid empty schedule
+        if (extractErrorMessage(html) != null) {
+            return null
+        }
+
         val table = doc.selectFirst("table.schedule-table")
 
         if (table == null) {
-            if (isAuthRequired(html)) return null
-
             val hasTimetableContext = doc.selectFirst("div.schedule-body") != null ||
-                    doc.selectFirst("select#group-select") != null ||
-                    doc.selectFirst("div.workarea-content") != null ||
-                    doc.selectFirst("h2") != null ||
-                    html.contains("eios/contacts/timetable")
+                    doc.selectFirst("select#group-select") != null
 
             if (hasTimetableContext) {
                 return buildEmptyWeekSchedule(doc, offsetWeeks, startDateStr, endDateStr)
@@ -39,7 +56,13 @@ object ScheduleParser {
             return null
         }
 
-        val thElements = table.select("thead th")
+        val thElements = table.select("thead th").let { theadThs ->
+            if (theadThs.isNotEmpty()) theadThs
+            else table.select("tr").firstOrNull()?.select("th")?.let { trThs ->
+                if (trThs.isNotEmpty()) trThs
+                else table.select("tr").firstOrNull()?.select("td") ?: org.jsoup.select.Elements()
+            } ?: org.jsoup.select.Elements()
+        }
         if (thElements.size < 2) {
             return buildEmptyWeekSchedule(doc, offsetWeeks, startDateStr, endDateStr)
         }
@@ -71,7 +94,7 @@ object ScheduleParser {
             val tds = tr.children().filter { it.tagName() == "td" }
             val dayTds: List<org.jsoup.nodes.Element>
 
-            if (tds.size == numDays + 1) {
+            if (tds.size >= numDays + 1) {
                 val timeRaw = tds[0].text().trim()
                 if (timeRaw.any { it.isDigit() }) {
                     currentTime = timeRaw
@@ -81,14 +104,6 @@ object ScheduleParser {
                 dayTds = tds.drop(1)
             } else if (tds.size == numDays) {
                 dayTds = tds
-            } else if (tds.size >= 8) {
-                val timeRaw = tds[0].text().trim()
-                if (timeRaw.any { it.isDigit() }) {
-                    currentTime = timeRaw
-                    val numMatch = Regex("""^(\d+)""").find(timeRaw)
-                    currentLessonNumber = numMatch?.value ?: ""
-                }
-                dayTds = tds.drop(1)
             } else {
                 continue
             }
