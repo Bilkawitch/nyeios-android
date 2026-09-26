@@ -163,7 +163,6 @@ class MainActivity : ComponentActivity() {
                         0 -> (scheduleUiState as? ScheduleUiState.Success)?.isRefreshing == true || scheduleUiState is ScheduleUiState.Loading
                         1 -> feedSyncProgress.isSyncing || (feedUiState as? FeedUiState.Success)?.isRefreshing == true || feedUiState is FeedUiState.Loading
                         2 -> (curriculumUiState as? CurriculumUiState.Success)?.isRefreshing == true || curriculumUiState is CurriculumUiState.Loading
-                        3 -> settingsUiState.isMeasuringPing || settingsUiState.isFetchingIp
                         else -> false
                     }
 
@@ -391,8 +390,11 @@ class MainActivity : ComponentActivity() {
                                             }
                                         }
 
-                                        // Profile button
-                                        IconButton(onClick = { scheduleViewModel.showLoginSheet() }) {
+                                        // Profile button — disabled when not authenticated
+                                        IconButton(
+                                            onClick = { scheduleViewModel.showLoginSheet() },
+                                            enabled = authSession.isLoggedIn
+                                        ) {
                                             Icon(
                                                 imageVector = Icons.Default.AccountCircle,
                                                 contentDescription = "Профиль",
@@ -400,7 +402,8 @@ class MainActivity : ComponentActivity() {
                                             )
                                         }
 
-                                        // Refresh button
+                                        // Refresh button — hidden on the settings tab
+                                        if (currentTab != 3) {
                                         IconButton(
                                             onClick = {
                                                 if (feedSyncProgress.isSyncing) {
@@ -415,7 +418,6 @@ class MainActivity : ComponentActivity() {
                                                     0 -> scheduleViewModel.refresh()
                                                     1 -> feedViewModel.requestSyncFeed()
                                                     2 -> curriculumViewModel.refresh()
-                                                    3 -> settingsViewModel.refreshDiagnostics()
                                                 }
                                             }
                                         ) {
@@ -499,6 +501,7 @@ class MainActivity : ComponentActivity() {
                                                 )
                                             }
                                         }
+                                        } // end if (currentTab != 3)
                                     }
                                 )
                             }
