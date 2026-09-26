@@ -554,7 +554,7 @@ fun FloorMapBottomSheet(
 
 
 @Composable
-private fun SingleFloorInteractiveView(
+internal fun SingleFloorInteractiveView(
     floor: Int,
     startRoom: FloorRoom?,
     destRoom: FloorRoom?,
@@ -1523,7 +1523,7 @@ private fun FloorStubView(
     }
 }
 
-private fun computeRouteDistance(route: FloorRoute): Float {
+internal fun computeRouteDistance(route: FloorRoute): Float {
     fun ptsDist(pts: List<Offset>): Float {
         var d = 0f
         for (i in 0 until pts.size - 1) {

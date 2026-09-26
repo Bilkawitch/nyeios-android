@@ -59,6 +59,8 @@ import ru.nya.nyeios.data.model.LessonType
 import ru.nya.nyeios.data.model.ScheduleUiState
 import ru.nya.nyeios.data.model.WeekSchedule
 import ru.nya.nyeios.ui.floormap.FloorMapBottomSheet
+import ru.nya.nyeios.ui.floormap.NycMapSheet
+import ru.nya.nyeios.ui.theme.isNycModern
 import ru.nya.nyeios.ui.theme.NierAmber
 import ru.nya.nyeios.ui.theme.NierBlue
 import ru.nya.nyeios.ui.theme.NierBorderLight
@@ -275,14 +277,25 @@ fun NycScheduleScreen(
         }
 
         if (floorMapTargetRoom != null) {
-            FloorMapBottomSheet(
-                targetRoomQuery = floorMapTargetRoom!!,
-                fromRoomQuery = floorMapFromRoom,
-                onDismiss = {
-                    floorMapTargetRoom = null
-                    floorMapFromRoom = null
-                }
-            )
+            if (isNycModern) {
+                NycMapSheet(
+                    targetRoomQuery = floorMapTargetRoom!!,
+                    fromRoomQuery = floorMapFromRoom,
+                    onDismiss = {
+                        floorMapTargetRoom = null
+                        floorMapFromRoom = null
+                    }
+                )
+            } else {
+                FloorMapBottomSheet(
+                    targetRoomQuery = floorMapTargetRoom!!,
+                    fromRoomQuery = floorMapFromRoom,
+                    onDismiss = {
+                        floorMapTargetRoom = null
+                        floorMapFromRoom = null
+                    }
+                )
+            }
         }
     }
 }
