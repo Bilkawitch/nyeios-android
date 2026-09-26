@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -621,7 +622,6 @@ internal fun ThemeSettingsContent() {
 
         // ── 02. ОСОБЫЕ ТЕМЫ ОФОРМЛЕНИЯ ─────────────────────────────────────
         // Impeccable Operate: повторяет существующие SectionHeader/NierCard/ThemeItemRow,
-        // нового визуального языка не вводит; выбор предупреждает о перезагрузке.
         SectionHeader(title = "[ 02 · ОСОБЫЕ ТЕМЫ ОФОРМЛЕНИЯ ]")
 
         NierCard {
@@ -631,15 +631,10 @@ internal fun ThemeSettingsContent() {
             ) {
                 ThemeItemRow(
                     title = "NyC-modern (Мягкая тема)",
-                    subtitle = "Скругленная тема по мокапу Night Skeuomorph: циановый акцент и объемные панели. ВНИМАНИЕ: требуется перезагрузка — приложение перезапустится автоматически.",
+                    subtitle = "Скругленная тема по мокапу Night Skeuomorph: циановый акцент и объемные панели",
                     isSelected = currentTheme == NierThemeMode.NYC_MODERN,
                     onClick = {
-                        Toast.makeText(
-                            context,
-                            "NyC-modern: требуется перезагрузка для полного применения темы",
-                            Toast.LENGTH_LONG
-                        ).show()
-                        applyThemeWithRestart(context, NierThemeMode.NYC_MODERN)
+                        ThemeManager.setTheme(context, NierThemeMode.NYC_MODERN)
                     }
                 )
             }
@@ -735,6 +730,9 @@ private fun NierToggleRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
+    val trackShape = if (isNycModern) RoundedCornerShape(percent = 50) else RoundedCornerShape(0.dp)
+    val thumbShape = if (isNycModern) CircleShape else RoundedCornerShape(0.dp)
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -763,19 +761,25 @@ private fun NierToggleRow(
         Box(
             modifier = Modifier
                 .size(width = 42.dp, height = 22.dp)
-                .background(if (checked) NierBlue.copy(alpha = 0.15f) else Color.Transparent)
+                .background(
+                    color = if (checked) NierBlue.copy(alpha = 0.15f) else Color.Transparent,
+                    shape = trackShape
+                )
                 .border(
                     width = 1.dp,
                     color = if (checked) NierBlue else NierBorderLight,
-                    shape = appRectShape()
+                    shape = trackShape
                 )
-                .padding(2.dp),
+                .padding(if (isNycModern) 3.dp else 2.dp),
             contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart
         ) {
             Box(
                 modifier = Modifier
                     .size(16.dp)
-                    .background(if (checked) NierBlue else NierDim)
+                    .background(
+                        color = if (checked) NierBlue else NierDim,
+                        shape = thumbShape
+                    )
             )
         }
     }

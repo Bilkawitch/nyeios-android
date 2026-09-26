@@ -149,11 +149,7 @@ val NycTypography = Typography(
 // (selected day bars, bottom-nav active icons, today marker).
 fun selectionAccent(): Color = if (isNycModern) NycCyan else NierBlue
 
-// Full-apply helper: NyC-modern geometry/fonts reload cleanly only after recreate.
+// Theme apply helper: themes update dynamically via Compose state.
 fun applyThemeWithRestart(context: Context, mode: NierThemeMode) {
-    val wasNyc = isNycModern
     ThemeManager.setTheme(context, mode)
-    if (mode == NierThemeMode.NYC_MODERN || wasNyc) {
-        (context as? Activity)?.recreate()
-    }
 }

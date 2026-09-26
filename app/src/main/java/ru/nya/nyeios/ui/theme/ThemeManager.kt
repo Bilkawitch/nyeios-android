@@ -29,7 +29,7 @@ enum class NierThemeMode(val id: String, val title: String, val description: Str
     NYC_MODERN(
         id = "nyc_modern",
         title = "NyC-modern",
-        description = "Мягкая скругленная тема по мокапу Night Skeuomorph: циановый акцент, объемные панели. ВНИМАНИЕ: требуется перезагрузка приложения для полного применения."
+        description = "Мягкая скругленная тема по мокапу Night Skeuomorph: циановый акцент, объемные панели"
     )
 }
 
