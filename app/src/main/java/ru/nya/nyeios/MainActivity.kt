@@ -85,6 +85,7 @@ import ru.nya.nyeios.ui.auth.NycLoginGate
 import ru.nya.nyeios.ui.auth.LoginFullscreenGate
 import ru.nya.nyeios.ui.debug.NetworkLogsBottomSheet
 import ru.nya.nyeios.ui.curriculum.CurriculumScreen
+import ru.nya.nyeios.ui.curriculum.NycCurriculumScreen
 import ru.nya.nyeios.ui.curriculum.CurriculumViewModel
 import ru.nya.nyeios.ui.feed.FeedScreen
 import ru.nya.nyeios.ui.feed.NycFeedScreen
@@ -728,12 +729,21 @@ class MainActivity : ComponentActivity() {
                                                 onOpenLogin = { scheduleViewModel.showLoginSheet() }
                                             )
                                         }
-                                        2 -> CurriculumScreen(
-                                            uiState = curriculumUiState,
-                                            onSelectTerm = { curriculumViewModel.selectTerm(it) },
-                                            onRefresh = { curriculumViewModel.refresh() },
-                                            onOpenLogin = { scheduleViewModel.showLoginSheet() }
-                                        )
+                                        2 -> if (isNycModern) {
+                                            NycCurriculumScreen(
+                                                uiState = curriculumUiState,
+                                                onSelectTerm = { curriculumViewModel.selectTerm(it) },
+                                                onRefresh = { curriculumViewModel.refresh() },
+                                                onOpenLogin = { scheduleViewModel.showLoginSheet() }
+                                            )
+                                        } else {
+                                            CurriculumScreen(
+                                                uiState = curriculumUiState,
+                                                onSelectTerm = { curriculumViewModel.selectTerm(it) },
+                                                onRefresh = { curriculumViewModel.refresh() },
+                                                onOpenLogin = { scheduleViewModel.showLoginSheet() }
+                                            )
+                                        }
                                         3 -> SettingsScreen(
                                             viewModel = settingsViewModel,
                                             updateViewModel = updateViewModel
