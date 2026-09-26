@@ -87,6 +87,7 @@ import ru.nya.nyeios.ui.debug.NetworkLogsBottomSheet
 import ru.nya.nyeios.ui.curriculum.CurriculumScreen
 import ru.nya.nyeios.ui.curriculum.CurriculumViewModel
 import ru.nya.nyeios.ui.feed.FeedScreen
+import ru.nya.nyeios.ui.feed.NycFeedScreen
 import ru.nya.nyeios.ui.feed.FeedViewModel
 import ru.nya.nyeios.ui.common.NycBottomNav
 import ru.nya.nyeios.ui.common.NycTopBar
@@ -712,12 +713,21 @@ class MainActivity : ComponentActivity() {
                                                 onOpenLogin = { scheduleViewModel.showLoginSheet() }
                                             )
                                         }
-                                        1 -> FeedScreen(
-                                            uiState = feedUiState,
-                                            feedViewModel = feedViewModel,
-                                            onRefresh = { feedViewModel.refresh() },
-                                            onOpenLogin = { scheduleViewModel.showLoginSheet() }
-                                        )
+                                        1 -> if (isNycModern) {
+                                            NycFeedScreen(
+                                                uiState = feedUiState,
+                                                feedViewModel = feedViewModel,
+                                                onRefresh = { feedViewModel.refresh() },
+                                                onOpenLogin = { scheduleViewModel.showLoginSheet() }
+                                            )
+                                        } else {
+                                            FeedScreen(
+                                                uiState = feedUiState,
+                                                feedViewModel = feedViewModel,
+                                                onRefresh = { feedViewModel.refresh() },
+                                                onOpenLogin = { scheduleViewModel.showLoginSheet() }
+                                            )
+                                        }
                                         2 -> CurriculumScreen(
                                             uiState = curriculumUiState,
                                             onSelectTerm = { curriculumViewModel.selectTerm(it) },
