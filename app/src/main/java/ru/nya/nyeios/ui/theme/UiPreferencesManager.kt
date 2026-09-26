@@ -41,8 +41,11 @@ object UiPreferencesManager {
     val borderWidth: Dp
         get() = if (thickBorders) 2.dp else 1.dp
 
+    val scheduleFontDeltaSp: Int
+        get() = if (largeScheduleFont) 2 else 0
+
     val scheduleFontDelta: TextUnit
-        get() = if (largeScheduleFont) 2.sp else 0.sp
+        get() = (if (largeScheduleFont) 2 else 0).sp
 
     fun init(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)

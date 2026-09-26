@@ -17,8 +17,51 @@ data class LessonProgressInfo(
 )
 
 object LessonTimeUtils {
-    private val timeRegex = Regex("""(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})""")
+    private val timeRegex = Regex("""(\d{2}:\d{2})\s*[-—–]\s*(\d{2}:\d{2})""")
     private val formatter = DateTimeFormatter.ofPattern("HH:mm")
+
+    fun parseTimeRange(timeRangeStr: String): Pair<LocalTime, LocalTime>? {
+        val match = timeRegex.find(timeRangeStr) ?: return null
+        val (startStr, endStr) = match.destructured
+        return try {
+            val start = LocalTime.parse(startStr, formatter)
+            val end = LocalTime.parse(endStr, formatter)
+            Pair(start, end)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    fun computeBreakMinutes(previousTimeStr: String, nextTimeStr: String): Long? {
+        val prevRange = parseTimeRange(previousTimeStr) ?: return null
+        val nextRange = parseTimeRange(nextTimeStr) ?: return null
+        val minutes = Duration.between(prevRange.second, nextRange.first).toMinutes()
+        return if (minutes > 0) minutes else null
+    }
+
+    fun formatLessonCount(count: Int): String {
+        val rem10 = count % 10
+        val rem100 = count % 100
+        val word = when {
+            rem100 in 11..19 -> "ПАР"
+            rem10 == 1 -> "ПАРА"
+            rem10 in 2..4 -> "ПАРЫ"
+            else -> "ПАР"
+        }
+        return "$count $word"
+    }
+
+    fun computeDayTimeRange(lessons: List<ru.nya.nyeios.data.model.LessonItem>): String {
+        if (lessons.isEmpty()) return ""
+        val firstStart = parseTimeRange(lessons.first().time)?.first?.format(formatter) ?: ""
+        val lastEnd = parseTimeRange(lessons.last().time)?.second?.format(formatter) ?: ""
+        return if (firstStart.isNotEmpty() && lastEnd.isNotEmpty()) {
+            "$firstStart—$lastEnd"
+        } else {
+            ""
+        }
+    }
+
 
     val moscowZone: ZoneId by lazy {
         try {

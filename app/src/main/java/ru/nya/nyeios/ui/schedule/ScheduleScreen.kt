@@ -53,9 +53,13 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.FilterCenterFocus
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.Warning
+import ru.nya.nyeios.data.floormap.FloorMapRepository
+import ru.nya.nyeios.ui.theme.UiPreferencesManager
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -424,9 +428,63 @@ fun ScheduleScreen(
                                 LazyColumn(
                                     modifier = Modifier.fillMaxSize(),
                                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
+                                    // Day summary header
+                                    item {
+                                        val dayNameUpper = currentDay.dayTitle.substringBefore(' ').uppercase()
+                                        val lessonCountText = LessonTimeUtils.formatLessonCount(lessons.size)
+                                        val timeRangeText = LessonTimeUtils.computeDayTimeRange(lessons)
+                                        val summaryText = if (timeRangeText.isNotEmpty()) {
+                                            "$dayNameUpper · $lessonCountText · $timeRangeText"
+                                        } else {
+                                            "$dayNameUpper · $lessonCountText"
+                                        }
+
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 2.dp, vertical = 4.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = summaryText,
+                                                fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                                                fontSize = (9 + UiPreferencesManager.scheduleFontDeltaSp).sp,
+                                                letterSpacing = 1.2.sp,
+                                                color = ru.nya.nyeios.ui.theme.NierDim
+                                            )
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.FilterCenterFocus,
+                                                    contentDescription = null,
+                                                    tint = ru.nya.nyeios.ui.theme.NierDim,
+                                                    modifier = Modifier.size(11.dp)
+                                                )
+                                                Text(
+                                                    text = if (uiState.schedule.isCached) "КЭШ" else "СЕТЬ",
+                                                    fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                                                    fontSize = 9.sp,
+                                                    letterSpacing = 1.sp,
+                                                    color = ru.nya.nyeios.ui.theme.NierDim
+                                                )
+                                            }
+                                        }
+                                    }
+
                                     itemsIndexed(lessons) { index, lesson ->
+                                        if (index > 0) {
+                                            val prevLesson = lessons[index - 1]
+                                            ScheduleTransferItem(
+                                                prevLesson = prevLesson,
+                                                nextLesson = lesson
+                                            )
+                                        }
+
                                         val previousRoom = if (index > 0) {
                                             lessons.subList(0, index).lastOrNull { it.room.isNotBlank() }?.room
                                         } else {
@@ -638,11 +696,93 @@ fun DaySelectorRow(
 }
 
 @Composable
+fun ScheduleTransferItem(
+    prevLesson: LessonItem,
+    nextLesson: LessonItem,
+    modifier: Modifier = Modifier
+) {
+    val breakMinutes = remember(prevLesson.time, nextLesson.time) {
+        LessonTimeUtils.computeBreakMinutes(prevLesson.time, nextLesson.time)
+    } ?: 10L
+
+    val routeDetails = remember(prevLesson.room, nextLesson.room) {
+        if (prevLesson.room.isNotBlank() && nextLesson.room.isNotBlank()) {
+            val fromRoom = FloorMapRepository.findRoom(prevLesson.room)
+            val toRoom = FloorMapRepository.findRoom(nextLesson.room)
+            if (fromRoom != null && toRoom != null) {
+                val route = FloorMapRepository.buildRoute(prevLesson.room, nextLesson.room)
+                val distMeters = if (route != null) {
+                    fun ptsDist(pts: List<Offset>): Float {
+                        var d = 0f
+                        for (i in 0 until pts.size - 1) {
+                            val dx = pts[i + 1].x - pts[i].x
+                            val dy = pts[i + 1].y - pts[i].y
+                            d += kotlin.math.hypot(dx, dy)
+                        }
+                        return d
+                    }
+                    val px = if (route.isCrossFloor) {
+                        ptsDist(route.fromFloorPoints) + ptsDist(route.toFloorPoints)
+                    } else {
+                        ptsDist(route.points)
+                    }
+                    (px * 0.11f).toInt().coerceAtLeast(10)
+                } else null
+
+                val floorStr = if (fromRoom.floor == toRoom.floor) {
+                    "${fromRoom.floor} ЭТАЖ"
+                } else {
+                    "${fromRoom.floor} → ${toRoom.floor} ЭТАЖ"
+                }
+                if (distMeters != null) "$floorStr · $distMeters М" else floorStr
+            } else null
+        } else null
+    }
+
+    val transferText = if (routeDetails != null) {
+        "ПЕРЕРЫВ $breakMinutes МИН · $routeDetails"
+    } else {
+        "ПЕРЕРЫВ $breakMinutes МИН"
+    }
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = 20.dp, top = 2.dp, bottom = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .width(1.dp)
+                .height(18.dp)
+                .background(ru.nya.nyeios.ui.theme.NierBorderLight)
+        )
+        Icon(
+            imageVector = Icons.Default.Route,
+            contentDescription = null,
+            tint = ru.nya.nyeios.ui.theme.NierDim,
+            modifier = Modifier.size(13.dp)
+        )
+        Text(
+            text = transferText,
+            fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+            fontSize = 9.sp,
+            letterSpacing = 1.1.sp,
+            color = ru.nya.nyeios.ui.theme.NierDim
+        )
+    }
+}
+
+@Composable
 fun LessonCard(
     lesson: LessonItem,
     isToday: Boolean,
     onRoomClick: (String) -> Unit = {}
 ) {
+    val fontDelta = UiPreferencesManager.scheduleFontDeltaSp
+    val borderWidth = UiPreferencesManager.borderWidth
+
     val progressInfo by produceState<LessonProgressInfo?>(
         initialValue = LessonTimeUtils.computeLessonProgress(lesson.time, isToday),
         key1 = lesson.time,
@@ -655,6 +795,7 @@ fun LessonCard(
     }
 
     val isOngoing = progressInfo?.isOngoing == true
+    val isFinished = progressInfo?.isFinished == true
 
     val animatedProgress by animateFloatAsState(
         targetValue = progressInfo?.progress ?: 0f,
@@ -680,7 +821,7 @@ fun LessonCard(
             .fillMaxWidth()
             .background(ru.nya.nyeios.ui.theme.NierPanelAlt)
             .border(
-                width = if (isOngoing) 1.5.dp else 1.dp,
+                width = if (isOngoing) (borderWidth + 0.5.dp) else borderWidth,
                 color = if (isOngoing) ru.nya.nyeios.ui.theme.NierGreen else ru.nya.nyeios.ui.theme.NierBorderLight
             )
     ) {
@@ -692,7 +833,7 @@ fun LessonCard(
                 // Left Column: Time & Slot Info with right divider
                 Box(
                     modifier = Modifier
-                        .width(62.dp)
+                        .width(66.dp)
                         .drawBehind {
                             drawLine(
                                 color = ru.nya.nyeios.ui.theme.NierBorderLight,
@@ -710,7 +851,7 @@ fun LessonCard(
                     ) {
                         Text(
                             text = startTime,
-                            fontSize = 10.sp,
+                            fontSize = (11 + fontDelta).sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
                             color = ru.nya.nyeios.ui.theme.NierDark
@@ -724,10 +865,19 @@ fun LessonCard(
                             )
                             Text(
                                 text = endTime,
-                                fontSize = 10.sp,
+                                fontSize = (10 + fontDelta).sp,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
                                 color = ru.nya.nyeios.ui.theme.NierDark
+                            )
+                        }
+                        if (lesson.lessonNumber.isNotEmpty()) {
+                            Text(
+                                text = "ПАРА ${lesson.lessonNumber}",
+                                fontSize = 8.sp,
+                                fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                                color = ru.nya.nyeios.ui.theme.NierDim,
+                                modifier = Modifier.padding(top = 2.dp)
                             )
                         }
                     }
@@ -748,27 +898,36 @@ fun LessonCard(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(6.dp)
                                     .background(dotColor)
-                            )
-                            Text(
-                                text = lesson.type.title.uppercase(),
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
-                                color = ru.nya.nyeios.ui.theme.NierDim,
-                                letterSpacing = 0.8.sp
-                            )
+                                    .padding(horizontal = 5.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = lesson.type.title.uppercase(),
+                                    fontSize = (9 + fontDelta).sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                    color = Color.White,
+                                    letterSpacing = 0.8.sp
+                                )
+                            }
                             if (lesson.subgroup.isNotEmpty()) {
                                 Text(
-                                    text = "· ${lesson.subgroup}",
+                                    text = "· ${lesson.subgroup.uppercase()}",
                                     fontSize = 9.sp,
                                     fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
                                     color = ru.nya.nyeios.ui.theme.NierDim
+                                )
+                            }
+                            if (isFinished) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = ru.nya.nyeios.ui.theme.NierGreen,
+                                    modifier = Modifier.size(13.dp)
                                 )
                             }
                         }
@@ -803,11 +962,11 @@ fun LessonCard(
                     // Subject Name
                     Text(
                         text = lesson.subject,
-                        fontSize = 12.sp,
+                        fontSize = (12 + fontDelta).sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
                         color = ru.nya.nyeios.ui.theme.NierDark,
-                        lineHeight = 16.sp
+                        lineHeight = (16 + fontDelta).sp
                     )
 
                     // Meta: Teacher & Room Badge
@@ -818,7 +977,7 @@ fun LessonCard(
                     ) {
                         Text(
                             text = lesson.teacher.ifEmpty { "Преподаватель не указан" },
-                            fontSize = 10.sp,
+                            fontSize = (10 + fontDelta).sp,
                             fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
                             color = ru.nya.nyeios.ui.theme.NierDim,
                             modifier = Modifier.weight(1f, fill = false),
@@ -830,19 +989,37 @@ fun LessonCard(
                                     lesson.room.contains("ДОТ", ignoreCase = true) ||
                                     lesson.room.contains("ЭОР", ignoreCase = true)
 
+                            val roomObj = remember(lesson.room) { FloorMapRepository.findRoom(lesson.room) }
+                            val roomBadgeText = if (roomObj != null && !isDotRoom) {
+                                "${lesson.room} / ${roomObj.floor}Э"
+                            } else {
+                                lesson.room
+                            }
+
                             Box(
                                 modifier = Modifier
                                     .background(if (isDotRoom) ru.nya.nyeios.ui.theme.NierHighlight else ru.nya.nyeios.ui.theme.NierDark)
                                     .clickable { onRoomClick(lesson.room) }
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    .padding(horizontal = 7.dp, vertical = 2.dp)
                             ) {
-                                Text(
-                                    text = "📍 ${lesson.room}",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
-                                    color = ru.nya.nyeios.ui.theme.NierSelectionText
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.LocationOn,
+                                        contentDescription = null,
+                                        tint = ru.nya.nyeios.ui.theme.NierBlue,
+                                        modifier = Modifier.size(11.dp)
+                                    )
+                                    Text(
+                                        text = roomBadgeText,
+                                        fontSize = (10 + fontDelta).sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                                        color = ru.nya.nyeios.ui.theme.NierSelectionText
+                                    )
+                                }
                             }
                         }
                     }
