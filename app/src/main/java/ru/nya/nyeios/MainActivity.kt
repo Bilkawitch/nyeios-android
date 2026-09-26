@@ -96,6 +96,7 @@ import ru.nya.nyeios.ui.schedule.ScheduleScreen
 import ru.nya.nyeios.ui.schedule.NycScheduleScreen
 import ru.nya.nyeios.ui.schedule.ScheduleViewModel
 import ru.nya.nyeios.ui.settings.SettingsScreen
+import ru.nya.nyeios.ui.settings.NycSettingsScreen
 import ru.nya.nyeios.ui.settings.SettingsViewModel
 import ru.nya.nyeios.ui.theme.LectureBlue
 import ru.nya.nyeios.ui.theme.NyEIOSTheme
@@ -744,10 +745,17 @@ class MainActivity : ComponentActivity() {
                                                 onOpenLogin = { scheduleViewModel.showLoginSheet() }
                                             )
                                         }
-                                        3 -> SettingsScreen(
-                                            viewModel = settingsViewModel,
-                                            updateViewModel = updateViewModel
-                                        )
+                                        3 -> if (isNycModern) {
+                                            NycSettingsScreen(
+                                                viewModel = settingsViewModel,
+                                                updateViewModel = updateViewModel
+                                            )
+                                        } else {
+                                            SettingsScreen(
+                                                viewModel = settingsViewModel,
+                                                updateViewModel = updateViewModel
+                                            )
+                                        }
                                     }
                                 }
                             }

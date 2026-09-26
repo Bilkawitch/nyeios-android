@@ -494,7 +494,7 @@ private fun GeneralSettingsContent(
 }
 
 @Composable
-private fun ThemeSettingsContent() {
+internal fun ThemeSettingsContent() {
     val context = LocalContext.current
     val currentTheme = ThemeManager.currentTheme
     val scrollState = rememberScrollState()
@@ -1011,7 +1011,7 @@ private fun NieROutlineButton(
 }
 
 @Composable
-private fun VersionSettingsContent(
+internal fun VersionSettingsContent(
     uiState: SettingsUiState,
     onCheckForUpdates: () -> Unit,
     onDownloadUpdate: (UpdateInfo) -> Unit
