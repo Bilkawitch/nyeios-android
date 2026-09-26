@@ -87,7 +87,10 @@ import ru.nya.nyeios.ui.curriculum.CurriculumScreen
 import ru.nya.nyeios.ui.curriculum.CurriculumViewModel
 import ru.nya.nyeios.ui.feed.FeedScreen
 import ru.nya.nyeios.ui.feed.FeedViewModel
+import ru.nya.nyeios.ui.common.NycBottomNav
+import ru.nya.nyeios.ui.common.NycTopBar
 import ru.nya.nyeios.ui.schedule.ScheduleScreen
+import ru.nya.nyeios.ui.schedule.NycScheduleScreen
 import ru.nya.nyeios.ui.schedule.ScheduleViewModel
 import ru.nya.nyeios.ui.settings.SettingsScreen
 import ru.nya.nyeios.ui.settings.SettingsViewModel
@@ -155,6 +158,8 @@ class MainActivity : ComponentActivity() {
 
                     val updateUiState by updateViewModel.uiState.collectAsState()
                     val hasPendingUpdate = updateUiState is UpdateUiState.Dismissed
+                    val isNycModern = ru.nya.nyeios.ui.theme.ThemeManager.currentTheme ==
+                        ru.nya.nyeios.ui.theme.NierThemeMode.NYC_MODERN
 
                     LaunchedEffect(Unit) {
                         updateViewModel.checkForUpdate()
@@ -188,6 +193,76 @@ class MainActivity : ComponentActivity() {
                     Scaffold(
                         containerColor = ru.nya.nyeios.ui.theme.NierBg,
                         topBar = {
+                            if (isNycModern) {
+                                // Parallel NyC-modern chrome: same state, mockup rendering.
+                                val nycTitle = when (currentTab) {
+                                    0 -> "Расписание"
+                                    1 -> "Лента"
+                                    2 -> "Успеваемость"
+                                    3 -> "Настройки"
+                                    else -> "NyEIOS"
+                                }
+                                val nycBase = remember(lastSyncTime) { formatSyncTime(lastSyncTime) }
+                                val nycFresh = remember(nycBase, currentTab, feedUiState) {
+                                    if (nycBase.isEmpty()) "" else {
+                                        var t = nycBase
+                                        if (currentTab == 1) {
+                                            val n = (feedUiState as? ru.nya.nyeios.data.model.FeedUiState.Success)?.posts?.size ?: 0
+                                            if (n > 0) t += " | $n ЗАПИСЕЙ"
+                                        }
+                                        t
+                                    }
+                                }
+                                val nycFreshColor = when (syncState) {
+                                    ru.nya.nyeios.ui.common.SyncState.FRESH -> ru.nya.nyeios.ui.theme.NierGreen
+                                    ru.nya.nyeios.ui.common.SyncState.AGED -> ru.nya.nyeios.ui.theme.NierAmber
+                                    ru.nya.nyeios.ui.common.SyncState.STALE -> ru.nya.nyeios.ui.theme.NierRed
+                                }
+                                val nycGroup =
+                                    (scheduleUiState as? ScheduleUiState.Success)?.schedule?.group
+                                val nycDownloads =
+                                    if (currentTab == 1) feedViewModel.downloadedFiles.collectAsState().value else emptyList()
+                                NycTopBar(
+                                    title = nycTitle,
+                                    freshText = nycFresh,
+                                    freshColor = nycFreshColor,
+                                    isSyncingFeed = feedSyncProgress.isSyncing,
+                                    version = if (currentTab == 0) "v$currentAppVersion" else "",
+                                    group = if (currentTab == 0) nycGroup else null,
+                                    showDownloads = currentTab == 1,
+                                    downloadCount = nycDownloads.size,
+                                    onDownloads = { feedViewModel.showDownloadsSheet() },
+                                    profileEnabled = authSession.isLoggedIn,
+                                    isLoggedIn = authSession.isLoggedIn,
+                                    onProfile = { scheduleViewModel.showLoginSheet() },
+                                    showRefresh = currentTab != 3,
+                                    isRefreshing = isRefreshing,
+                                    isStale = syncState == ru.nya.nyeios.ui.common.SyncState.STALE,
+                                    onRefresh = {
+                                        if (feedSyncProgress.isSyncing) {
+                                            android.widget.Toast.makeText(
+                                                this@MainActivity,
+                                                "Идёт синхронизация Живой ленты. Расписание и успеваемость работают из кэша.",
+                                                android.widget.Toast.LENGTH_SHORT
+                                            ).show()
+                                            return@NycTopBar
+                                        }
+                                        when (currentTab) {
+                                            0 -> scheduleViewModel.refresh()
+                                            1 -> feedViewModel.requestSyncFeed()
+                                            2 -> curriculumViewModel.refresh()
+                                        }
+                                    },
+                                    hasPendingUpdate = hasPendingUpdate,
+                                    onLogoClick = {
+                                        if (hasPendingUpdate) {
+                                            updateViewModel.restoreBanner()
+                                        } else {
+                                            isNetworkLogsSheetVisible = true
+                                        }
+                                    }
+                                )
+                            } else {
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -518,8 +593,15 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
+                            } // end legacy topBar Column
                         },
                         bottomBar = {
+                            if (isNycModern) {
+                                NycBottomNav(
+                                    currentTab = currentTab,
+                                    onSelect = { currentTab = it }
+                                )
+                            } else {
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -589,6 +671,7 @@ class MainActivity : ComponentActivity() {
 
                                 ru.nya.nyeios.ui.common.NierDotRow()
                             }
+                            } // end legacy bottomBar Column
                         }
                     ) { innerPadding ->
                         Box(
@@ -603,17 +686,31 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier.fillMaxSize()
                                 ) { tab ->
                                     when (tab) {
-                                        0 -> ScheduleScreen(
-                                            uiState = scheduleUiState,
-                                            weekOffset = weekOffset,
-                                            selectedDayIndex = selectedDayIndex,
-                                            onPrevWeek = { scheduleViewModel.prevWeek() },
-                                            onNextWeek = { scheduleViewModel.nextWeek() },
-                                            onCurrentWeek = { scheduleViewModel.currentWeek() },
-                                            onSelectDay = { scheduleViewModel.selectDay(it) },
-                                            onRefresh = { scheduleViewModel.refresh() },
-                                            onOpenLogin = { scheduleViewModel.showLoginSheet() }
-                                        )
+                                        0 -> if (isNycModern) {
+                                            NycScheduleScreen(
+                                                uiState = scheduleUiState,
+                                                weekOffset = weekOffset,
+                                                selectedDayIndex = selectedDayIndex,
+                                                onPrevWeek = { scheduleViewModel.prevWeek() },
+                                                onNextWeek = { scheduleViewModel.nextWeek() },
+                                                onCurrentWeek = { scheduleViewModel.currentWeek() },
+                                                onSelectDay = { scheduleViewModel.selectDay(it) },
+                                                onRefresh = { scheduleViewModel.refresh() },
+                                                onOpenLogin = { scheduleViewModel.showLoginSheet() }
+                                            )
+                                        } else {
+                                            ScheduleScreen(
+                                                uiState = scheduleUiState,
+                                                weekOffset = weekOffset,
+                                                selectedDayIndex = selectedDayIndex,
+                                                onPrevWeek = { scheduleViewModel.prevWeek() },
+                                                onNextWeek = { scheduleViewModel.nextWeek() },
+                                                onCurrentWeek = { scheduleViewModel.currentWeek() },
+                                                onSelectDay = { scheduleViewModel.selectDay(it) },
+                                                onRefresh = { scheduleViewModel.refresh() },
+                                                onOpenLogin = { scheduleViewModel.showLoginSheet() }
+                                            )
+                                        }
                                         1 -> FeedScreen(
                                             uiState = feedUiState,
                                             feedViewModel = feedViewModel,
