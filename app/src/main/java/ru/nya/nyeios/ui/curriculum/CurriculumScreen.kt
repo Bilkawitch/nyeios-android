@@ -1,7 +1,6 @@
 package ru.nya.nyeios.ui.curriculum
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,7 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
@@ -27,11 +25,8 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Grade
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -49,14 +44,11 @@ import ru.nya.nyeios.data.model.CurriculumControlType
 import ru.nya.nyeios.data.model.CurriculumSubject
 import ru.nya.nyeios.data.model.CurriculumTerm
 import ru.nya.nyeios.data.model.CurriculumUiState
-import ru.nya.nyeios.ui.theme.ExamRed
-import ru.nya.nyeios.ui.theme.ExamRedBg
 import ru.nya.nyeios.ui.theme.LabAmber
 import ru.nya.nyeios.ui.theme.LabAmberBg
 import ru.nya.nyeios.ui.theme.LectureBlue
 import ru.nya.nyeios.ui.theme.LectureBlueBg
 import ru.nya.nyeios.ui.theme.LiveBadgeColor
-import ru.nya.nyeios.ui.theme.ObsidianBorder
 import ru.nya.nyeios.ui.theme.ObsidianCard
 import ru.nya.nyeios.ui.theme.ObsidianSurface
 import ru.nya.nyeios.ui.theme.OtherPurple
@@ -100,63 +92,109 @@ fun CurriculumScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(24.dp),
+                        .padding(horizontal = 24.dp, vertical = 32.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, ru.nya.nyeios.ui.theme.NierBorder)
+                            .background(ru.nya.nyeios.ui.theme.NierPanelAlt)
+                            .padding(20.dp)
                     ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .background(ru.nya.nyeios.ui.theme.NierRed)
+                            )
+                            Text(
+                                text = "СИСТЕМНОЕ ОПОВЕЩЕНИЕ",
+                                fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp,
+                                letterSpacing = 1.sp,
+                                color = ru.nya.nyeios.ui.theme.NierRed
+                            )
+                        }
+
                         Box(
                             modifier = Modifier
-                                .size(64.dp)
-                                .clip(CircleShape)
-                                .background(ExamRedBg),
+                                .size(52.dp)
+                                .background(ru.nya.nyeios.ui.theme.NierRed.copy(alpha = 0.12f))
+                                .border(1.dp, ru.nya.nyeios.ui.theme.NierRed),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Warning,
                                 contentDescription = null,
-                                tint = ExamRed,
-                                modifier = Modifier.size(32.dp)
+                                tint = ru.nya.nyeios.ui.theme.NierRed,
+                                modifier = Modifier.size(26.dp)
                             )
                         }
 
+                        Spacer(Modifier.height(14.dp))
+
                         Text(
                             text = uiState.message,
-                            color = TextPrimary,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Medium,
+                            color = ru.nya.nyeios.ui.theme.NierDark,
+                            fontSize = 13.sp,
+                            fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                            fontWeight = FontWeight.SemiBold,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            lineHeight = 22.sp,
-                            modifier = Modifier.padding(horizontal = 16.dp)
+                            lineHeight = 18.sp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp)
                         )
 
+                        Spacer(Modifier.height(20.dp))
+
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            OutlinedButton(
-                                onClick = onRefresh,
-                                shape = RoundedCornerShape(12.dp),
-                                border = BorderStroke(1.dp, ObsidianBorder),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
-                                modifier = Modifier.height(44.dp)
+                            Box(
+                                modifier = Modifier
+                                    .height(38.dp)
+                                    .border(1.dp, ru.nya.nyeios.ui.theme.NierBorder)
+                                    .background(ru.nya.nyeios.ui.theme.NierPanel)
+                                    .clickable { onRefresh() }
+                                    .padding(horizontal = 14.dp),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Text("Повторить", fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    text = "ПОВТОРИТЬ",
+                                    fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                    letterSpacing = 1.sp,
+                                    color = ru.nya.nyeios.ui.theme.NierDark
+                                )
                             }
 
-                            Button(
-                                onClick = onOpenLogin,
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = LectureBlue,
-                                    contentColor = Color.White
-                                ),
-                                modifier = Modifier.height(44.dp)
+                            Box(
+                                modifier = Modifier
+                                    .height(38.dp)
+                                    .border(1.dp, ru.nya.nyeios.ui.theme.NierSelection)
+                                    .background(ru.nya.nyeios.ui.theme.NierSelection)
+                                    .clickable { onOpenLogin() }
+                                    .padding(horizontal = 14.dp),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Text("Войти в аккаунт", fontWeight = FontWeight.Bold)
+                                Text(
+                                    text = "ВОЙТИ В АККАУНТ",
+                                    fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                    letterSpacing = 1.sp,
+                                    color = ru.nya.nyeios.ui.theme.NierSelectionText
+                                )
                             }
                         }
                     }

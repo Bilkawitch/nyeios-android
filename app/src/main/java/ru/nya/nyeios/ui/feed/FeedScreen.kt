@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
@@ -82,8 +81,6 @@ import ru.nya.nyeios.data.model.FeedAttachment
 import ru.nya.nyeios.data.model.FeedPost
 import ru.nya.nyeios.data.model.FeedUiState
 import ru.nya.nyeios.ui.download.DownloadsBottomSheet
-import ru.nya.nyeios.ui.theme.ExamRed
-import ru.nya.nyeios.ui.theme.ExamRedBg
 import ru.nya.nyeios.ui.theme.LabAmber
 import ru.nya.nyeios.ui.theme.LectureBlue
 import ru.nya.nyeios.ui.theme.LectureBlueBg
@@ -277,7 +274,7 @@ fun FeedScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(24.dp),
+                        .padding(horizontal = 24.dp, vertical = 32.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     if (syncProgress.isSyncing) {
@@ -288,59 +285,109 @@ fun FeedScreen(
                     } else {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(1.dp, ru.nya.nyeios.ui.theme.NierBorder)
+                                .background(ru.nya.nyeios.ui.theme.NierPanelAlt)
+                                .padding(20.dp)
                         ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .background(ru.nya.nyeios.ui.theme.NierRed)
+                                )
+                                Text(
+                                    text = "СИСТЕМНОЕ ОПОВЕЩЕНИЕ",
+                                    fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 11.sp,
+                                    letterSpacing = 1.sp,
+                                    color = ru.nya.nyeios.ui.theme.NierRed
+                                )
+                            }
+
                             Box(
                                 modifier = Modifier
-                                    .size(64.dp)
-                                    .clip(CircleShape)
-                                    .background(ExamRedBg),
+                                    .size(52.dp)
+                                    .background(ru.nya.nyeios.ui.theme.NierRed.copy(alpha = 0.12f))
+                                    .border(1.dp, ru.nya.nyeios.ui.theme.NierRed),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Warning,
                                     contentDescription = null,
-                                    tint = ExamRed,
-                                    modifier = Modifier.size(32.dp)
+                                    tint = ru.nya.nyeios.ui.theme.NierRed,
+                                    modifier = Modifier.size(26.dp)
                                 )
                             }
 
+                            Spacer(Modifier.height(14.dp))
+
                             Text(
                                 text = uiState.message,
-                                color = TextPrimary,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium,
+                                color = ru.nya.nyeios.ui.theme.NierDark,
+                                fontSize = 13.sp,
+                                fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                fontWeight = FontWeight.SemiBold,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                lineHeight = 22.sp,
-                                modifier = Modifier.padding(horizontal = 16.dp)
+                                lineHeight = 18.sp,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp)
                             )
 
+                            Spacer(Modifier.height(20.dp))
+
                             Row(
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                OutlinedButton(
-                                    onClick = { feedViewModel?.requestSyncFeed() ?: onRefresh() },
-                                    shape = RoundedCornerShape(0.dp),
-                                    border = BorderStroke(1.dp, PracticeGreen.copy(alpha = 0.5f)),
-                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = PracticeGreen),
-                                    modifier = Modifier.height(44.dp)
+                                Box(
+                                    modifier = Modifier
+                                        .height(38.dp)
+                                        .border(1.dp, ru.nya.nyeios.ui.theme.NierBorder)
+                                        .background(ru.nya.nyeios.ui.theme.NierPanel)
+                                        .clickable { feedViewModel?.requestSyncFeed() ?: onRefresh() }
+                                        .padding(horizontal = 14.dp),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Text("Повторить", fontWeight = FontWeight.SemiBold)
+                                    Text(
+                                        text = "ПОВТОРИТЬ",
+                                        fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp,
+                                        letterSpacing = 1.sp,
+                                        color = ru.nya.nyeios.ui.theme.NierDark
+                                    )
                                 }
 
-                                if (!isUserLoggedIn) {
-                                    Button(
-                                        onClick = onOpenLogin,
-                                        shape = RoundedCornerShape(0.dp),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = LectureBlue,
-                                            contentColor = Color.White
-                                        ),
-                                        modifier = Modifier.height(44.dp)
+                                val isAuthIssue = uiState.message.contains("авториз", ignoreCase = true) ||
+                                        uiState.message.contains("сесси", ignoreCase = true) ||
+                                        uiState.message.contains("аккаунт", ignoreCase = true)
+
+                                if (isAuthIssue || !isUserLoggedIn) {
+                                    Box(
+                                        modifier = Modifier
+                                            .height(38.dp)
+                                            .border(1.dp, ru.nya.nyeios.ui.theme.NierSelection)
+                                            .background(ru.nya.nyeios.ui.theme.NierSelection)
+                                            .clickable { onOpenLogin() }
+                                            .padding(horizontal = 14.dp),
+                                        contentAlignment = Alignment.Center
                                     ) {
-                                        Text("Войти в аккаунт", fontWeight = FontWeight.Bold)
+                                        Text(
+                                            text = "ВОЙТИ В АККАУНТ",
+                                            fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp,
+                                            letterSpacing = 1.sp,
+                                            color = ru.nya.nyeios.ui.theme.NierSelectionText
+                                        )
                                     }
                                 }
                             }
@@ -365,55 +412,115 @@ fun FeedScreen(
                         } else {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .border(1.dp, ru.nya.nyeios.ui.theme.NierBorder)
+                                    .background(ru.nya.nyeios.ui.theme.NierPanelAlt)
+                                    .padding(20.dp)
                             ) {
-                                Text(text = "📢", fontSize = 44.sp)
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    modifier = Modifier.padding(bottom = 16.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(6.dp)
+                                            .background(ru.nya.nyeios.ui.theme.NierDim)
+                                    )
+                                    Text(
+                                        text = "ЖИВАЯ ЛЕНТА",
+                                        fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp,
+                                        letterSpacing = 1.sp,
+                                        color = ru.nya.nyeios.ui.theme.NierDim
+                                    )
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .size(52.dp)
+                                        .background(ru.nya.nyeios.ui.theme.NierDim.copy(alpha = 0.08f))
+                                        .border(1.dp, ru.nya.nyeios.ui.theme.NierBorder),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CloudDownload,
+                                        contentDescription = null,
+                                        tint = ru.nya.nyeios.ui.theme.NierDim,
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                }
+
+                                Spacer(Modifier.height(14.dp))
+
                                 Text(
                                     text = "Нет сохранённых объявлений",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 18.sp,
-                                    color = TextPrimary
-                                )
-                                Text(
-                                    text = "Живая лента сохраняется локально после разовой синхронизации с eios.gukolomna.ru.",
-                                    color = TextMuted,
+                                    color = ru.nya.nyeios.ui.theme.NierDark,
                                     fontSize = 13.sp,
+                                    fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                    fontWeight = FontWeight.SemiBold,
                                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                     lineHeight = 18.sp,
-                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp)
                                 )
 
-                                Spacer(Modifier.height(4.dp))
+                                Spacer(Modifier.height(6.dp))
+
+                                Text(
+                                    text = "Живая лента сохраняется локально после разовой синхронизации с eios.gukolomna.ru.",
+                                    color = ru.nya.nyeios.ui.theme.NierDim,
+                                    fontSize = 11.sp,
+                                    fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    lineHeight = 16.sp,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp)
+                                )
+
+                                Spacer(Modifier.height(20.dp))
 
                                 if (!isUserLoggedIn) {
-                                    Button(
-                                        onClick = onOpenLogin,
-                                        shape = RoundedCornerShape(0.dp),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = LectureBlue,
-                                            contentColor = Color.White
-                                        ),
-                                        modifier = Modifier.height(44.dp)
+                                    Box(
+                                        modifier = Modifier
+                                            .height(38.dp)
+                                            .border(1.dp, ru.nya.nyeios.ui.theme.NierSelection)
+                                            .background(ru.nya.nyeios.ui.theme.NierSelection)
+                                            .clickable { onOpenLogin() }
+                                            .padding(horizontal = 14.dp),
+                                        contentAlignment = Alignment.Center
                                     ) {
-                                        Text("Войти в аккаунт", fontWeight = FontWeight.Bold)
+                                        Text(
+                                            text = "ВОЙТИ В АККАУНТ",
+                                            fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp,
+                                            letterSpacing = 1.sp,
+                                            color = ru.nya.nyeios.ui.theme.NierSelectionText
+                                        )
                                     }
                                 } else {
-                                    Button(
-                                        onClick = { feedViewModel?.requestSyncFeed() ?: onRefresh() },
-                                        shape = RoundedCornerShape(0.dp),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = PracticeGreen,
-                                            contentColor = Color.White
-                                        ),
-                                        modifier = Modifier.height(44.dp)
+                                    Box(
+                                        modifier = Modifier
+                                            .height(38.dp)
+                                            .border(1.dp, ru.nya.nyeios.ui.theme.NierBorder)
+                                            .background(ru.nya.nyeios.ui.theme.NierPanel)
+                                            .clickable { feedViewModel?.requestSyncFeed() ?: onRefresh() }
+                                            .padding(horizontal = 14.dp),
+                                        contentAlignment = Alignment.Center
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Default.CloudDownload,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp)
+                                        Text(
+                                            text = "ЗАГРУЗИТЬ С СЕРВЕРА",
+                                            fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp,
+                                            letterSpacing = 1.sp,
+                                            color = ru.nya.nyeios.ui.theme.NierDark
                                         )
-                                        Spacer(Modifier.width(8.dp))
-                                        Text("Загрузить ленту с сервера", fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
