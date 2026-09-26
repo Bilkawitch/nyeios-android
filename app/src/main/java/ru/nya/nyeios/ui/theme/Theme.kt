@@ -14,6 +14,7 @@ fun NyEIOSTheme(
     content: @Composable () -> Unit
 ) {
     val isNight = ThemeManager.currentTheme == NierThemeMode.NIGHT
+    val isNyc = ThemeManager.currentTheme == NierThemeMode.NYC_MODERN
 
     val colorScheme = darkColorScheme(
         primary = NierDark,
@@ -49,8 +50,9 @@ fun NyEIOSTheme(
                 window.statusBarColor = NierBg.toArgb()
                 window.navigationBarColor = NierPanel.toArgb()
                 WindowCompat.getInsetsController(window, view).apply {
-                    isAppearanceLightStatusBars = !isNight
-                    isAppearanceLightNavigationBars = !isNight
+                    // NyC-modern is always dark: light system icons. Legacy themes keep prior behavior.
+                    isAppearanceLightStatusBars = if (isNyc) false else !isNight
+                    isAppearanceLightNavigationBars = if (isNyc) false else !isNight
                 }
             }
         }
@@ -58,7 +60,7 @@ fun NyEIOSTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = NierTypography,
+        typography = if (isNyc) NycTypography else NierTypography,
         content = content
     )
 }

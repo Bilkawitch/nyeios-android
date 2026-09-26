@@ -12,13 +12,14 @@ import ru.nya.nyeios.ui.theme.NierThemeMode
 class ThemeManagerTest {
 
     @Test
-    fun `theme modes include regular, night, black and retro`() {
+    fun `theme modes include regular, night, black retro and nyc modern`() {
         val modes = NierThemeMode.entries
-        assertEquals(4, modes.size)
+        assertEquals(5, modes.size)
         assertEquals("regular", NierThemeMode.REGULAR.id)
         assertEquals("night", NierThemeMode.NIGHT.id)
         assertEquals("black", NierThemeMode.BLACK.id)
         assertEquals("retro", NierThemeMode.RETRO.id)
+        assertEquals("nyc_modern", NierThemeMode.NYC_MODERN.id)
     }
 
     @Test
@@ -61,5 +62,16 @@ class ThemeManagerTest {
         assertEquals("AMOLED background must be pure black", Color(0xFF000000), bg)
         assertEquals("AMOLED borders must match current palette dark charcoal", Color(0xFF3A342B), border)
         assertTrue("AMOLED text must be high contrast sand", dark.red > 0.7f)
+    }
+
+    @Test
+    fun `nyc modern theme matches night skeuomorph mockup tokens`() {
+        val palette = ru.nya.nyeios.ui.theme.NierPaletteNycModern
+
+        assertEquals(Color(0xFF04060A), palette.bg)
+        assertEquals(Color(0xFFDBE4F0), palette.dark)
+        assertEquals(Color(0xFF4ADEDE), palette.selectionText)
+        assertEquals(Color(0xFF4ADEDE), palette.magenta)
+        assertEquals(Color(0xFF6FA8FF), palette.blue)
     }
 }

@@ -32,6 +32,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import ru.nya.nyeios.ui.theme.appSheetShape
+import ru.nya.nyeios.ui.theme.appSmallShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
@@ -164,7 +166,7 @@ fun FloorMapBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = NierBg,
-        shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp),
+        shape = appSheetShape(),
         scrimColor = Color(0x991A1812),
         dragHandle = {
             Box(
@@ -197,7 +199,7 @@ fun FloorMapBottomSheet(
                     Box(
                         modifier = Modifier
                             .size(32.dp)
-                            .border(1.5.dp, NierDark, RoundedCornerShape(2.dp))
+                            .border(1.5.dp, NierDark, appSmallShape())
                             .background(if (route?.isCrossFloor == true) NierMagenta else NierDark),
                         contentAlignment = Alignment.Center
                     ) {
@@ -394,7 +396,7 @@ fun FloorMapBottomSheet(
                                 .border(
                                     width = if (isEditingStart) 1.5.dp else 1.dp,
                                     color = if (isEditingStart) NierBlue else NierBorderLight,
-                                    shape = RoundedCornerShape(2.dp)
+                                    shape = appSmallShape()
                                 )
                                 .background(if (isEditingStart) NierBlue.copy(alpha = 0.12f) else NierPanel)
                                 .clickable { editTarget = RouteEditTarget.START }
@@ -434,7 +436,7 @@ fun FloorMapBottomSheet(
                                 .border(
                                     width = if (isEditingDest) 1.5.dp else 1.dp,
                                     color = if (isEditingDest) NierBlue else NierBorderLight,
-                                    shape = RoundedCornerShape(2.dp)
+                                    shape = appSmallShape()
                                 )
                                 .background(if (isEditingDest) NierBlue.copy(alpha = 0.12f) else NierPanel)
                                 .clickable { editTarget = RouteEditTarget.DESTINATION }
@@ -797,7 +799,7 @@ private fun SingleFloorInteractiveView(
             Box(
                 modifier = Modifier
                     .size(26.dp)
-                    .border(1.dp, NierDark, RoundedCornerShape(2.dp))
+                    .border(1.dp, NierDark, appSmallShape())
                     .background(NierPanel)
                     .clickable { scale = (scale * 1.25f).coerceAtMost(3.8f) },
                 contentAlignment = Alignment.Center
@@ -808,7 +810,7 @@ private fun SingleFloorInteractiveView(
             Box(
                 modifier = Modifier
                     .size(26.dp)
-                    .border(1.dp, NierDark, RoundedCornerShape(2.dp))
+                    .border(1.dp, NierDark, appSmallShape())
                     .background(NierPanel)
                     .clickable { scale = (scale / 1.25f).coerceAtLeast(fitScale * 0.7f) },
                 contentAlignment = Alignment.Center
@@ -819,7 +821,7 @@ private fun SingleFloorInteractiveView(
             Box(
                 modifier = Modifier
                     .size(26.dp)
-                    .border(1.dp, NierDark, RoundedCornerShape(2.dp))
+                    .border(1.dp, NierDark, appSmallShape())
                     .background(NierPanel)
                     .clickable {
                         scale = fitScale
@@ -1132,7 +1134,7 @@ private fun MultiFloorInteractiveView(
             Box(
                 modifier = Modifier
                     .size(26.dp)
-                    .border(1.dp, NierDark, RoundedCornerShape(2.dp))
+                    .border(1.dp, NierDark, appSmallShape())
                     .background(NierPanel)
                     .clickable { scale = (scale * 1.25f).coerceAtMost(3.5f) },
                 contentAlignment = Alignment.Center
@@ -1143,7 +1145,7 @@ private fun MultiFloorInteractiveView(
             Box(
                 modifier = Modifier
                     .size(26.dp)
-                    .border(1.dp, NierDark, RoundedCornerShape(2.dp))
+                    .border(1.dp, NierDark, appSmallShape())
                     .background(NierPanel)
                     .clickable { scale = (scale / 1.25f).coerceAtLeast(fitScale * 0.6f) },
                 contentAlignment = Alignment.Center
@@ -1154,7 +1156,7 @@ private fun MultiFloorInteractiveView(
             Box(
                 modifier = Modifier
                     .size(26.dp)
-                    .border(1.dp, NierDark, RoundedCornerShape(2.dp))
+                    .border(1.dp, NierDark, appSmallShape())
                     .background(NierPanel)
                     .clickable {
                         scale = fitScale
@@ -1370,7 +1372,7 @@ private fun RoomInfoCard(
                     if (room.type == RoomType.DEAN_OFFICE) {
                         Box(
                             modifier = Modifier
-                                .border(1.dp, NierAmber, RoundedCornerShape(2.dp))
+                                .border(1.dp, NierAmber, appSmallShape())
                                 .background(NierAmber.copy(alpha = 0.15f))
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
@@ -1388,7 +1390,7 @@ private fun RoomInfoCard(
                 Box(
                     modifier = Modifier
                         .background(NierPanel)
-                        .border(1.dp, NierBorderLight, RoundedCornerShape(2.dp))
+                        .border(1.dp, NierBorderLight, appSmallShape())
                         .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
                     Text(
@@ -1470,7 +1472,7 @@ private fun FloorStubView(
             Box(
                 modifier = Modifier
                     .size(48.dp)
-                    .border(1.dp, NierDark, RoundedCornerShape(2.dp))
+                    .border(1.dp, NierDark, appSmallShape())
                     .background(NierPanel),
                 contentAlignment = Alignment.Center
             ) {
@@ -1502,7 +1504,7 @@ private fun FloorStubView(
 
             Button(
                 onClick = onSwitchToFloor4,
-                shape = RoundedCornerShape(2.dp),
+                shape = appSmallShape(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = NierDark,
                     contentColor = NierBg

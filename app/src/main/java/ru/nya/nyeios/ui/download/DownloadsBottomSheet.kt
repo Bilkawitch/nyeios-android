@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import ru.nya.nyeios.ui.theme.appRectShape
+import ru.nya.nyeios.ui.theme.appSheetShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Close
@@ -121,7 +123,7 @@ fun DownloadsBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = NierPanel,
-        shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp),
+        shape = appSheetShape(),
         dragHandle = {
             Box(
                 modifier = Modifier
@@ -416,7 +418,7 @@ fun DownloadsBottomSheet(
         AlertDialog(
             onDismissRequest = { showClearConfirm = false },
             containerColor = NierPanel,
-            shape = RoundedCornerShape(0.dp),
+            shape = appRectShape(),
             modifier = Modifier.border(1.5.dp, NierDark),
             title = {
                 Text(

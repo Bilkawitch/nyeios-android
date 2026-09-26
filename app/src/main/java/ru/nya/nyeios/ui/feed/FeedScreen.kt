@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import ru.nya.nyeios.ui.theme.appRectShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
@@ -129,7 +130,7 @@ fun FeedScreen(
             containerColor = ObsidianSurface,
             titleContentColor = TextPrimary,
             textContentColor = TextSecondary,
-            shape = RoundedCornerShape(0.dp),
+            shape = appRectShape(),
             icon = {
                 Icon(
                     imageVector = Icons.Default.CloudSync,
@@ -164,7 +165,7 @@ fun FeedScreen(
                         containerColor = PracticeGreen,
                         contentColor = Color.White
                     ),
-                    shape = RoundedCornerShape(0.dp)
+                    shape = appRectShape()
                 ) {
                     Text("Начать загрузку", fontWeight = FontWeight.Bold)
                 }
@@ -172,7 +173,7 @@ fun FeedScreen(
             dismissButton = {
                 OutlinedButton(
                     onClick = { feedViewModel?.dismissSyncConfirmationDialog() },
-                    shape = RoundedCornerShape(0.dp),
+                    shape = appRectShape(),
                     border = BorderStroke(1.dp, ObsidianBorder),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary)
                 ) {

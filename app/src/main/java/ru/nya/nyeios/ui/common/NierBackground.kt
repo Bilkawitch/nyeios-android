@@ -1,13 +1,16 @@
 package ru.nya.nyeios.ui.common
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -16,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import ru.nya.nyeios.ui.theme.NierBg
 import ru.nya.nyeios.ui.theme.NierDark
 import ru.nya.nyeios.ui.theme.NierDarkSecondary
+import ru.nya.nyeios.ui.theme.isNycModern
 
 /**
  * Authentic NieR: Automata background with subtle geometric curve lines and YoRHa watermark.
@@ -26,6 +30,18 @@ fun NierBackground(
     content: @Composable () -> Unit
 ) {
     Box(modifier = modifier.fillMaxSize()) {
+        if (isNycModern) {
+            // NyC-modern screen wash from the mockup: linear-gradient(180deg, #121A26, #0B1119).
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color(0xFF121A26), Color(0xFF0B1119))
+                        )
+                    )
+            )
+        } else {
         Canvas(modifier = Modifier.fillMaxSize()) {
             // Base background
             drawRect(color = NierBg)
@@ -62,6 +78,7 @@ fun NierBackground(
                 strokeWidth = 0.8f
             )
         }
+        }
 
         content()
     }
@@ -77,6 +94,11 @@ fun NierDotRow(
     dotSize: Dp = 2.5.dp,
     spacing: Dp = 5.dp
 ) {
+    if (isNycModern) {
+        // NyC-modern has no military dot rows; keep the 8dp slot so layout rhythm is unchanged.
+        Spacer(modifier = modifier.fillMaxWidth().height(8.dp))
+        return
+    }
     Canvas(
         modifier = modifier
             .fillMaxWidth()

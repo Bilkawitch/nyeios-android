@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import ru.nya.nyeios.ui.theme.appRectShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -215,7 +216,7 @@ fun LoginFullscreenGate(
                                 value = username,
                                 onValueChange = { username = it },
                                 placeholder = { Text("23an041 / ivan.petrov", color = NierDim) },
-                                shape = RoundedCornerShape(0.dp),
+                                shape = appRectShape(),
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(
                                     keyboardType = KeyboardType.Text,
@@ -264,7 +265,7 @@ fun LoginFullscreenGate(
                                         )
                                     }
                                 },
-                                shape = RoundedCornerShape(0.dp),
+                                shape = appRectShape(),
                                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(

@@ -25,6 +25,11 @@ enum class NierThemeMode(val id: String, val title: String, val description: Str
         id = "retro",
         title = "YoRHa Retro",
         description = "Аутентичная винтажная палитра терминалов YoRHa: теплый песочный фон, глубокие чернила и насыщенный синий"
+    ),
+    NYC_MODERN(
+        id = "nyc_modern",
+        title = "NyC-modern",
+        description = "Мягкая скругленная тема по мокапу Night Skeuomorph: циановый акцент, объемные панели. ВНИМАНИЕ: требуется перезагрузка приложения для полного применения."
     )
 }
 
@@ -43,6 +48,7 @@ object ThemeManager {
             NierThemeMode.NIGHT.id -> NierThemeMode.NIGHT
             NierThemeMode.BLACK.id -> NierThemeMode.BLACK
             NierThemeMode.RETRO.id -> NierThemeMode.RETRO
+            NierThemeMode.NYC_MODERN.id -> NierThemeMode.NYC_MODERN
             else -> NierThemeMode.REGULAR
         }
     }

@@ -41,9 +41,13 @@ import androidx.compose.ui.platform.LocalContext
 import ru.nya.nyeios.data.net.EiosLastGetInfo
 import ru.nya.nyeios.data.net.PingResult
 import ru.nya.nyeios.data.update.GithubRateLimitState
+import android.widget.Toast
 import ru.nya.nyeios.ui.common.NierCheckbox
 import ru.nya.nyeios.ui.common.NierDotRow
 import ru.nya.nyeios.ui.theme.ThemeManager
+import ru.nya.nyeios.ui.theme.applyThemeWithRestart
+import ru.nya.nyeios.ui.theme.appRectShape
+import ru.nya.nyeios.ui.theme.isNycModern
 import ru.nya.nyeios.ui.theme.NierThemeMode
 import ru.nya.nyeios.ui.theme.UiPreferencesManager
 import ru.nya.nyeios.ui.theme.ListDensityMode
@@ -53,6 +57,7 @@ import ru.nya.nyeios.ui.theme.NierBlue
 import ru.nya.nyeios.ui.theme.NierBorder
 import ru.nya.nyeios.ui.theme.NierBorderLight
 import ru.nya.nyeios.ui.theme.NierDark
+import ru.nya.nyeios.ui.theme.NierDarkSecondary
 import ru.nya.nyeios.ui.theme.NierDim
 import ru.nya.nyeios.ui.theme.NierGreen
 import ru.nya.nyeios.ui.theme.NierPanel
@@ -60,6 +65,7 @@ import ru.nya.nyeios.ui.theme.NierPanelAlt
 import ru.nya.nyeios.ui.theme.NierRed
 import ru.nya.nyeios.ui.theme.NierSelection
 import ru.nya.nyeios.ui.theme.NierSelectionText
+import ru.nya.nyeios.ui.theme.NierSurface
 import ru.nya.nyeios.ui.theme.RajdhaniFamily
 import ru.nya.nyeios.ui.theme.ShareTechMonoFamily
 import java.text.SimpleDateFormat
@@ -143,7 +149,7 @@ private fun SettingsSubtabBar(
                     .border(
                         width = 1.dp,
                         color = if (isSelected) NierDark else NierBorderLight,
-                        shape = RoundedCornerShape(0.dp)
+                        shape = appRectShape()
                     )
                     .clickable { onSelectSubtab(subtab) }
                     .padding(vertical = 8.dp, horizontal = 10.dp),
@@ -457,7 +463,7 @@ private fun GeneralSettingsContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(NierPanelAlt)
-                .border(1.dp, NierBorderLight, RoundedCornerShape(0.dp))
+                .border(1.dp, NierBorderLight, appRectShape())
                 .clickable { onRefreshAll() }
                 .padding(vertical = 10.dp),
             contentAlignment = Alignment.Center
@@ -512,7 +518,7 @@ private fun ThemeSettingsContent() {
                     title = "YoRHa Regular (Светлая тема)",
                     subtitle = "Классическая индустриальная палитра NieR: Automata: песочно-оливковый фон, темный контрастный текст и акценты",
                     isSelected = currentTheme == NierThemeMode.REGULAR,
-                    onClick = { ThemeManager.setTheme(context, NierThemeMode.REGULAR) }
+                    onClick = { applyThemeWithRestart(context, NierThemeMode.REGULAR) }
                 )
 
                 Box(
@@ -527,7 +533,7 @@ private fun ThemeSettingsContent() {
                     title = "YoRHa Night (Темная тема)",
                     subtitle = "Инвертированная палитра NieR: Automata: глубокий темный фон, теплый бежевый текст и панели",
                     isSelected = currentTheme == NierThemeMode.NIGHT,
-                    onClick = { ThemeManager.setTheme(context, NierThemeMode.NIGHT) }
+                    onClick = { applyThemeWithRestart(context, NierThemeMode.NIGHT) }
                 )
 
                 Box(
@@ -542,7 +548,7 @@ private fun ThemeSettingsContent() {
                     title = "YoRHa Black (AMOLED)",
                     subtitle = "100% черный фон для OLED-экранов с контрастными элементами темного цвета палитры YoRHa",
                     isSelected = currentTheme == NierThemeMode.BLACK,
-                    onClick = { ThemeManager.setTheme(context, NierThemeMode.BLACK) }
+                    onClick = { applyThemeWithRestart(context, NierThemeMode.BLACK) }
                 )
 
                 Box(
@@ -557,13 +563,39 @@ private fun ThemeSettingsContent() {
                     title = "YoRHa Retro (Винтажная тема)",
                     subtitle = "Аутентичный теплый песочный холст, глубокие чернила и насыщенный синий акцент терминала",
                     isSelected = currentTheme == NierThemeMode.RETRO,
-                    onClick = { ThemeManager.setTheme(context, NierThemeMode.RETRO) }
+                    onClick = { applyThemeWithRestart(context, NierThemeMode.RETRO) }
                 )
             }
         }
 
-        // ── 02. ИНТЕРФЕЙС ─────────────────────────────────────────────────
-        SectionHeader(title = "[ 02 · ИНТЕРФЕЙС ]")
+        // ── 02. ОСОБЫЕ ТЕМЫ ОФОРМЛЕНИЯ ─────────────────────────────────────
+        // Impeccable Operate: повторяет существующие SectionHeader/NierCard/ThemeItemRow,
+        // нового визуального языка не вводит; выбор предупреждает о перезагрузке.
+        SectionHeader(title = "[ 02 · ОСОБЫЕ ТЕМЫ ОФОРМЛЕНИЯ ]")
+
+        NierCard {
+            Column(
+                modifier = Modifier.padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                ThemeItemRow(
+                    title = "NyC-modern (Мягкая тема)",
+                    subtitle = "Скругленная тема по мокапу Night Skeuomorph: циановый акцент и объемные панели. ВНИМАНИЕ: требуется перезагрузка — приложение перезапустится автоматически.",
+                    isSelected = currentTheme == NierThemeMode.NYC_MODERN,
+                    onClick = {
+                        Toast.makeText(
+                            context,
+                            "NyC-modern: требуется перезагрузка для полного применения темы",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        applyThemeWithRestart(context, NierThemeMode.NYC_MODERN)
+                    }
+                )
+            }
+        }
+
+        // ── 03. ИНТЕРФЕЙС ─────────────────────────────────────────────────
+        SectionHeader(title = "[ 03 · ИНТЕРФЕЙС ]")
 
         NierCard {
             Column {
@@ -603,8 +635,8 @@ private fun ThemeSettingsContent() {
             }
         }
 
-        // ── 03. ПЛОТНОСТЬ СПИСКОВ ─────────────────────────────────────────
-        SectionHeader(title = "[ 03 · ПЛОТНОСТЬ СПИСКОВ ]")
+        // ── 04. ПЛОТНОСТЬ СПИСКОВ ─────────────────────────────────────────
+        SectionHeader(title = "[ 04 · ПЛОТНОСТЬ СПИСКОВ ]")
 
         NierCard {
             Row(
@@ -623,7 +655,7 @@ private fun ThemeSettingsContent() {
                             .border(
                                 width = 1.dp,
                                 color = if (isSelected) NierBlue else NierBorderLight,
-                                shape = RoundedCornerShape(0.dp)
+                                shape = appRectShape()
                             )
                             .clickable { UiPreferencesManager.setListDensity(context, density) },
                         contentAlignment = Alignment.Center
@@ -684,7 +716,7 @@ private fun NierToggleRow(
                 .border(
                     width = 1.dp,
                     color = if (checked) NierBlue else NierBorderLight,
-                    shape = RoundedCornerShape(0.dp)
+                    shape = appRectShape()
                 )
                 .padding(2.dp),
             contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart
@@ -715,7 +747,7 @@ private fun ThemeItemRow(
     ) {
         NierCheckbox(
             checked = isSelected,
-            color = if (isSelected) NierDark else NierBorderLight,
+            color = if (isSelected) NierDark else if (isNycModern) NierDim else NierBorderLight,
             size = 14.dp,
             modifier = Modifier.padding(top = 2.dp)
         )
@@ -774,7 +806,7 @@ private fun VpnRateLimitWarningBanner(isVpnActive: Boolean) {
             .border(
                 width = 1.5.dp,
                 color = NierAmber,
-                shape = RoundedCornerShape(0.dp)
+                shape = appRectShape()
             )
             .padding(10.dp)
     ) {
@@ -906,15 +938,22 @@ private fun DiagnosticRow(
 
 @Composable
 private fun SectionHeader(title: String) {
+    // NyC-modern: mockup sechdr is a dark inset strip with muted mono text.
+    // YoRHa themes keep the solid dark bar with canvas text.
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(NierDark)
+            .background(if (isNycModern) NierSurface else NierDark)
+            .border(
+                width = 1.dp,
+                color = if (isNycModern) NierBorderLight else NierDark,
+                shape = appRectShape()
+            )
             .padding(horizontal = 10.dp, vertical = 5.dp)
     ) {
         Text(
             text = title,
-            color = NierBg,
+            color = if (isNycModern) NierDarkSecondary else NierBg,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = RajdhaniFamily,
@@ -934,7 +973,7 @@ private fun NierCard(
             .border(
                 width = 1.dp,
                 color = NierBorderLight,
-                shape = RoundedCornerShape(0.dp)
+                shape = appRectShape()
             )
     ) {
         content()
@@ -953,7 +992,7 @@ private fun NieROutlineButton(
             .border(
                 width = 1.dp,
                 color = if (enabled) color else NierBorderLight,
-                shape = RoundedCornerShape(0.dp)
+                shape = appRectShape()
             )
             .background(Color.Transparent)
             .clickable(enabled = enabled) { onClick() }
@@ -1003,7 +1042,7 @@ private fun VersionSettingsContent(
                         modifier = Modifier
                             .size(46.dp)
                             .background(NierDark)
-                            .border(1.dp, NierBorderLight, RoundedCornerShape(0.dp)),
+                            .border(1.dp, NierBorderLight, appRectShape()),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -1040,7 +1079,7 @@ private fun VersionSettingsContent(
                                 modifier = Modifier
                                     .padding(top = 2.dp)
                                     .background(NierAmber.copy(alpha = 0.15f))
-                                    .border(1.dp, NierAmber, RoundedCornerShape(0.dp))
+                                    .border(1.dp, NierAmber, appRectShape())
                                     .padding(horizontal = 6.dp, vertical = 2.dp)
                             ) {
                                 Text(
@@ -1057,7 +1096,7 @@ private fun VersionSettingsContent(
                                 modifier = Modifier
                                     .padding(top = 2.dp)
                                     .background(NierGreen.copy(alpha = 0.15f))
-                                    .border(1.dp, NierGreen, RoundedCornerShape(0.dp))
+                                    .border(1.dp, NierGreen, appRectShape())
                                     .padding(horizontal = 6.dp, vertical = 2.dp)
                             ) {
                                 Text(
@@ -1172,7 +1211,7 @@ private fun VersionSettingsContent(
                                 Box(
                                     modifier = Modifier
                                         .background(NierSelection)
-                                        .border(1.dp, NierDark, RoundedCornerShape(0.dp))
+                                        .border(1.dp, NierDark, appRectShape())
                                         .padding(horizontal = 6.dp, vertical = 1.dp)
                                 ) {
                                     Text(

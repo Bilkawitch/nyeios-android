@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import ru.nya.nyeios.ui.theme.appSheetShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.Close
@@ -91,7 +92,7 @@ fun NetworkLogsBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = NierPanel,
-        shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp),
+        shape = appSheetShape(),
         dragHandle = {
             Box(
                 modifier = Modifier

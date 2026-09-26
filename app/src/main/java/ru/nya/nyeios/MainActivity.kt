@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import ru.nya.nyeios.ui.theme.appPillShape
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -276,7 +277,7 @@ class MainActivity : ComponentActivity() {
                                                     if (currentTab == 0) {
                                                         Box(
                                                             modifier = Modifier
-                                                                .clip(RoundedCornerShape(3.dp))
+                                                                .clip(appPillShape())
                                                                 .background(ru.nya.nyeios.ui.theme.NierDark.copy(alpha = 0.12f))
                                                                 .padding(horizontal = 5.dp, vertical = 1.dp)
                                                         ) {
@@ -292,7 +293,7 @@ class MainActivity : ComponentActivity() {
                                                         if (group != null) {
                                                             Box(
                                                                 modifier = Modifier
-                                                                    .clip(RoundedCornerShape(3.dp))
+                                                                    .clip(appPillShape())
                                                                     .background(ru.nya.nyeios.ui.theme.NierBlue.copy(alpha = 0.15f))
                                                                     .padding(horizontal = 5.dp, vertical = 1.dp)
                                                             ) {
@@ -463,18 +464,21 @@ class MainActivity : ComponentActivity() {
                                                 ru.nya.nyeios.ui.theme.NierThemeMode.NIGHT -> Color(0xFF1E1A15)
                                                 ru.nya.nyeios.ui.theme.NierThemeMode.REGULAR -> Color(0xFF3A342B)
                                                 ru.nya.nyeios.ui.theme.NierThemeMode.RETRO -> Color(0xFF2E2C25)
+                                                ru.nya.nyeios.ui.theme.NierThemeMode.NYC_MODERN -> Color(0xFF0A0F16)
                                             }
                                             val solidLight = when (themeMode) {
                                                 ru.nya.nyeios.ui.theme.NierThemeMode.BLACK -> Color(0xFFCAC6A8)
                                                 ru.nya.nyeios.ui.theme.NierThemeMode.NIGHT -> Color(0xFFCAC6A8)
                                                 ru.nya.nyeios.ui.theme.NierThemeMode.REGULAR -> Color(0xFFEDEAD8)
                                                 ru.nya.nyeios.ui.theme.NierThemeMode.RETRO -> Color(0xFFE7E4D0)
+                                                ru.nya.nyeios.ui.theme.NierThemeMode.NYC_MODERN -> Color(0xFF4ADEDE)
                                             }
                                             val solidBorder = when (themeMode) {
                                                 ru.nya.nyeios.ui.theme.NierThemeMode.BLACK -> Color(0xFFCAC6A8)
                                                 ru.nya.nyeios.ui.theme.NierThemeMode.NIGHT -> Color(0xFFCAC6A8)
                                                 ru.nya.nyeios.ui.theme.NierThemeMode.REGULAR -> Color(0xFF3A342B)
                                                 ru.nya.nyeios.ui.theme.NierThemeMode.RETRO -> Color(0xFF4A4740)
+                                                ru.nya.nyeios.ui.theme.NierThemeMode.NYC_MODERN -> Color(0xFF4ADEDE)
                                             }
 
                                             val squareBg = if (isRefreshBlinking) {
@@ -562,8 +566,8 @@ class MainActivity : ComponentActivity() {
                                                 )
                                             },
                                             colors = NavigationBarItemDefaults.colors(
-                                                selectedIconColor = ru.nya.nyeios.ui.theme.NierBlue,
-                                                selectedTextColor = ru.nya.nyeios.ui.theme.NierBlue,
+                                                selectedIconColor = ru.nya.nyeios.ui.theme.selectionAccent(),
+                                                selectedTextColor = ru.nya.nyeios.ui.theme.selectionAccent(),
                                                 unselectedIconColor = ru.nya.nyeios.ui.theme.NierDim,
                                                 unselectedTextColor = ru.nya.nyeios.ui.theme.NierDim,
                                                 indicatorColor = Color.Transparent
@@ -573,7 +577,7 @@ class MainActivity : ComponentActivity() {
                                                     val barWidth = size.width * 0.45f
                                                     val startX = (size.width - barWidth) / 2f
                                                     drawRect(
-                                                        color = ru.nya.nyeios.ui.theme.NierBlue,
+                                                        color = ru.nya.nyeios.ui.theme.selectionAccent(),
                                                         topLeft = Offset(startX, 0f),
                                                         size = androidx.compose.ui.geometry.Size(barWidth, 2.dp.toPx())
                                                     )

@@ -181,7 +181,7 @@ fun ScheduleScreen(
                                 verticalArrangement = Arrangement.spacedBy(14.dp)
                             ) {
                                 CircularProgressIndicator(
-                                    color = ru.nya.nyeios.ui.theme.NierBlue,
+                                    color = ru.nya.nyeios.ui.theme.selectionAccent(),
                                     strokeWidth = 2.dp,
                                     modifier = Modifier.size(36.dp)
                                 )
@@ -653,7 +653,7 @@ fun DaySelectorRow(
                         // Active bottom indicator bar
                         if (isSelected) {
                             drawRect(
-                                color = ru.nya.nyeios.ui.theme.NierBlue,
+                                color = ru.nya.nyeios.ui.theme.selectionAccent(),
                                 topLeft = Offset(0f, size.height - 2.5.dp.toPx()),
                                 size = androidx.compose.ui.geometry.Size(size.width, 2.5.dp.toPx())
                             )
@@ -661,7 +661,7 @@ fun DaySelectorRow(
                         // Today top indicator bar
                         if (day.isToday) {
                             drawRect(
-                                color = ru.nya.nyeios.ui.theme.NierBlue,
+                                color = ru.nya.nyeios.ui.theme.selectionAccent(),
                                 topLeft = Offset(0f, 0f),
                                 size = androidx.compose.ui.geometry.Size(size.width, 2.5.dp.toPx())
                             )
