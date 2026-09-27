@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import ru.nya.nyeios.data.model.UpdateInfo
 import ru.nya.nyeios.data.net.EiosLastGetInfo
@@ -183,22 +185,89 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     /**
      * Ручная проверка доступности основных эндпоинтов (Расписание, Лента, БРС).
      * Запускается только по явному нажатию кнопки пользователем.
+     * Проверка выполняется строго ПООЧЕРЕДНО (не параллельно), чтобы сервер не дропал соединение.
      */
     fun checkEndpoints() {
+        if (_uiState.value.isCheckingEndpoints) return
         viewModelScope.launch {
+            val endpointIds = listOf("timetable", "feed", "curriculum")
+
             _uiState.update { state ->
                 state.copy(
                     isCheckingEndpoints = true,
-                    endpointsHealth = state.endpointsHealth.map { it.copy(status = EndpointStatus.CHECKING) }
+                    endpointsHealth = state.endpointsHealth.mapIndexed { index, item ->
+                        if (index == 0) {
+                            item.copy(
+                                status = EndpointStatus.CHECKING,
+                                latencyMs = null,
+                                message = "Кидаю GET на ${item.path} с таймаутом в 15с (1\\15с)"
+                            )
+                        } else {
+                            item.copy(
+                                status = EndpointStatus.PENDING,
+                                latencyMs = null,
+                                message = "В очереди на проверку..."
+                            )
+                        }
+                    }
                 )
             }
-            val results = eiosRepository.checkEndpointsHealth()
-            _uiState.update {
-                it.copy(
-                    isCheckingEndpoints = false,
-                    endpointsHealth = results
-                )
+
+            for (id in endpointIds) {
+                val targetItem = _uiState.value.endpointsHealth.find { it.id == id } ?: continue
+                val path = targetItem.path
+
+                // Устанавливаем текущий как CHECKING
+                _uiState.update { state ->
+                    state.copy(
+                        endpointsHealth = state.endpointsHealth.map { item ->
+                            if (item.id == id) {
+                                item.copy(
+                                    status = EndpointStatus.CHECKING,
+                                    latencyMs = null,
+                                    message = "Кидаю GET на $path с таймаутом в 15с (1\\15с)"
+                                )
+                            } else item
+                        }
+                    )
+                }
+
+                // Счетчик в реальном времени с шагом в 1 секунду
+                var second = 1
+                val tickerJob = launch {
+                    while (isActive && second <= 15) {
+                        _uiState.update { state ->
+                            state.copy(
+                                endpointsHealth = state.endpointsHealth.map { item ->
+                                    if (item.id == id && item.status == EndpointStatus.CHECKING) {
+                                        item.copy(
+                                            message = "Кидаю GET на $path с таймаутом в 15с (${second}\\15с)"
+                                        )
+                                    } else item
+                                }
+                            )
+                        }
+                        delay(1000)
+                        second++
+                    }
+                }
+
+                val result = try {
+                    eiosRepository.checkEndpointHealth(id)
+                } finally {
+                    tickerJob.cancel()
+                }
+
+                _uiState.update { state ->
+                    state.copy(
+                        endpointsHealth = state.endpointsHealth.map { item ->
+                            if (item.id == id) result else item
+                        }
+                    )
+                }
             }
+
+            _uiState.update { it.copy(isCheckingEndpoints = false) }
         }
     }
 

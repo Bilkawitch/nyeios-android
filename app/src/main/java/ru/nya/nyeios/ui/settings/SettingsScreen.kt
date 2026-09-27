@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,6 +23,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Speed
@@ -32,8 +36,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -959,8 +968,13 @@ private fun LastGetRow(getInfo: EiosLastGetInfo) {
 
 @Composable
 private fun EndpointHealthRow(item: EndpointHealthItem) {
+    var isExpanded by rememberSaveable { mutableStateOf(false) }
+    val clipboardManager = LocalClipboardManager.current
+    val context = LocalContext.current
+
     val (statusColor, statusBadge) = when (item.status) {
         EndpointStatus.IDLE -> Pair(NierDim, "НЕ ПРОВЕРЯЛСЯ")
+        EndpointStatus.PENDING -> Pair(NierDim, "В ОЧЕРЕДИ")
         EndpointStatus.CHECKING -> Pair(NierBlue, "ПРОВЕРКА...")
         EndpointStatus.OK -> Pair(NierGreen, "ДОСТУПЕН")
         EndpointStatus.DEGRADED -> Pair(NierAmber, "200 СБОЙ / ПУСТО")
@@ -972,9 +986,10 @@ private fun EndpointHealthRow(item: EndpointHealthItem) {
         modifier = Modifier
             .fillMaxWidth()
             .background(NierPanelAlt)
-            .border(0.5.dp, NierBorderLight)
+            .border(0.5.dp, if (isExpanded) NierBorder else NierBorderLight)
+            .clickable { isExpanded = !isExpanded }
             .padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(3.dp)
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -997,20 +1012,32 @@ private fun EndpointHealthRow(item: EndpointHealthItem) {
                 )
             }
 
-            Box(
-                modifier = Modifier
-                    .background(statusColor.copy(alpha = 0.15f))
-                    .border(0.5.dp, statusColor)
-                    .padding(horizontal = 6.dp, vertical = 2.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Text(
-                    text = statusBadge,
-                    fontSize = 9.sp,
-                    fontFamily = RajdhaniFamily,
-                    fontWeight = FontWeight.Bold,
-                    color = statusColor,
-                    letterSpacing = 0.5.sp,
-                    maxLines = 1
+                Box(
+                    modifier = Modifier
+                        .background(statusColor.copy(alpha = 0.15f))
+                        .border(0.5.dp, statusColor)
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = statusBadge,
+                        fontSize = 9.sp,
+                        fontFamily = RajdhaniFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = statusColor,
+                        letterSpacing = 0.5.sp,
+                        maxLines = 1
+                    )
+                }
+
+                Icon(
+                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = if (isExpanded) "Свернуть лог" else "Развернуть лог",
+                    tint = NierDim,
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }
@@ -1028,6 +1055,7 @@ private fun EndpointHealthRow(item: EndpointHealthItem) {
                     color = when (item.status) {
                         EndpointStatus.ERROR -> NierRed
                         EndpointStatus.DEGRADED -> NierAmber
+                        EndpointStatus.CHECKING -> NierBlue
                         else -> NierDarkSecondary
                     },
                     modifier = Modifier.weight(1f, fill = false)
@@ -1039,6 +1067,67 @@ private fun EndpointHealthRow(item: EndpointHealthItem) {
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = NierDim
+                    )
+                }
+            }
+        }
+
+        // Выпадающий технический журнал запроса (drop-out с сырыми машинными логами)
+        AnimatedVisibility(visible = isExpanded) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 6.dp)
+                    .background(NierBg)
+                    .border(0.5.dp, NierBorderLight)
+                    .padding(8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "[ ТЕХНИЧЕСКИЙ ЖУРНАЛ ЗАПРОСА ]",
+                        fontFamily = RajdhaniFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 10.sp,
+                        color = NierDim,
+                        letterSpacing = 0.5.sp
+                    )
+
+                    if (!item.rawLog.isNullOrEmpty()) {
+                        NieROutlineButton(
+                            text = "СКОПИРОВАТЬ ЛОГ",
+                            color = NierBlue,
+                            onClick = {
+                                clipboardManager.setText(AnnotatedString(item.rawLog))
+                                Toast.makeText(context, "Лог скопирован в буфер", Toast.LENGTH_SHORT).show()
+                            }
+                        )
+                    }
+                }
+
+                val logText = item.rawLog ?: when (item.status) {
+                    EndpointStatus.CHECKING -> "Запрос выполняется в данный момент...\nОжидайте ответа сервера (таймаут 15 сек)."
+                    EndpointStatus.PENDING -> "Запрос находится в очереди.\nБудет запущен сразу после завершения текущего теста."
+                    else -> "Диагностика этого эндпоинта ещё не запускалась.\nНажмите кнопку «ПРОВЕРИТЬ» выше для отправки тестового запроса."
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(NierDark)
+                        .padding(8.dp)
+                        .horizontalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        text = logText,
+                        fontFamily = ShareTechMonoFamily,
+                        fontSize = 9.5.sp,
+                        color = NierBg,
+                        lineHeight = 13.5.sp
                     )
                 }
             }

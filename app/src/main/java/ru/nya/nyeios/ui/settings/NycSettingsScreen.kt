@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -20,6 +22,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Tune
@@ -31,9 +35,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import android.widget.Toast
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -856,8 +867,13 @@ private fun NycGetRow(getInfo: EiosLastGetInfo) {
 
 @Composable
 private fun NycEndpointHealthRow(item: EndpointHealthItem) {
+    var isExpanded by rememberSaveable { mutableStateOf(false) }
+    val clipboardManager = LocalClipboardManager.current
+    val context = LocalContext.current
+
     val (statusColor, statusBadge) = when (item.status) {
         EndpointStatus.IDLE -> Pair(nycFaint, "НЕ ПРОВЕРЯЛСЯ")
+        EndpointStatus.PENDING -> Pair(nycFaint, "В ОЧЕРЕДИ")
         EndpointStatus.CHECKING -> Pair(NycCyan, "ПРОВЕРКА...")
         EndpointStatus.OK -> Pair(nycGreen, "ДОСТУПЕН")
         EndpointStatus.DEGRADED -> Pair(nycAmber, "200 СБОЙ / ПУСТО")
@@ -870,10 +886,11 @@ private fun NycEndpointHealthRow(item: EndpointHealthItem) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
             .background(Color(150, 185, 235, alpha = 7))
-            .border(1.dp, Color(150, 185, 235, alpha = 13), RoundedCornerShape(8.dp))
+            .border(1.dp, if (isExpanded) NycCyan.copy(alpha = 0.35f) else Color(150, 185, 235, alpha = 13), RoundedCornerShape(8.dp))
+            .clickable { isExpanded = !isExpanded }
             .padding(8.dp)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -895,21 +912,33 @@ private fun NycEndpointHealthRow(item: EndpointHealthItem) {
                     )
                 }
 
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(statusColor.copy(alpha = 0.12f))
-                        .border(1.dp, statusColor.copy(alpha = 0.28f), RoundedCornerShape(4.dp))
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Text(
-                        text = statusBadge,
-                        fontFamily = NycMonoFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 8.sp,
-                        letterSpacing = 0.5.sp,
-                        color = statusColor,
-                        maxLines = 1
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(statusColor.copy(alpha = 0.12f))
+                            .border(1.dp, statusColor.copy(alpha = 0.28f), RoundedCornerShape(4.dp))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = statusBadge,
+                            fontFamily = NycMonoFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 8.sp,
+                            letterSpacing = 0.5.sp,
+                            color = statusColor,
+                            maxLines = 1
+                        )
+                    }
+
+                    Icon(
+                        imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                        contentDescription = if (isExpanded) "Свернуть лог" else "Развернуть лог",
+                        tint = nycFaint,
+                        modifier = Modifier.size(15.dp)
                     )
                 }
             }
@@ -927,6 +956,7 @@ private fun NycEndpointHealthRow(item: EndpointHealthItem) {
                         color = when (item.status) {
                             EndpointStatus.ERROR -> nycRed
                             EndpointStatus.DEGRADED -> nycAmber
+                            EndpointStatus.CHECKING -> NycCyan
                             else -> nycBody
                         },
                         modifier = Modifier.weight(1f, fill = false)
@@ -938,6 +968,80 @@ private fun NycEndpointHealthRow(item: EndpointHealthItem) {
                             fontSize = 8.5.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = nycMuted
+                        )
+                    }
+                }
+            }
+
+            // Выпадающий технический журнал запроса (drop-out с сырыми машинными логами)
+            AnimatedVisibility(visible = isExpanded) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color(10, 15, 25, alpha = 200))
+                        .border(1.dp, Color(150, 185, 235, alpha = 25), RoundedCornerShape(6.dp))
+                        .padding(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "[ ТЕХНИЧЕСКИЙ ЖУРНАЛ ЗАПРОСА ]",
+                            fontFamily = NycMonoFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 9.sp,
+                            color = nycMuted,
+                            letterSpacing = 0.5.sp
+                        )
+
+                        if (!item.rawLog.isNullOrEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(NycCyan.copy(alpha = 0.15f))
+                                    .border(1.dp, NycCyan.copy(alpha = 0.35f), RoundedCornerShape(4.dp))
+                                    .clickable {
+                                        clipboardManager.setText(AnnotatedString(item.rawLog))
+                                        Toast.makeText(context, "Лог скопирован в буфер", Toast.LENGTH_SHORT).show()
+                                    }
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "СКОПИРОВАТЬ",
+                                    fontFamily = NycMonoFamily,
+                                    fontSize = 8.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = NycCyan
+                                )
+                            }
+                        }
+                    }
+
+                    val logText = item.rawLog ?: when (item.status) {
+                        EndpointStatus.CHECKING -> "Запрос выполняется в данный момент...\nОжидайте ответа сервера (таймаут 15 сек)."
+                        EndpointStatus.PENDING -> "Запрос находится в очереди.\nБудет запущен сразу после завершения текущего теста."
+                        else -> "Диагностика этого эндпоинта ещё не запускалась.\nНажмите кнопку «ПРОВЕРИТЬ» выше для отправки тестового запроса."
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(Color(5, 8, 15))
+                            .padding(8.dp)
+                            .horizontalScroll(rememberScrollState())
+                    ) {
+                        Text(
+                            text = logText,
+                            fontFamily = NycMonoFamily,
+                            fontSize = 8.5.sp,
+                            color = nycText,
+                            lineHeight = 12.5.sp
                         )
                     }
                 }

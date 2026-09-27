@@ -1153,94 +1153,171 @@ class EiosRepository(private val context: Context) {
         }
     }
 
+    private val diagnosticHttpClient: OkHttpClient by lazy {
+        okHttpClient.newBuilder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
+            .writeTimeout(15, TimeUnit.SECONDS)
+            .callTimeout(15, TimeUnit.SECONDS)
+            .build()
+    }
+
     /**
-     * Выполняет диагностическую проверку ключевых эндпоинтов портала (Расписание, Лента, БРС).
-     * Вызывается строго вручную по нажатию кнопки пользователем.
+     * Выполняет диагностическую проверку ключевых эндпоинтов портала (Расписание, Лента, БРС) поочередно.
      */
     suspend fun checkEndpointsHealth(): List<EndpointHealthItem> = withContext(Dispatchers.IO) {
-        val results = mutableListOf<EndpointHealthItem>()
-        results.add(checkTimetableEndpoint())
-        results.add(checkFeedEndpoint())
-        results.add(checkCurriculumEndpoint())
-        results
+        listOf(
+            checkEndpointHealth("timetable"),
+            checkEndpointHealth("feed"),
+            checkEndpointHealth("curriculum")
+        )
+    }
+
+    /**
+     * Выполняет проверку одного конкретного эндпоинта по его id (timetable, feed, curriculum).
+     * Использует отдельный клиент с жестким таймаутом в 15 секунд.
+     */
+    suspend fun checkEndpointHealth(id: String): EndpointHealthItem = withContext(Dispatchers.IO) {
+        when (id) {
+            "timetable" -> checkTimetableEndpoint()
+            "feed" -> checkFeedEndpoint()
+            "curriculum" -> checkCurriculumEndpoint()
+            else -> EndpointHealthItem(
+                id = id,
+                name = id.uppercase(Locale.getDefault()),
+                path = "/eios/",
+                status = EndpointStatus.ERROR,
+                message = "Неизвестный эндпоинт: $id"
+            )
+        }
     }
 
     private fun checkTimetableEndpoint(): EndpointHealthItem {
         val start = System.currentTimeMillis()
         val url = "https://eios.gukolomna.ru/eios/contacts/timetable/"
+        val path = "/eios/contacts/timetable/"
+        var responseCode: Int? = null
+        var responseMsg: String? = null
+        var responseHeaders: okhttp3.Headers? = null
+        var bodyStr = ""
+
         try {
             val req = Request.Builder().url(url).build()
-            val resp = okHttpClient.newCall(req).execute()
+            val resp = diagnosticHttpClient.newCall(req).execute()
             val latency = System.currentTimeMillis() - start
-            val code = resp.code
-            val body = resp.body?.string() ?: ""
-            val errText = ScheduleParser.extractErrorMessage(body)
+            responseCode = resp.code
+            responseMsg = resp.message
+            responseHeaders = resp.headers
+            bodyStr = resp.body?.string() ?: ""
+            val errText = ScheduleParser.extractErrorMessage(bodyStr)
+            val isAuthReq = bodyStr.contains("bx_auth_serv") || ScheduleParser.isAuthRequired(bodyStr)
+            val hasTable = bodyStr.contains("schedule-table")
 
-            return when {
+            val (status, message, verdict) = when {
                 !resp.isSuccessful -> {
-                    EndpointHealthItem(
-                        id = "timetable",
-                        name = "РАСПИСАНИЕ",
-                        path = "/eios/contacts/timetable/",
-                        status = EndpointStatus.ERROR,
-                        httpCode = code,
-                        latencyMs = latency,
-                        message = "Ошибка HTTP $code"
+                    Triple(
+                        EndpointStatus.ERROR,
+                        "Ошибка сервера: HTTP $responseCode",
+                        "Сервер вернул код ошибки HTTP $responseCode (${resp.message})"
                     )
                 }
                 errText != null -> {
-                    EndpointHealthItem(
-                        id = "timetable",
-                        name = "РАСПИСАНИЕ",
-                        path = "/eios/contacts/timetable/",
-                        status = EndpointStatus.DEGRADED,
-                        httpCode = code,
-                        latencyMs = latency,
-                        message = "200 ОК, но сбой 1С: $errText"
+                    Triple(
+                        EndpointStatus.DEGRADED,
+                        "200 ОК, но сбой 1С: $errText",
+                        "Сервер отдал HTTP 200, но в теле страницы обнаружен текст ошибки 1С: «$errText»"
                     )
                 }
-                body.contains("Отсутствует соединение с сервером") -> {
-                    EndpointHealthItem(
-                        id = "timetable",
-                        name = "РАСПИСАНИЕ",
-                        path = "/eios/contacts/timetable/",
-                        status = EndpointStatus.DEGRADED,
-                        httpCode = code,
-                        latencyMs = latency,
-                        message = "200 ОК, но служба 1С недоступна"
+                bodyStr.contains("Отсутствует соединение с сервером") -> {
+                    Triple(
+                        EndpointStatus.DEGRADED,
+                        "200 ОК, но служба 1С недоступна",
+                        "Сервер отдал HTTP 200, но связь веб-сервера со службой 1С:Университет отсутствует"
                     )
                 }
-                body.contains("schedule-table") -> {
-                    EndpointHealthItem(
-                        id = "timetable",
-                        name = "РАСПИСАНИЕ",
-                        path = "/eios/contacts/timetable/",
-                        status = EndpointStatus.OK,
-                        httpCode = code,
-                        latencyMs = latency,
-                        message = "200 ОК · Таблица доступна"
+                hasTable -> {
+                    Triple(
+                        EndpointStatus.OK,
+                        "200 ОК · Таблица расписания получена (${latency} мс)",
+                        "Сервер ответил штатно. В HTML обнаружен контейнер <table class=\"schedule-table\">"
+                    )
+                }
+                isAuthReq -> {
+                    Triple(
+                        EndpointStatus.AUTH_REQUIRED,
+                        "200 ОК · Требуется вход, отдана форма авторизации (${latency} мс)",
+                        "Сервер отдал форму входа (сессия не авторизована). Эндпоинт доступен, но требует входа"
                     )
                 }
                 else -> {
-                    EndpointHealthItem(
-                        id = "timetable",
-                        name = "РАСПИСАНИЕ",
-                        path = "/eios/contacts/timetable/",
-                        status = EndpointStatus.DEGRADED,
-                        httpCode = code,
-                        latencyMs = latency,
-                        message = "200 ОК, но пустая страница (нет таблицы)"
+                    Triple(
+                        EndpointStatus.DEGRADED,
+                        "200 ОК, но пустая страница (нет таблицы)",
+                        "Сервер вернул 200 ОК, но маркер расписания не найден"
                     )
                 }
             }
-        } catch (e: Exception) {
+
+            val rawLog = buildDiagnosticRawLog(
+                method = "GET",
+                url = url,
+                cookiesSent = getActiveCookies(),
+                responseCode = responseCode,
+                responseMessage = responseMsg,
+                responseHeaders = responseHeaders,
+                latencyMs = latency,
+                bodySnippet = bodyStr,
+                bodySize = bodyStr.toByteArray(Charsets.UTF_8).size,
+                verdict = verdict,
+                error = null
+            )
+
             return EndpointHealthItem(
                 id = "timetable",
                 name = "РАСПИСАНИЕ",
-                path = "/eios/contacts/timetable/",
+                path = path,
+                status = status,
+                httpCode = responseCode,
+                latencyMs = latency,
+                message = message,
+                rawLog = rawLog
+            )
+        } catch (e: Throwable) {
+            val latency = System.currentTimeMillis() - start
+            val isTimeout = e is java.net.SocketTimeoutException || e is java.io.InterruptedIOException
+            val message = if (isTimeout) {
+                "Таймаут соединения: сервер не ответил за 15 секунд"
+            } else {
+                "Нет связи с сервером (${e.localizedMessage ?: e.message ?: "сбой сети"})"
+            }
+            val verdict = if (isTimeout) {
+                "Сервер не успел ответить за отведенные 15 секунд (таймаут истек). Возможно, сервис 1С перегружен или завис."
+            } else {
+                "Сетевой сбой при попытке соединения с сервером: ${e.javaClass.simpleName}"
+            }
+
+            val rawLog = buildDiagnosticRawLog(
+                method = "GET",
+                url = url,
+                cookiesSent = getActiveCookies(),
+                responseCode = responseCode,
+                responseMessage = responseMsg,
+                responseHeaders = responseHeaders,
+                latencyMs = latency,
+                bodySnippet = null,
+                bodySize = 0,
+                verdict = verdict,
+                error = e
+            )
+
+            return EndpointHealthItem(
+                id = "timetable",
+                name = "РАСПИСАНИЕ",
+                path = path,
                 status = EndpointStatus.ERROR,
-                latencyMs = System.currentTimeMillis() - start,
-                message = "Нет связи с сервером"
+                latencyMs = latency,
+                message = message,
+                rawLog = rawLog
             )
         }
     }
@@ -1248,79 +1325,120 @@ class EiosRepository(private val context: Context) {
     private fun checkFeedEndpoint(): EndpointHealthItem {
         val start = System.currentTimeMillis()
         val url = "https://eios.gukolomna.ru/eios/"
+        val path = "/eios/"
+        var responseCode: Int? = null
+        var responseMsg: String? = null
+        var responseHeaders: okhttp3.Headers? = null
+        var bodyStr = ""
+
         try {
             val req = Request.Builder().url(url).build()
-            val resp = okHttpClient.newCall(req).execute()
+            val resp = diagnosticHttpClient.newCall(req).execute()
             val latency = System.currentTimeMillis() - start
-            val code = resp.code
-            val body = resp.body?.string() ?: ""
+            responseCode = resp.code
+            responseMsg = resp.message
+            responseHeaders = resp.headers
+            bodyStr = resp.body?.string() ?: ""
 
-            return when {
+            val (status, message, verdict) = when {
                 !resp.isSuccessful -> {
-                    EndpointHealthItem(
-                        id = "feed",
-                        name = "ЖИВАЯ ЛЕНТА",
-                        path = "/eios/",
-                        status = EndpointStatus.ERROR,
-                        httpCode = code,
-                        latencyMs = latency,
-                        message = "Ошибка HTTP $code"
+                    Triple(
+                        EndpointStatus.ERROR,
+                        "Ошибка сервера: HTTP $responseCode",
+                        "Сервер вернул ошибку HTTP $responseCode (${resp.message})"
                     )
                 }
-                body.contains("errortext") -> {
-                    val errText = ScheduleParser.extractErrorMessage(body) ?: "Ошибка Битрикс"
-                    EndpointHealthItem(
-                        id = "feed",
-                        name = "ЖИВАЯ ЛЕНТА",
-                        path = "/eios/",
-                        status = EndpointStatus.DEGRADED,
-                        httpCode = code,
-                        latencyMs = latency,
-                        message = "200 ОК, но ошибка: $errText"
+                bodyStr.contains("errortext") -> {
+                    val errText = ScheduleParser.extractErrorMessage(bodyStr) ?: "Ошибка Битрикс"
+                    Triple(
+                        EndpointStatus.DEGRADED,
+                        "200 ОК, но ошибка: $errText",
+                        "Сервер отдал HTTP 200, но обнаружена ошибка Битрикса: $errText"
                     )
                 }
-                body.contains("feed-post-block") || body.contains("feed-wrap") || body.contains("workarea") -> {
-                    EndpointHealthItem(
-                        id = "feed",
-                        name = "ЖИВАЯ ЛЕНТА",
-                        path = "/eios/",
-                        status = EndpointStatus.OK,
-                        httpCode = code,
-                        latencyMs = latency,
-                        message = "200 ОК · Работает штатно"
+                bodyStr.contains("feed-post-block") || bodyStr.contains("feed-wrap") || bodyStr.contains("workarea") -> {
+                    Triple(
+                        EndpointStatus.OK,
+                        "200 ОК · Живая лента доступна (${latency} мс)",
+                        "Сервер ответил штатно. Обнаружены блоки живой ленты"
                     )
                 }
-                body.contains("bx_auth_serv") || ScheduleParser.isAuthRequired(body) -> {
-                    EndpointHealthItem(
-                        id = "feed",
-                        name = "ЖИВАЯ ЛЕНТА",
-                        path = "/eios/",
-                        status = EndpointStatus.AUTH_REQUIRED,
-                        httpCode = code,
-                        latencyMs = latency,
-                        message = "200 ОК · Требуется авторизация"
+                bodyStr.contains("bx_auth_serv") || ScheduleParser.isAuthRequired(bodyStr) -> {
+                    Triple(
+                        EndpointStatus.AUTH_REQUIRED,
+                        "200 ОК · Требуется вход, отдана форма авторизации (${latency} мс)",
+                        "Сервер отдал форму входа (сессия не авторизована). Эндпоинт доступен, но требует кук"
                     )
                 }
                 else -> {
-                    EndpointHealthItem(
-                        id = "feed",
-                        name = "ЖИВАЯ ЛЕНТА",
-                        path = "/eios/",
-                        status = EndpointStatus.OK,
-                        httpCode = code,
-                        latencyMs = latency,
-                        message = "200 ОК · Страница получена"
+                    Triple(
+                        EndpointStatus.OK,
+                        "200 ОК · Страница получена (${latency} мс)",
+                        "Сервер вернул 200 ОК, тело страницы получено (${bodyStr.length} симв.)"
                     )
                 }
             }
-        } catch (e: Exception) {
+
+            val rawLog = buildDiagnosticRawLog(
+                method = "GET",
+                url = url,
+                cookiesSent = getActiveCookies(),
+                responseCode = responseCode,
+                responseMessage = responseMsg,
+                responseHeaders = responseHeaders,
+                latencyMs = latency,
+                bodySnippet = bodyStr,
+                bodySize = bodyStr.toByteArray(Charsets.UTF_8).size,
+                verdict = verdict,
+                error = null
+            )
+
             return EndpointHealthItem(
                 id = "feed",
                 name = "ЖИВАЯ ЛЕНТА",
-                path = "/eios/",
+                path = path,
+                status = status,
+                httpCode = responseCode,
+                latencyMs = latency,
+                message = message,
+                rawLog = rawLog
+            )
+        } catch (e: Throwable) {
+            val latency = System.currentTimeMillis() - start
+            val isTimeout = e is java.net.SocketTimeoutException || e is java.io.InterruptedIOException
+            val message = if (isTimeout) {
+                "Таймаут соединения: сервер не ответил за 15 секунд"
+            } else {
+                "Нет связи с сервером (${e.localizedMessage ?: e.message ?: "сбой сети"})"
+            }
+            val verdict = if (isTimeout) {
+                "Сервер не успел ответить за отведенные 15 секунд (таймаут истек). Возможно, портал перегружен."
+            } else {
+                "Сетевой сбой при попытке соединения с сервером: ${e.javaClass.simpleName}"
+            }
+
+            val rawLog = buildDiagnosticRawLog(
+                method = "GET",
+                url = url,
+                cookiesSent = getActiveCookies(),
+                responseCode = responseCode,
+                responseMessage = responseMsg,
+                responseHeaders = responseHeaders,
+                latencyMs = latency,
+                bodySnippet = null,
+                bodySize = 0,
+                verdict = verdict,
+                error = e
+            )
+
+            return EndpointHealthItem(
+                id = "feed",
+                name = "ЖИВАЯ ЛЕНТА",
+                path = path,
                 status = EndpointStatus.ERROR,
-                latencyMs = System.currentTimeMillis() - start,
-                message = "Нет связи с сервером"
+                latencyMs = latency,
+                message = message,
+                rawLog = rawLog
             )
         }
     }
@@ -1335,81 +1453,195 @@ class EiosRepository(private val context: Context) {
         if (userId.isNotEmpty()) params.add("user_id=$userId")
         if (params.isNotEmpty()) urlBuilder.append("?").append(params.joinToString("&"))
         val url = urlBuilder.toString()
+        val path = if (params.isNotEmpty()) "/eios/contacts/curriculum/?${params.joinToString("&")}" else "/eios/contacts/curriculum/"
+        var responseCode: Int? = null
+        var responseMsg: String? = null
+        var responseHeaders: okhttp3.Headers? = null
+        var bodyStr = ""
 
         try {
             val req = Request.Builder().url(url).build()
-            val resp = okHttpClient.newCall(req).execute()
+            val resp = diagnosticHttpClient.newCall(req).execute()
             val latency = System.currentTimeMillis() - start
-            val code = resp.code
-            val body = resp.body?.string() ?: ""
+            responseCode = resp.code
+            responseMsg = resp.message
+            responseHeaders = resp.headers
+            bodyStr = resp.body?.string() ?: ""
 
-            return when {
+            val (status, message, verdict) = when {
                 !resp.isSuccessful -> {
-                    EndpointHealthItem(
-                        id = "curriculum",
-                        name = "УСПЕВАЕМОСТЬ (БРС)",
-                        path = "/eios/contacts/curriculum/",
-                        status = EndpointStatus.ERROR,
-                        httpCode = code,
-                        latencyMs = latency,
-                        message = "Ошибка HTTP $code"
+                    Triple(
+                        EndpointStatus.ERROR,
+                        "Ошибка сервера: HTTP $responseCode",
+                        "Сервер вернул ошибку HTTP $responseCode (${resp.message})"
                     )
                 }
-                body.contains("errortext") -> {
-                    val errText = ScheduleParser.extractErrorMessage(body) ?: "Ошибка Битрикс"
-                    EndpointHealthItem(
-                        id = "curriculum",
-                        name = "УСПЕВАЕМОСТЬ (БРС)",
-                        path = "/eios/contacts/curriculum/",
-                        status = EndpointStatus.DEGRADED,
-                        httpCode = code,
-                        latencyMs = latency,
-                        message = "200 ОК, но ошибка: $errText"
+                bodyStr.contains("errortext") -> {
+                    val errText = ScheduleParser.extractErrorMessage(bodyStr) ?: "Ошибка Битрикс"
+                    Triple(
+                        EndpointStatus.DEGRADED,
+                        "200 ОК, но ошибка: $errText",
+                        "Сервер отдал HTTP 200, но обнаружена ошибка Битрикса: $errText"
                     )
                 }
-                body.contains("bx_auth_serv") || ScheduleParser.isAuthRequired(body) -> {
-                    EndpointHealthItem(
-                        id = "curriculum",
-                        name = "УСПЕВАЕМОСТЬ (БРС)",
-                        path = "/eios/contacts/curriculum/",
-                        status = EndpointStatus.AUTH_REQUIRED,
-                        httpCode = code,
-                        latencyMs = latency,
-                        message = "200 ОК · Требуется авторизация"
+                bodyStr.contains("bx_auth_serv") || ScheduleParser.isAuthRequired(bodyStr) -> {
+                    Triple(
+                        EndpointStatus.AUTH_REQUIRED,
+                        "200 ОК · Требуется вход, отдана форма авторизации (${latency} мс)",
+                        "Сервер отдал форму входа (сессия не авторизована). Эндпоинт доступен, но требует кук"
                     )
                 }
-                body.contains("curriculum") || body.contains("Семестр") || body.contains("таблица") || body.contains("table") -> {
-                    EndpointHealthItem(
-                        id = "curriculum",
-                        name = "УСПЕВАЕМОСТЬ (БРС)",
-                        path = "/eios/contacts/curriculum/",
-                        status = EndpointStatus.OK,
-                        httpCode = code,
-                        latencyMs = latency,
-                        message = "200 ОК · Работает штатно"
+                bodyStr.contains("curriculum") || bodyStr.contains("Семестр") || bodyStr.contains("таблица") || bodyStr.contains("table") -> {
+                    Triple(
+                        EndpointStatus.OK,
+                        "200 ОК · Учебный план и БРС доступны (${latency} мс)",
+                        "Сервер ответил штатно. Обнаружены структуры учебного плана / БРС"
                     )
                 }
                 else -> {
-                    EndpointHealthItem(
-                        id = "curriculum",
-                        name = "УСПЕВАЕМОСТЬ (БРС)",
-                        path = "/eios/contacts/curriculum/",
-                        status = EndpointStatus.OK,
-                        httpCode = code,
-                        latencyMs = latency,
-                        message = "200 ОК · Страница получена"
+                    Triple(
+                        EndpointStatus.OK,
+                        "200 ОК · Страница получена (${latency} мс)",
+                        "Сервер вернул 200 ОК, тело страницы получено (${bodyStr.length} симв.)"
                     )
                 }
             }
-        } catch (e: Exception) {
+
+            val rawLog = buildDiagnosticRawLog(
+                method = "GET",
+                url = url,
+                cookiesSent = getActiveCookies(),
+                responseCode = responseCode,
+                responseMessage = responseMsg,
+                responseHeaders = responseHeaders,
+                latencyMs = latency,
+                bodySnippet = bodyStr,
+                bodySize = bodyStr.toByteArray(Charsets.UTF_8).size,
+                verdict = verdict,
+                error = null
+            )
+
             return EndpointHealthItem(
                 id = "curriculum",
                 name = "УСПЕВАЕМОСТЬ (БРС)",
-                path = "/eios/contacts/curriculum/",
-                status = EndpointStatus.ERROR,
-                latencyMs = System.currentTimeMillis() - start,
-                message = "Нет связи с сервером"
+                path = path,
+                status = status,
+                httpCode = responseCode,
+                latencyMs = latency,
+                message = message,
+                rawLog = rawLog
             )
+        } catch (e: Throwable) {
+            val latency = System.currentTimeMillis() - start
+            val isTimeout = e is java.net.SocketTimeoutException || e is java.io.InterruptedIOException
+            val message = if (isTimeout) {
+                "Таймаут соединения: сервер не ответил за 15 секунд"
+            } else {
+                "Нет связи с сервером (${e.localizedMessage ?: e.message ?: "сбой сети"})"
+            }
+            val verdict = if (isTimeout) {
+                "Сервер не успел ответить за отведенные 15 секунд (таймаут истек). Возможно, портал перегружен."
+            } else {
+                "Сетевой сбой при попытке соединения с сервером: ${e.javaClass.simpleName}"
+            }
+
+            val rawLog = buildDiagnosticRawLog(
+                method = "GET",
+                url = url,
+                cookiesSent = getActiveCookies(),
+                responseCode = responseCode,
+                responseMessage = responseMsg,
+                responseHeaders = responseHeaders,
+                latencyMs = latency,
+                bodySnippet = null,
+                bodySize = 0,
+                verdict = verdict,
+                error = e
+            )
+
+            return EndpointHealthItem(
+                id = "curriculum",
+                name = "УСПЕВАЕМОСТЬ (БРС)",
+                path = path,
+                status = EndpointStatus.ERROR,
+                latencyMs = latency,
+                message = message,
+                rawLog = rawLog
+            )
+        }
+    }
+
+    private fun buildDiagnosticRawLog(
+        method: String,
+        url: String,
+        cookiesSent: String?,
+        responseCode: Int?,
+        responseMessage: String?,
+        responseHeaders: okhttp3.Headers?,
+        latencyMs: Long,
+        bodySnippet: String?,
+        bodySize: Int,
+        verdict: String,
+        error: Throwable?
+    ): String {
+        val httpUrl = url.toHttpUrl()
+        val host = httpUrl.host
+        return buildString {
+            appendLine("═══════════════════════════════════════════════════════════")
+            appendLine(">>> HTTP-ЗАПРОС (REQUEST)")
+            appendLine("═══════════════════════════════════════════════════════════")
+            appendLine("$method $url HTTP/1.1")
+            appendLine("Host: $host")
+            appendLine("User-Agent: $BROWSER_USER_AGENT")
+            appendLine("Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")
+            appendLine("Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7")
+            appendLine("Sec-CH-UA: \"Chromium\";v=\"128\", \"Not;A=Brand\";v=\"24\", \"Google Chrome\";v=\"128\"")
+            appendLine("Sec-CH-UA-Mobile: ?1")
+            appendLine("Sec-CH-UA-Platform: \"Android\"")
+            appendLine("Upgrade-Insecure-Requests: 1")
+            if (!cookiesSent.isNullOrEmpty()) {
+                appendLine("Cookie: $cookiesSent")
+            } else {
+                appendLine("Cookie: [Сессия не авторизована]")
+            }
+            appendLine()
+
+            if (error != null) {
+                appendLine("═══════════════════════════════════════════════════════════")
+                appendLine("<<< СБОЙ СЕТЕВОГО ЗАПРОСА (${latencyMs} мс)")
+                appendLine("═══════════════════════════════════════════════════════════")
+                appendLine("Исключение: ${error.javaClass.name}")
+                appendLine("Сообщение: ${error.localizedMessage ?: error.message}")
+                if (error is java.net.SocketTimeoutException || error is java.io.InterruptedIOException) {
+                    appendLine("Таймаут: Превышен лимит ожидания ответа (15.000 сек).")
+                }
+                appendLine("Стек ошибки:")
+                error.stackTrace.take(6).forEach { st ->
+                    appendLine("  at $st")
+                }
+                appendLine()
+                appendLine("ВЕРДИКТ:")
+                appendLine(verdict)
+            } else if (responseCode != null) {
+                appendLine("═══════════════════════════════════════════════════════════")
+                appendLine("<<< HTTP-ОТВЕТ (RESPONSE · HTTP $responseCode · ${latencyMs} мс)")
+                appendLine("═══════════════════════════════════════════════════════════")
+                appendLine("HTTP/1.1 $responseCode ${responseMessage ?: ""}")
+                responseHeaders?.forEach { (name, value) ->
+                    appendLine("$name: $value")
+                }
+                appendLine()
+                appendLine("═══════════════════════════════════════════════════════════")
+                appendLine("ДИАГНОСТИЧЕСКИЙ АНАЛИЗ ТЕЛА ($bodySize байт)")
+                appendLine("═══════════════════════════════════════════════════════════")
+                appendLine("ВЕРДИКТ: $verdict")
+                if (!bodySnippet.isNullOrEmpty()) {
+                    appendLine()
+                    appendLine("Фрагмент содержимого HTML (первые 400 симв.):")
+                    val snippetClean = bodySnippet.take(400).replace("\r", "")
+                    appendLine(snippetClean)
+                }
+            }
         }
     }
 }

@@ -2,6 +2,7 @@ package ru.nya.nyeios.data.net
 
 enum class EndpointStatus {
     IDLE,
+    PENDING,
     CHECKING,
     OK,
     DEGRADED,
@@ -16,5 +17,6 @@ data class EndpointHealthItem(
     val status: EndpointStatus = EndpointStatus.IDLE,
     val httpCode: Int? = null,
     val latencyMs: Long? = null,
-    val message: String? = null
+    val message: String? = null,
+    val rawLog: String? = null
 )

@@ -9,12 +9,12 @@ import ru.nya.nyeios.ui.settings.ChangelogHistory
 class ChangelogHistoryTest {
 
     @Test
-    fun testLatestReleaseIs023() {
+    fun testLatestReleaseIs025() {
         val releases = ChangelogHistory.releases
         assertTrue("Changelog should contain releases", releases.isNotEmpty())
 
         val latest = releases.first()
-        assertEquals("Latest release must be 0.2.3", "0.2.3", latest.version)
+        assertEquals("Latest release must be 0.2.5", "0.2.5", latest.version)
         assertTrue("Latest release should have isLatest = true", latest.isLatest)
     }
 
