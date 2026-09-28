@@ -346,10 +346,10 @@ fun NycBottomNav(
 ) {
     val faint = Color(0xFF5B6A7E)
     val tabs = listOf(
-        NycTab(0, Icons.Default.CalendarToday, "Расписание"),
-        NycTab(1, Icons.Default.DynamicFeed, "Лента"),
-        NycTab(2, Icons.Default.School, "БРС"),
-        NycTab(3, Icons.Default.Settings, "Настройки")
+        NycTab(0, Icons.Default.CalendarToday, androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.tab_schedule)),
+        NycTab(1, Icons.Default.DynamicFeed, androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.tab_feed)),
+        NycTab(2, Icons.Default.School, androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.tab_curriculum)),
+        NycTab(3, Icons.Default.Settings, androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.tab_settings))
     )
     Row(
         modifier = modifier

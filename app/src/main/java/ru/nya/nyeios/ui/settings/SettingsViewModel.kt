@@ -22,10 +22,13 @@ import ru.nya.nyeios.data.update.AppVersionProvider
 import ru.nya.nyeios.data.update.GithubRateLimitState
 import ru.nya.nyeios.data.update.UpdateRepository
 
-enum class SettingsSubtab(val title: String) {
-    GENERAL("ОБЩЕЕ"),
-    THEME("ТЕМА"),
-    VERSION("ВЕРСИЯ")
+import ru.nya.nyeios.R
+
+enum class SettingsSubtab(val titleResId: Int, val title: String) {
+    GENERAL(R.string.settings_tab_general, "ОБЩЕЕ"),
+    THEME(R.string.settings_tab_theme, "ТЕМА"),
+    VERSION(R.string.settings_tab_version, "ВЕРСИЯ"),
+    LANGUAGE(R.string.settings_tab_language, "ЯЗЫК")
 }
 
 data class SettingsUiState(
@@ -116,6 +119,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 }
             }
             SettingsSubtab.THEME -> Unit
+            SettingsSubtab.LANGUAGE -> Unit
         }
     }
 

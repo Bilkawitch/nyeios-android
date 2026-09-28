@@ -1,0 +1,88 @@
+<resources>
+    <string name="app_name">NyEIOS</string>
+
+    <!-- Navigation Tabs -->
+    <string name="tab_schedule">Schedule</string>
+    <string name="tab_feed">Feed</string>
+    <string name="tab_curriculum">Grades</string>
+    <string name="tab_settings">Settings</string>
+
+    <!-- Settings Subtabs -->
+    <string name="settings_tab_general">GENERAL</string>
+    <string name="settings_tab_theme">THEME</string>
+    <string name="settings_tab_version">VERSION</string>
+    <string name="settings_tab_language">LANGUAGE</string>
+
+    <!-- Language Settings -->
+    <string name="language_settings_title">[ 01 · INTERFACE LANGUAGE ]</string>
+    <string name="language_system_title">System default</string>
+    <string name="language_system_desc">Use system language</string>
+    <string name="language_ru_title">Русский (Russian)</string>
+    <string name="language_ru_desc">Russian application interface</string>
+    <string name="language_en_title">English</string>
+    <string name="language_en_desc">English user interface (work in progress)</string>
+    <string name="language_server_note_title">[ 02 · SERVER DATA &amp; TIMETABLE ]</string>
+    <string name="language_server_note_desc">Academic process data (course names, instructor names, timetable, announcements and grades) is fetched directly from the university portal eios.gukolomna.ru and preserved in the original server language.</string>
+
+    <!-- Common Actions -->
+    <string name="action_refresh">Refresh</string>
+    <string name="action_copy">Copy</string>
+    <string name="action_copy_all">COPY ALL</string>
+    <string name="action_clear">CLEAR</string>
+    <string name="action_login">Log in</string>
+    <string name="action_logout">Log out</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_close">Close</string>
+    <string name="action_retry">Retry</string>
+    <string name="action_check_updates">CHECK FOR UPDATES</string>
+
+    <!-- Timetable / Schedule Screen -->
+    <string name="schedule_current_week">Current week</string>
+    <string name="schedule_prev_week">Previous week</string>
+    <string name="schedule_next_week">Next week</string>
+    <string name="schedule_week_fmt">Week %1$d</string>
+    <string name="schedule_no_lessons_title">NO CLASSES THIS WEEK</string>
+    <string name="schedule_no_lessons_desc">No scheduled classes found in the university timetable</string>
+    <string name="schedule_empty_day">No classes</string>
+    <string name="schedule_break_fmt">BREAK %1$d MIN</string>
+    <string name="schedule_floor_fmt">FLOOR %1$d</string>
+    <string name="schedule_dist_fmt">%1$d M</string>
+    <string name="schedule_map_btn">MAP</string>
+    <string name="schedule_offline_cache">OFFLINE CACHE</string>
+
+    <!-- Login -->
+    <string name="login_title">EIOS LOGIN</string>
+    <string name="login_username_label">Login or Email</string>
+    <string name="login_password_label">Password</string>
+    <string name="login_remember_me">Remember session</string>
+    <string name="login_submit">LOG IN TO EIOS</string>
+    <string name="login_gate_title">AUTHORIZATION REQUIRED</string>
+    <string name="login_gate_desc">To access schedule, grades and announcements, please log in with your eios.gukolomna.ru credentials.</string>
+    <string name="login_error_credentials">Invalid username or password</string>
+
+    <!-- Network Logs -->
+    <string name="network_logs_title">NETWORK LOGS</string>
+    <string name="network_logs_empty_title">NO NETWORK REQUESTS YET</string>
+    <string name="network_logs_empty_desc">Request logs will appear here when schedule, live feed, or curriculum data is synchronized.</string>
+    <string name="network_raw_response_copied">Raw response copied</string>
+    <string name="network_raw_response_empty">Server response is empty</string>
+    <string name="network_copy_raw_desc">Copy raw server response</string>
+
+    <!-- Feed / Live Feed -->
+    <string name="feed_title">LIVE FEED</string>
+    <string name="feed_empty_title">NO ANNOUNCEMENTS</string>
+    <string name="feed_empty_desc">No posts available in the feed yet</string>
+
+    <!-- Curriculum / BRS -->
+    <string name="curriculum_title">CURRICULUM (BRS)</string>
+    <string name="curriculum_empty_title">NO GRADE DATA</string>
+    <string name="curriculum_empty_desc">Curriculum data is empty or not yet loaded</string>
+
+    <!-- Theme Settings -->
+    <string name="theme_section_title">[ 01 · THEME SELECTION ]</string>
+    <string name="theme_special_title">[ 02 · SPECIAL THEMES ]</string>
+
+    <!-- Version Settings -->
+    <string name="version_section_title">[ 01 · APP VERSION ]</string>
+    <string name="version_changelog_title">[ 02 · CHANGELOG ]</string>
+</resources>

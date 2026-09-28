@@ -1,5 +1,7 @@
 package ru.nya.nyeios
 
+import android.content.Context
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -62,6 +64,9 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
+import ru.nya.nyeios.ui.language.LanguageManager
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -122,18 +127,44 @@ import androidx.compose.ui.geometry.Offset
 
 class MainActivity : ComponentActivity() {
 
+    override fun attachBaseContext(newBase: Context) {
+        LanguageManager.init(newBase)
+        val localized = LanguageManager.applyLocaleContext(newBase)
+        super.attachBaseContext(localized)
+    }
+
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ru.nya.nyeios.ui.theme.ThemeManager.init(this)
+        LanguageManager.init(this)
         enableEdgeToEdge()
 
         setContent {
-            NyEIOSTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = ObsidianBg
-                ) {
+            val currentLanguage = LanguageManager.currentLanguage
+            val effectiveLocale = LanguageManager.effectiveLocale
+            val baseConfig = LocalConfiguration.current
+            val baseContext = LocalContext.current
+
+            val localizedConfig = remember(currentLanguage, baseConfig) {
+                Configuration(baseConfig).apply {
+                    setLocale(effectiveLocale)
+                    setLayoutDirection(effectiveLocale)
+                }
+            }
+            val localizedContext = remember(currentLanguage, baseContext, localizedConfig) {
+                baseContext.createConfigurationContext(localizedConfig)
+            }
+
+            androidx.compose.runtime.CompositionLocalProvider(
+                LocalConfiguration provides localizedConfig,
+                LocalContext provides localizedContext
+            ) {
+                NyEIOSTheme {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = ObsidianBg
+                    ) {
                     val scheduleViewModel: ScheduleViewModel = viewModel()
                     val feedViewModel: FeedViewModel = viewModel()
                     val curriculumViewModel: CurriculumViewModel = viewModel()
@@ -201,10 +232,10 @@ class MainActivity : ComponentActivity() {
                             if (isNycModern) {
                                 // Parallel NyC-modern chrome: same state, mockup rendering.
                                 val nycTitle = when (currentTab) {
-                                    0 -> "Расписание"
-                                    1 -> "Лента"
-                                    2 -> "Успеваемость"
-                                    3 -> "Настройки"
+                                    0 -> stringResource(R.string.tab_schedule)
+                                    1 -> stringResource(R.string.tab_feed)
+                                    2 -> stringResource(R.string.tab_curriculum)
+                                    3 -> stringResource(R.string.tab_settings)
                                     else -> "NyEIOS"
                                 }
                                 val nycBase = remember(lastSyncTime) { formatSyncTime(lastSyncTime) }
@@ -342,9 +373,9 @@ class MainActivity : ComponentActivity() {
                                                     Text(
                                                         text = when (currentTab) {
                                                             0 -> "NyEIOS"
-                                                            1 -> "Живая лента"
-                                                            2 -> "Успеваемость"
-                                                            3 -> "Настройки"
+                                                            1 -> stringResource(R.string.feed_title)
+                                                            2 -> stringResource(R.string.curriculum_title)
+                                                            3 -> stringResource(R.string.tab_settings)
                                                             else -> "NyEIOS"
                                                         },
                                                         fontWeight = FontWeight.Bold,
@@ -626,10 +657,10 @@ class MainActivity : ComponentActivity() {
                                     }
                                 ) {
                                     val tabs = listOf(
-                                        Triple(0, Icons.Default.CalendarToday, "Расписание"),
-                                        Triple(1, Icons.Default.DynamicFeed, "Лента"),
-                                        Triple(2, Icons.Default.School, "БРС"),
-                                        Triple(3, Icons.Default.Settings, "Настройки")
+                                        Triple(0, Icons.Default.CalendarToday, stringResource(R.string.tab_schedule)),
+                                        Triple(1, Icons.Default.DynamicFeed, stringResource(R.string.tab_feed)),
+                                        Triple(2, Icons.Default.School, stringResource(R.string.tab_curriculum)),
+                                        Triple(3, Icons.Default.Settings, stringResource(R.string.tab_settings))
                                     )
 
                                     tabs.forEach { (index, icon, title) ->
@@ -833,6 +864,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
 }
 
 private fun formatSyncTime(timestamp: Long): String {

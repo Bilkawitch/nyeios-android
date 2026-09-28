@@ -1,3 +1,88 @@
 <resources>
     <string name="app_name">NyEIOS</string>
+
+    <!-- Navigation Tabs -->
+    <string name="tab_schedule">Расписание</string>
+    <string name="tab_feed">Лента</string>
+    <string name="tab_curriculum">БРС</string>
+    <string name="tab_settings">Настройки</string>
+
+    <!-- Settings Subtabs -->
+    <string name="settings_tab_general">ОБЩЕЕ</string>
+    <string name="settings_tab_theme">ТЕМА</string>
+    <string name="settings_tab_version">ВЕРСИЯ</string>
+    <string name="settings_tab_language">ЯЗЫК</string>
+
+    <!-- Language Settings -->
+    <string name="language_settings_title">[ 01 · ВЫБОР ЯЗЫКА ИНТЕРФЕЙСА ]</string>
+    <string name="language_system_title">Системный (по умолчанию)</string>
+    <string name="language_system_desc">Использовать системный язык устройства</string>
+    <string name="language_ru_title">Русский</string>
+    <string name="language_ru_desc">Русский язык интерфейса приложения</string>
+    <string name="language_en_title">English</string>
+    <string name="language_en_desc">English user interface (в разработке / ready for translation)</string>
+    <string name="language_server_note_title">[ 02 · СЕРВЕРНЫЕ ДАННЫЕ И РАСПИСАНИЕ ]</string>
+    <string name="language_server_note_desc">Данные учебного процесса (названия дисциплин, ФИО преподавателей, расписание занятий, объявления Живой ленты и оценки БРС) поступают с веб-портала eios.gukolomna.ru и отображаются на оригинальном языке сервера университета.</string>
+
+    <!-- Common Actions -->
+    <string name="action_refresh">Обновить</string>
+    <string name="action_copy">Копировать</string>
+    <string name="action_copy_all">КОПИРОВАТЬ ВСЁ</string>
+    <string name="action_clear">ОЧИСТИТЬ</string>
+    <string name="action_login">Войти</string>
+    <string name="action_logout">Выйти</string>
+    <string name="action_cancel">Отмена</string>
+    <string name="action_close">Закрыть</string>
+    <string name="action_retry">Повторить</string>
+    <string name="action_check_updates">ПРОВЕРИТЬ ОБНОВЛЕНИЯ</string>
+
+    <!-- Timetable / Schedule Screen -->
+    <string name="schedule_current_week">Текущая неделя</string>
+    <string name="schedule_prev_week">Предыдущая неделя</string>
+    <string name="schedule_next_week">Следующая неделя</string>
+    <string name="schedule_week_fmt">Неделя %1$d</string>
+    <string name="schedule_no_lessons_title">НА ЭТОЙ НЕДЕЛЕ ЗАНЯТИЙ НЕТ</string>
+    <string name="schedule_no_lessons_desc">В расписании университета нет запланированных пар</string>
+    <string name="schedule_empty_day">Пар нет</string>
+    <string name="schedule_break_fmt">ПЕРЕРЫВ %1$d МИН</string>
+    <string name="schedule_floor_fmt">%1$d ЭТАЖ</string>
+    <string name="schedule_dist_fmt">%1$d М</string>
+    <string name="schedule_map_btn">КАРТА</string>
+    <string name="schedule_offline_cache">ОФЛАЙН-КЭШ</string>
+
+    <!-- Login -->
+    <string name="login_title">АВТОРИЗАЦИЯ В ЭИОС</string>
+    <string name="login_username_label">Логин или Email</string>
+    <string name="login_password_label">Пароль</string>
+    <string name="login_remember_me">Запомнить сессию</string>
+    <string name="login_submit">ВОЙТИ В ЭИОС</string>
+    <string name="login_gate_title">ТРЕБУЕТСЯ АВТОРИЗАЦИЯ</string>
+    <string name="login_gate_desc">Для доступа к расписанию, оценкам и Живой ленте выполните вход с учетными данными портала eios.gukolomna.ru.</string>
+    <string name="login_error_credentials">Неверный логин или пароль</string>
+
+    <!-- Network Logs -->
+    <string name="network_logs_title">СЕТЕВЫЕ ЛОГИ</string>
+    <string name="network_logs_empty_title">СЕТЕВЫХ ЗАПРОСОВ ПОКА НЕТ</string>
+    <string name="network_logs_empty_desc">Журнал запросов начнет наполняться при синхронизации расписания, Живой ленты или учебного плана.</string>
+    <string name="network_raw_response_copied">Raw ответ скопирован</string>
+    <string name="network_raw_response_empty">Ответ сервера пуст</string>
+    <string name="network_copy_raw_desc">Скопировать raw ответ сервера</string>
+
+    <!-- Feed / Live Feed -->
+    <string name="feed_title">ЖИВАЯ ЛЕНТА</string>
+    <string name="feed_empty_title">НЕТ ОБЪЯВЛЕНИЙ</string>
+    <string name="feed_empty_desc">В Живой ленте пока нет записей</string>
+
+    <!-- Curriculum / BRS -->
+    <string name="curriculum_title">УСПЕВАЕМОСТЬ (БРС)</string>
+    <string name="curriculum_empty_title">НЕТ ДАННЫХ УСПЕВАЕМОСТИ</string>
+    <string name="curriculum_empty_desc">Учебный план пуст или еще не загружен</string>
+
+    <!-- Theme Settings -->
+    <string name="theme_section_title">[ 01 · ВЫБОР ТЕМЫ ОФОРМЛЕНИЯ ]</string>
+    <string name="theme_special_title">[ 02 · ОСОБЫЕ ТЕМЫ ОФОРМЛЕНИЯ ]</string>
+
+    <!-- Version Settings -->
+    <string name="version_section_title">[ 01 · ВЕРСИЯ ПРИЛОЖЕНИЯ ]</string>
+    <string name="version_changelog_title">[ 02 · ИСТОРИЯ ИЗМЕНЕНИЙ ]</string>
 </resources>

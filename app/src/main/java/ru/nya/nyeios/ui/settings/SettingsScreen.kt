@@ -135,6 +135,9 @@ fun SettingsScreen(
                         }
                     )
                 }
+                SettingsSubtab.LANGUAGE -> {
+                    LanguageSettingsContent()
+                }
             }
         }
     }
@@ -149,8 +152,8 @@ private fun SettingsSubtabBar(
         modifier = Modifier
             .fillMaxWidth()
             .background(NierPanel)
-            .padding(horizontal = 8.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(horizontal = 6.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         SettingsSubtab.entries.forEach { subtab ->
             val isSelected = subtab == currentSubtab
@@ -165,27 +168,29 @@ private fun SettingsSubtabBar(
                         shape = appRectShape()
                     )
                     .clickable { onSelectSubtab(subtab) }
-                    .padding(vertical = 8.dp, horizontal = 10.dp),
+                    .padding(vertical = 8.dp, horizontal = 4.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     // NieR Checkbox indicator [✕] / [☐]
                     NierCheckbox(
                         checked = isSelected,
                         color = if (isSelected) NierSelectionText else NierDark,
-                        size = 14.dp
+                        size = 12.dp
                     )
 
                     Text(
-                        text = subtab.title,
+                        text = androidx.compose.ui.res.stringResource(subtab.titleResId),
                         color = if (isSelected) NierSelectionText else NierDark,
-                        fontSize = 12.sp,
+                        fontSize = 10.5.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                         fontFamily = RajdhaniFamily,
-                        letterSpacing = 1.sp
+                        letterSpacing = 0.5.sp,
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
             }
@@ -725,6 +730,90 @@ internal fun ThemeSettingsContent() {
                         )
                     }
                 }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+@Composable
+fun LanguageSettingsContent() {
+    val context = LocalContext.current
+    val currentLang = ru.nya.nyeios.ui.language.LanguageManager.currentLanguage
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        SectionHeader(title = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_settings_title))
+
+        NierCard {
+            Column(
+                modifier = Modifier.padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                ThemeItemRow(
+                    title = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_system_title),
+                    subtitle = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_system_desc),
+                    isSelected = currentLang == ru.nya.nyeios.ui.language.AppLanguage.SYSTEM,
+                    onClick = {
+                        ru.nya.nyeios.ui.language.LanguageManager.setLanguage(context, ru.nya.nyeios.ui.language.AppLanguage.SYSTEM)
+                    }
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(NierBorderLight)
+                )
+
+                ThemeItemRow(
+                    title = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_ru_title),
+                    subtitle = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_ru_desc),
+                    isSelected = currentLang == ru.nya.nyeios.ui.language.AppLanguage.RU,
+                    onClick = {
+                        ru.nya.nyeios.ui.language.LanguageManager.setLanguage(context, ru.nya.nyeios.ui.language.AppLanguage.RU)
+                    }
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(NierBorderLight)
+                )
+
+                ThemeItemRow(
+                    title = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_en_title),
+                    subtitle = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_en_desc),
+                    isSelected = currentLang == ru.nya.nyeios.ui.language.AppLanguage.EN,
+                    onClick = {
+                        ru.nya.nyeios.ui.language.LanguageManager.setLanguage(context, ru.nya.nyeios.ui.language.AppLanguage.EN)
+                    }
+                )
+            }
+        }
+
+        SectionHeader(title = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_server_note_title))
+
+        NierCard {
+            Column(
+                modifier = Modifier.padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_server_note_desc),
+                    color = NierDim,
+                    fontSize = 11.sp,
+                    lineHeight = 16.sp,
+                    fontFamily = ShareTechMonoFamily
+                )
             }
         }
 

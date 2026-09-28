@@ -78,6 +78,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -391,7 +392,7 @@ fun ScheduleScreen(
                                             verticalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
                                             Text(
-                                                text = if (allDaysEmpty) "— НА ЭТОЙ НЕДЕЛЕ ЗАНЯТИЙ НЕТ —" else "— ЗАНЯТИЙ НЕТ · СВОБОДНЫЙ ДЕНЬ —",
+                                                text = if (allDaysEmpty) stringResource(R.string.schedule_no_lessons_title) else "— ЗАНЯТИЙ НЕТ · СВОБОДНЫЙ ДЕНЬ —",
                                                 fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 11.sp,
@@ -400,7 +401,7 @@ fun ScheduleScreen(
                                             )
                                             if (allDaysEmpty) {
                                                 Text(
-                                                    text = "В расписании университета нет запланированных пар",
+                                                    text = stringResource(R.string.schedule_no_lessons_desc),
                                                     fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
                                                     fontWeight = FontWeight.Medium,
                                                     fontSize = 12.sp,
@@ -570,9 +571,9 @@ fun WeekNavigator(
         ) {
             Text(
                 text = when (weekOffset) {
-                    0 -> "Текущая неделя"
-                    1 -> "Следующая неделя"
-                    -1 -> "Предыдущая неделя"
+                    0 -> stringResource(R.string.schedule_current_week)
+                    1 -> stringResource(R.string.schedule_next_week)
+                    -1 -> stringResource(R.string.schedule_prev_week)
                     else -> if (weekOffset > 0) "+$weekOffset нед." else "$weekOffset нед."
                 },
                 fontSize = 14.sp,
