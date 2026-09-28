@@ -12,8 +12,8 @@ android {
         applicationId = "ru.nya.nyeios"
         minSdk = 26
         targetSdk = 34
-        versionCode = 21
-        versionName = "0.2.6a"
+        versionCode = 22
+        versionName = "0.2.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

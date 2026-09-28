@@ -6,13 +6,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -130,6 +132,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 
 class MainActivity : ComponentActivity() {
@@ -670,6 +673,24 @@ class MainActivity : ComponentActivity() {
                                     onSelect = { currentTab = it }
                                 )
                             } else {
+                            val tabs = listOf(
+                                Triple(0, Icons.Default.CalendarToday, stringResource(R.string.tab_schedule)),
+                                Triple(1, Icons.Default.DynamicFeed, stringResource(R.string.tab_feed)),
+                                Triple(2, Icons.Default.School, stringResource(R.string.tab_curriculum)),
+                                Triple(3, Icons.Default.Settings, stringResource(R.string.tab_settings))
+                            )
+                            // Selection marker glides between the four destinations on tab change.
+                            val navMarkerIndex by animateFloatAsState(
+                                targetValue = currentTab.toFloat(),
+                                animationSpec = UiPreferencesManager.gated(
+                                    spring(
+                                        dampingRatio = Spring.DampingRatioNoBouncy,
+                                        stiffness = Spring.StiffnessMediumLow
+                                    )
+                                ),
+                                label = "bottom_nav_marker"
+                            )
+                            val navMarkerColor = ru.nya.nyeios.ui.theme.selectionAccent()
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -678,23 +699,34 @@ class MainActivity : ComponentActivity() {
                                 NavigationBar(
                                     containerColor = ru.nya.nyeios.ui.theme.NierPanel,
                                     tonalElevation = 0.dp,
-                                    modifier = Modifier.drawBehind {
-                                        // Thick top border of the NieR navigation bar
-                                        drawLine(
-                                            color = ru.nya.nyeios.ui.theme.NierDark,
-                                            start = Offset(0f, 0f),
-                                            end = Offset(size.width, 0f),
-                                            strokeWidth = 2.dp.toPx()
-                                        )
-                                    }
+                                    modifier = Modifier
+                                        .drawBehind {
+                                            // Thick top border of the NieR navigation bar
+                                            drawLine(
+                                                color = ru.nya.nyeios.ui.theme.NierDark,
+                                                start = Offset(0f, 0f),
+                                                end = Offset(size.width, 0f),
+                                                strokeWidth = 2.dp.toPx()
+                                            )
+                                        }
+                                        // NavigationBar paints its own container colour after the
+                                        // caller's drawBehind, so the marker has to be drawn with
+                                        // drawWithContent to stay visible.
+                                        .drawWithContent {
+                                            drawContent()
+                                            // Marker is positioned by the animated index, not the item.
+                                            val itemWidth = size.width / tabs.size
+                                            val barWidth = itemWidth * 0.45f
+                                            drawRect(
+                                                color = navMarkerColor,
+                                                topLeft = Offset(
+                                                    navMarkerIndex * itemWidth + (itemWidth - barWidth) / 2f,
+                                                    0f
+                                                ),
+                                                size = androidx.compose.ui.geometry.Size(barWidth, 2.dp.toPx())
+                                            )
+                                        }
                                 ) {
-                                    val tabs = listOf(
-                                        Triple(0, Icons.Default.CalendarToday, stringResource(R.string.tab_schedule)),
-                                        Triple(1, Icons.Default.DynamicFeed, stringResource(R.string.tab_feed)),
-                                        Triple(2, Icons.Default.School, stringResource(R.string.tab_curriculum)),
-                                        Triple(3, Icons.Default.Settings, stringResource(R.string.tab_settings))
-                                    )
-
                                     tabs.forEach { (index, icon, title) ->
                                         val isSelected = currentTab == index
                                         NavigationBarItem(
@@ -725,18 +757,7 @@ class MainActivity : ComponentActivity() {
                                                 unselectedIconColor = ru.nya.nyeios.ui.theme.NierDim,
                                                 unselectedTextColor = ru.nya.nyeios.ui.theme.NierDim,
                                                 indicatorColor = Color.Transparent
-                                            ),
-                                            modifier = Modifier.drawBehind {
-                                                if (isSelected) {
-                                                    val barWidth = size.width * 0.45f
-                                                    val startX = (size.width - barWidth) / 2f
-                                                    drawRect(
-                                                        color = ru.nya.nyeios.ui.theme.selectionAccent(),
-                                                        topLeft = Offset(startX, 0f),
-                                                        size = androidx.compose.ui.geometry.Size(barWidth, 2.dp.toPx())
-                                                    )
-                                                }
-                                            }
+                                            )
                                         )
                                     }
                                 }
@@ -752,13 +773,10 @@ class MainActivity : ComponentActivity() {
                                 .padding(innerPadding)
                         ) {
                             ru.nya.nyeios.ui.common.NierBackground {
-                                Crossfade(
-                                    targetState = currentTab,
-                                    animationSpec = UiPreferencesManager.gated(tween()),
-                                    label = "tab_transition",
-                                    modifier = Modifier.fillMaxSize()
-                                ) { tab ->
-                                    when (tab) {
+                                // Destinations swap instantly; the motion lives in the bottom-nav
+                                // selection marker instead of a crossfade between screens.
+                                Box(modifier = Modifier.fillMaxSize()) {
+                                    when (currentTab) {
                                         0 -> if (isNycModern) {
                                             NycScheduleScreen(
                                                 uiState = scheduleUiState,

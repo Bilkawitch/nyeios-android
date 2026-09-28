@@ -1,10 +1,14 @@
 package ru.nya.nyeios.ui.common
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -34,6 +38,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,6 +56,7 @@ import ru.nya.nyeios.ui.theme.NycCyan
 import ru.nya.nyeios.ui.theme.NycMonoFamily
 import ru.nya.nyeios.ui.theme.NycSansFamily
 import ru.nya.nyeios.ui.theme.NycShapes
+import ru.nya.nyeios.ui.theme.UiPreferencesManager
 import ru.nya.nyeios.ui.theme.nycRaised
 import ru.nya.nyeios.ui.theme.rememberUiInfiniteTransition
 
@@ -350,6 +356,21 @@ fun NycBottomNav(
         NycTab(2, Icons.Default.School, androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.tab_curriculum)),
         NycTab(3, Icons.Default.Settings, androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.tab_settings))
     )
+    // Selection marker glides between destinations on tab change; item tints follow it.
+    val animatedIndex by animateFloatAsState(
+        targetValue = currentTab.toFloat(),
+        animationSpec = UiPreferencesManager.gated(
+            spring(
+                dampingRatio = Spring.DampingRatioNoBouncy,
+                stiffness = Spring.StiffnessMediumLow
+            )
+        ),
+        label = "nyc_nav_marker"
+    )
+    val horizontalPadding = 10.dp
+    val itemSpacing = 4.dp
+    val verticalPadding = 8.dp
+    val markerWidth = 26.dp
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -363,29 +384,39 @@ fun NycBottomNav(
                     end = Offset(size.width, 0f),
                     strokeWidth = 1.dp.toPx()
                 )
+                // Marker is positioned by the animated index; the padding is subtracted
+                // manually because this layer draws before the Row's padding is applied.
+                val padding = horizontalPadding.toPx()
+                val spacing = itemSpacing.toPx()
+                val itemWidth =
+                    (size.width - padding * 2 - spacing * (tabs.size - 1)) / tabs.size
+                val marker = markerWidth.toPx()
+                drawRect(
+                    color = NycCyan,
+                    topLeft = Offset(
+                        padding + animatedIndex * (itemWidth + spacing) + (itemWidth - marker) / 2f,
+                        verticalPadding.toPx()
+                    ),
+                    size = androidx.compose.ui.geometry.Size(marker, 2.dp.toPx())
+                )
             }
             .navigationBarsPadding()
-            .padding(horizontal = 10.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+            .padding(horizontal = horizontalPadding, vertical = verticalPadding),
+        horizontalArrangement = Arrangement.spacedBy(itemSpacing)
     ) {
         tabs.forEach { tab ->
             val selected = tab.index == currentTab
+            val tint by animateColorAsState(
+                targetValue = if (selected) NycCyan else faint,
+                animationSpec = UiPreferencesManager.gated(tween(durationMillis = 220)),
+                label = "nyc_nav_tint"
+            )
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .height(66.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .clickable { onSelect(tab.index) }
-                    .drawBehind {
-                        if (selected) {
-                            val w = 26.dp.toPx()
-                            drawRect(
-                                color = NycCyan,
-                                topLeft = Offset((size.width - w) / 2f, 0f),
-                                size = androidx.compose.ui.geometry.Size(w, 2.dp.toPx())
-                            )
-                        }
-                    }
                     .padding(top = 6.dp, bottom = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
@@ -403,7 +434,7 @@ fun NycBottomNav(
                     Icon(
                         imageVector = tab.icon,
                         contentDescription = tab.title,
-                        tint = if (selected) NycCyan else faint,
+                        tint = tint,
                         modifier = Modifier.size(21.dp)
                     )
                 }
@@ -417,7 +448,7 @@ fun NycBottomNav(
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 7.8.sp,
                     letterSpacing = 1.sp,
-                    color = if (selected) NycCyan else faint
+                    color = tint
                 )
             }
         }
