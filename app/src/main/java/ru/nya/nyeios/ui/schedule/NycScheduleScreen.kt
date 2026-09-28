@@ -1,5 +1,13 @@
 package ru.nya.nyeios.ui.schedule
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -179,102 +187,149 @@ fun NycScheduleScreen(
                 is ScheduleUiState.Success -> {
                     val safeDayIndex =
                         selectedDayIndex.coerceIn(0, (uiState.schedule.days.size - 1).coerceAtLeast(0))
-                    val currentDay = uiState.schedule.days.getOrNull(safeDayIndex)
 
-                    if (currentDay == null || currentDay.lessons.isEmpty()) {
-                        val allDaysEmpty = uiState.schedule.days.isNotEmpty() &&
-                            uiState.schedule.days.all { it.lessons.isEmpty() }
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(24.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
+                    // Same day/week slide as the YoRHa screen so "Анимации переходов" has an
+                    // effect in the NyC theme too; gated() collapses it to an instant swap.
+                    AnimatedContent(
+                        targetState = Pair(uiState.schedule.offsetWeeks, safeDayIndex),
+                        transitionSpec = {
+                            val isForward = if (targetState.first != initialState.first) {
+                                targetState.first > initialState.first
+                            } else {
+                                targetState.second > initialState.second
+                            }
+                            val slideFraction = 0.28f
+                            val animDuration = 240
+                            if (isForward) {
+                                (slideInHorizontally(
+                                    animationSpec = UiPreferencesManager.gated(tween(animDuration, easing = FastOutSlowInEasing)),
+                                    initialOffsetX = { fullWidth -> (fullWidth * slideFraction).toInt() }
+                                ) + fadeIn(
+                                    animationSpec = UiPreferencesManager.gated(tween(animDuration, easing = LinearEasing))
+                                )).togetherWith(
+                                    slideOutHorizontally(
+                                        animationSpec = UiPreferencesManager.gated(tween(animDuration, easing = FastOutSlowInEasing)),
+                                        targetOffsetX = { fullWidth -> -(fullWidth * slideFraction).toInt() }
+                                    ) + fadeOut(
+                                        animationSpec = UiPreferencesManager.gated(tween((animDuration * 0.75f).toInt(), easing = LinearEasing))
+                                    )
+                                )
+                            } else {
+                                (slideInHorizontally(
+                                    animationSpec = UiPreferencesManager.gated(tween(animDuration, easing = FastOutSlowInEasing)),
+                                    initialOffsetX = { fullWidth -> -(fullWidth * slideFraction).toInt() }
+                                ) + fadeIn(
+                                    animationSpec = UiPreferencesManager.gated(tween(animDuration, easing = LinearEasing))
+                                )).togetherWith(
+                                    slideOutHorizontally(
+                                        animationSpec = UiPreferencesManager.gated(tween(animDuration, easing = FastOutSlowInEasing)),
+                                        targetOffsetX = { fullWidth -> (fullWidth * slideFraction).toInt() }
+                                    ) + fadeOut(
+                                        animationSpec = UiPreferencesManager.gated(tween((animDuration * 0.75f).toInt(), easing = LinearEasing))
+                                    )
+                                )
+                            }.using(SizeTransform(clip = false))
+                        },
+                        label = "nyc_day_schedule_transition",
+                        modifier = Modifier.fillMaxSize()
+                    ) { (_, dayIdx) ->
+                        val currentDay = uiState.schedule.days.getOrNull(dayIdx)
+
+                        if (currentDay == null || currentDay.lessons.isEmpty()) {
+                            val allDaysEmpty = uiState.schedule.days.isNotEmpty() &&
+                                uiState.schedule.days.all { it.lessons.isEmpty() }
                             Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .nycCard()
-                                    .padding(vertical = 20.dp, horizontal = 16.dp),
+                                    .fillMaxSize()
+                                    .padding(24.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = if (allDaysEmpty) stringResource(R.string.schedule_empty_week_banner)
-                                    else stringResource(R.string.schedule_empty_day_banner),
-                                    fontFamily = NycMonoFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp,
-                                    letterSpacing = 1.sp,
-                                    color = nycMuted,
-                                    textAlign = TextAlign.Center
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .nycCard()
+                                        .padding(vertical = 20.dp, horizontal = 16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = if (allDaysEmpty) stringResource(R.string.schedule_empty_week_banner)
+                                        else stringResource(R.string.schedule_empty_day_banner),
+                                        fontFamily = NycMonoFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp,
+                                        letterSpacing = 1.sp,
+                                        color = nycMuted,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+                        } else {
+                            val todayDayMonth = remember {
+                                try {
+                                    java.time.LocalDate.now(LessonTimeUtils.moscowZone)
+                                        .format(java.time.format.DateTimeFormatter.ofPattern("dd.MM"))
+                                } catch (e: Exception) {
+                                    ""
+                                }
+                            }
+                            val isDayToday = currentDay.isToday || (
+                                uiState.schedule.offsetWeeks == 0 &&
+                                    todayDayMonth.isNotEmpty() &&
+                                    (currentDay.dateString.contains(todayDayMonth) ||
+                                        currentDay.dayTitle.contains(todayDayMonth))
                                 )
-                            }
-                        }
-                    } else {
-                        val todayDayMonth = remember {
-                            try {
-                                java.time.LocalDate.now(LessonTimeUtils.moscowZone)
-                                    .format(java.time.format.DateTimeFormatter.ofPattern("dd.MM"))
-                            } catch (e: Exception) {
-                                ""
-                            }
-                        }
-                        val isDayToday = currentDay.isToday || (
-                            uiState.schedule.offsetWeeks == 0 &&
-                                todayDayMonth.isNotEmpty() &&
-                                (currentDay.dateString.contains(todayDayMonth) ||
-                                    currentDay.dayTitle.contains(todayDayMonth))
-                            )
 
-                        val lessons = currentDay.lessons
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = UiPreferencesManager.listSpace(10.dp)),
-                            verticalArrangement = Arrangement.spacedBy(UiPreferencesManager.listSpace(10.dp))
-                        ) {
-                            // Slim day summary (app-only element, kept minimal per Operate).
-                            item {
-                                val dayNameUpper =
-                                    localizedDayName(currentDay.dayTitle.substringBefore(' '))
-                                val cacheStr = if (uiState.schedule.isCached) stringResource(R.string.schedule_cache_badge) else stringResource(R.string.schedule_network_badge)
-                                val summary =
-                                    "$dayNameUpper · ${LessonTimeUtils.formatLessonCount(lessons.size)}" +
-                                        " · $cacheStr"
-                                Text(
-                                    text = summary,
-                                    fontFamily = NycMonoFamily,
-                                    fontSize = 9.sp,
-                                    letterSpacing = 1.2.sp,
-                                    color = nycFaint,
-                                    modifier = Modifier.padding(horizontal = 2.dp, vertical = 2.dp)
-                                )
-                            }
-
-                            itemsIndexed(lessons) { index, lesson ->
-                                if (index > 0) {
-                                    ScheduleTransferItem(
-                                        prevLesson = lessons[index - 1],
-                                        nextLesson = lesson
+                            val lessons = currentDay.lessons
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = UiPreferencesManager.listSpace(10.dp)),
+                                verticalArrangement = Arrangement.spacedBy(UiPreferencesManager.listSpace(10.dp))
+                            ) {
+                                // Slim day summary (app-only element, kept minimal per Operate).
+                                item {
+                                    val dayNameUpper =
+                                        localizedDayName(currentDay.dayTitle.substringBefore(' '))
+                                    val cacheStr = if (uiState.schedule.isCached) stringResource(R.string.schedule_cache_badge) else stringResource(R.string.schedule_network_badge)
+                                    val summary =
+                                        "$dayNameUpper · ${LessonTimeUtils.formatLessonCount(lessons.size)}" +
+                                            " · $cacheStr"
+                                    Text(
+                                        text = summary,
+                                        fontFamily = NycMonoFamily,
+                                        fontSize = 9.sp,
+                                        letterSpacing = 1.2.sp,
+                                        color = nycFaint,
+                                        modifier = Modifier.padding(horizontal = 2.dp, vertical = 2.dp)
                                     )
                                 }
 
-                                val previousRoom = if (index > 0) {
-                                    lessons.subList(0, index)
-                                        .lastOrNull { it.room.isNotBlank() }?.room
-                                } else {
-                                    null
-                                }
-
-                                NycLessonCard(
-                                    lesson = lesson,
-                                    isToday = isDayToday,
-                                    onRoomClick = { room ->
-                                        floorMapTargetRoom = room
-                                        floorMapFromRoom = previousRoom
+                                itemsIndexed(lessons) { index, lesson ->
+                                    if (index > 0) {
+                                        ScheduleTransferItem(
+                                            prevLesson = lessons[index - 1],
+                                            nextLesson = lesson
+                                        )
                                     }
-                                )
-                            }
-                            item {
-                                Spacer(modifier = Modifier.height(20.dp))
+
+                                    val previousRoom = if (index > 0) {
+                                        lessons.subList(0, index)
+                                            .lastOrNull { it.room.isNotBlank() }?.room
+                                    } else {
+                                        null
+                                    }
+
+                                    NycLessonCard(
+                                        lesson = lesson,
+                                        isToday = isDayToday,
+                                        onRoomClick = { room ->
+                                            floorMapTargetRoom = room
+                                            floorMapFromRoom = previousRoom
+                                        }
+                                    )
+                                }
+                                item {
+                                    Spacer(modifier = Modifier.height(20.dp))
+                                }
                             }
                         }
                     }
@@ -531,6 +586,9 @@ private fun NycDayRow(
                             RoundedCornerShape(12.dp)
                         ) else Modifier
                     )
+                    // Clip before clickable so the press ripple matches the 12dp chip corners
+                    // instead of spilling out as a sharp-edged rectangle.
+                    .clip(RoundedCornerShape(12.dp))
                     .clickable { onSelectDay(index) }
                     .drawBehind {
                         if (day.isToday) {
