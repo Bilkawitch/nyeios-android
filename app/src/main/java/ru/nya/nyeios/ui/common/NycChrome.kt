@@ -5,7 +5,6 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -35,7 +34,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,6 +52,7 @@ import ru.nya.nyeios.ui.theme.NycMonoFamily
 import ru.nya.nyeios.ui.theme.NycSansFamily
 import ru.nya.nyeios.ui.theme.NycShapes
 import ru.nya.nyeios.ui.theme.nycRaised
+import ru.nya.nyeios.ui.theme.rememberUiInfiniteTransition
 
 // Parallel NyC-modern chrome from mockup nyeios_redesign.html (appbar 64px, bnav 76px).
 // Render-only: all state and callbacks are computed by MainActivity exactly as for
@@ -98,13 +97,13 @@ fun NycTopBar(
         horizontalArrangement = Arrangement.spacedBy(9.dp)
     ) {
         // Logo 42dp, halo pulse when an update is pending.
-        val halo = rememberInfiniteTransition(label = "nyc_halo")
-        val haloAlpha by halo.animateFloat(
+        val halo = rememberUiInfiniteTransition("nyc_halo")
+        val haloAlpha = halo?.animateFloat(
             initialValue = 0.25f,
             targetValue = 0.8f,
             animationSpec = infiniteRepeatable(tween(1300, easing = FastOutSlowInEasing), RepeatMode.Reverse),
             label = "halo_alpha"
-        )
+        )?.value ?: 0.8f
         Box(
             modifier = Modifier
                 .size(42.dp)
@@ -250,21 +249,21 @@ fun NycTopBar(
         }
 
         if (showRefresh) {
-            val blink = rememberInfiniteTransition(label = "nyc_btnblink")
-            val blinkPhase by blink.animateFloat(
+            val blink = rememberUiInfiniteTransition("nyc_btnblink")
+            val blinkPhase = blink?.animateFloat(
                 initialValue = 0f,
                 targetValue = 1f,
                 animationSpec = infiniteRepeatable(tween(1600, easing = LinearEasing), RepeatMode.Restart),
                 label = "blink"
-            )
+            )?.value ?: 0f
             val blinking = isStale && !isRefreshing
-            val spin = rememberInfiniteTransition(label = "nyc_spin")
-            val rot by spin.animateFloat(
+            val spin = rememberUiInfiniteTransition("nyc_spin")
+            val rot = spin?.animateFloat(
                 initialValue = 0f,
                 targetValue = 360f,
                 animationSpec = infiniteRepeatable(tween(1000, easing = LinearEasing), RepeatMode.Restart),
                 label = "rot"
-            )
+            )?.value ?: 0f
             // faint is read to keep the mockup token set referenced; tint below uses muted
             @Suppress("UNUSED_EXPRESSION")
             faint

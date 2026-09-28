@@ -5,7 +5,6 @@ import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -85,6 +84,7 @@ import ru.nya.nyeios.ui.theme.nycBadgeBg
 import ru.nya.nyeios.ui.theme.nycBadgeShape
 import ru.nya.nyeios.ui.theme.nycCard
 import ru.nya.nyeios.ui.theme.nycRaised
+import ru.nya.nyeios.ui.theme.rememberUiInfiniteTransition
 import ru.nya.nyeios.ui.theme.nycWell
 
 // Parallel NyC-modern schedule interface from mockup nyeios_redesign.html (screen 2).
@@ -228,8 +228,8 @@ fun NycScheduleScreen(
                         val lessons = currentDay.lessons
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = UiPreferencesManager.listSpace(10.dp)),
+                            verticalArrangement = Arrangement.spacedBy(UiPreferencesManager.listSpace(10.dp))
                         ) {
                             // Slim day summary (app-only element, kept minimal per Operate).
                             item {
@@ -606,7 +606,7 @@ private fun NycLessonCard(
 
     val animatedProgress by animateFloatAsState(
         targetValue = progressInfo?.progress ?: 0f,
-        animationSpec = tween(durationMillis = 500),
+        animationSpec = UiPreferencesManager.gated(tween(durationMillis = 500)),
         label = "nyc_lesson_progress"
     )
 
@@ -627,13 +627,13 @@ private fun NycLessonCard(
         if (s >= 60) stringResource(R.string.lesson_left_min_fmt, s / 60) else stringResource(R.string.lesson_left_sec_fmt, s)
     } ?: ""
 
-    val blink = rememberInfiniteTransition(label = "nyc_led")
-    val ledAlpha by blink.animateFloat(
+    val blink = rememberUiInfiniteTransition("nyc_led")
+    val ledAlpha = blink?.animateFloat(
         initialValue = 1f,
         targetValue = 0.3f,
         animationSpec = infiniteRepeatable(tween(1300, easing = LinearEasing), RepeatMode.Reverse),
         label = "led"
-    )
+    )?.value ?: 1f
 
     Box(
         modifier = Modifier

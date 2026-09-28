@@ -8,7 +8,6 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -113,6 +112,7 @@ import ru.nya.nyeios.ui.theme.ShareTechMonoFamily
 import ru.nya.nyeios.ui.theme.TextMuted
 import ru.nya.nyeios.ui.theme.TextPrimary
 import ru.nya.nyeios.ui.theme.TextSecondary
+import ru.nya.nyeios.ui.theme.rememberUiInfiniteTransition
 import kotlin.math.hypot
 import kotlin.math.roundToInt
 
@@ -572,9 +572,9 @@ internal fun SingleFloorInteractiveView(
     val mapHeight = if (floor == 3) FloorMapRepository.MAP_HEIGHT_3 else FloorMapRepository.MAP_HEIGHT_4
     val rooms = remember(floor) { FloorMapRepository.getRoomsForFloor(floor) }
 
-    // Pulsing highlight animation for destination room
-    val infiniteTransition = rememberInfiniteTransition(label = "pulse_animation")
-    val pulseAlpha by infiniteTransition.animateFloat(
+    // Pulsing highlight animation for destination room (static when animations are off)
+    val infiniteTransition = rememberUiInfiniteTransition("pulse_animation")
+    val pulseAlpha = infiniteTransition?.animateFloat(
         initialValue = 0.22f,
         targetValue = 0.50f,
         animationSpec = infiniteRepeatable(
@@ -582,8 +582,8 @@ internal fun SingleFloorInteractiveView(
             repeatMode = RepeatMode.Reverse
         ),
         label = "pulse_alpha"
-    )
-    val pulseStrokeWidth by infiniteTransition.animateFloat(
+    )?.value ?: 0.35f
+    val pulseStrokeWidth = infiniteTransition?.animateFloat(
         initialValue = 2.2f,
         targetValue = 4.0f,
         animationSpec = infiniteRepeatable(
@@ -591,10 +591,10 @@ internal fun SingleFloorInteractiveView(
             repeatMode = RepeatMode.Reverse
         ),
         label = "pulse_stroke"
-    )
+    )?.value ?: 2.2f
 
     // Marching animation for route chevrons
-    val chevronAnim by infiniteTransition.animateFloat(
+    val chevronAnim = infiniteTransition?.animateFloat(
         initialValue = 0f,
         targetValue = 32f,
         animationSpec = infiniteRepeatable(
@@ -602,7 +602,7 @@ internal fun SingleFloorInteractiveView(
             repeatMode = RepeatMode.Restart
         ),
         label = "chevron_anim"
-    )
+    )?.value ?: 0f
 
     val currentFloorRoutePoints = remember(route, floor) {
         if (route == null) emptyList()
@@ -861,8 +861,8 @@ private fun MultiFloorInteractiveView(
     val combinedWidth = 1024f
     val combinedHeight = floor3Y + FloorMapRepository.MAP_HEIGHT_3 // 887 + 603 = 1490f
 
-    val infiniteTransition = rememberInfiniteTransition(label = "multi_floor_anim")
-    val pulseAlpha by infiniteTransition.animateFloat(
+    val infiniteTransition = rememberUiInfiniteTransition("multi_floor_anim")
+    val pulseAlpha = infiniteTransition?.animateFloat(
         initialValue = 0.22f,
         targetValue = 0.50f,
         animationSpec = infiniteRepeatable(
@@ -870,8 +870,8 @@ private fun MultiFloorInteractiveView(
             repeatMode = RepeatMode.Reverse
         ),
         label = "pulse_alpha"
-    )
-    val pulseStrokeWidth by infiniteTransition.animateFloat(
+    )?.value ?: 0.35f
+    val pulseStrokeWidth = infiniteTransition?.animateFloat(
         initialValue = 2.2f,
         targetValue = 4.0f,
         animationSpec = infiniteRepeatable(
@@ -879,8 +879,8 @@ private fun MultiFloorInteractiveView(
             repeatMode = RepeatMode.Reverse
         ),
         label = "pulse_stroke"
-    )
-    val chevronAnim by infiniteTransition.animateFloat(
+    )?.value ?: 2.2f
+    val chevronAnim = infiniteTransition?.animateFloat(
         initialValue = 0f,
         targetValue = 32f,
         animationSpec = infiniteRepeatable(
@@ -888,7 +888,7 @@ private fun MultiFloorInteractiveView(
             repeatMode = RepeatMode.Restart
         ),
         label = "chevron_anim"
-    )
+    )?.value ?: 0f
 
     BoxWithConstraints(
         modifier = Modifier

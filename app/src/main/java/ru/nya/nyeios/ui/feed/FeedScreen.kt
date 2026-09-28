@@ -540,8 +540,8 @@ fun FeedScreen(
                 } else {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = UiPreferencesManager.listSpace(12.dp)),
+                        verticalArrangement = Arrangement.spacedBy(UiPreferencesManager.listSpace(14.dp))
                     ) {
                         // 1. Live Sync Progress or Sync Bar
                         if (syncProgress.isSyncing) {

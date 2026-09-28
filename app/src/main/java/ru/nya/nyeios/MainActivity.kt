@@ -69,6 +69,8 @@ import androidx.compose.ui.res.stringResource
 import ru.nya.nyeios.ui.language.LanguageManager
 import ru.nya.nyeios.ui.language.LanguageTypewriterManager
 import ru.nya.nyeios.ui.language.typewriterText
+import ru.nya.nyeios.ui.theme.UiPreferencesManager
+import ru.nya.nyeios.ui.theme.rememberUiInfiniteTransition
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -359,16 +361,18 @@ class MainActivity : ComponentActivity() {
                                                 .padding(vertical = 2.dp)
                                         ) {
                                             // Square NieR Logo box
-                                            val pulseTransition = rememberInfiniteTransition(label = "update_pulse")
-                                            val pulseAlpha by pulseTransition.animateFloat(
-                                                initialValue = 0.20f,
-                                                targetValue = 0.85f,
-                                                animationSpec = infiniteRepeatable(
-                                                    animation = tween(1000, easing = FastOutSlowInEasing),
-                                                    repeatMode = RepeatMode.Reverse
-                                                ),
-                                                label = "pulse_alpha"
-                                            )
+                                            val pulseTransition = rememberUiInfiniteTransition("update_pulse")
+                                            val pulseAlpha = if (pulseTransition != null) {
+                                                pulseTransition.animateFloat(
+                                                    initialValue = 0.20f,
+                                                    targetValue = 0.85f,
+                                                    animationSpec = infiniteRepeatable(
+                                                        animation = tween(1000, easing = FastOutSlowInEasing),
+                                                        repeatMode = RepeatMode.Reverse
+                                                    ),
+                                                    label = "pulse_alpha"
+                                                ).value
+                                            } else 0.85f
 
                                             Box(
                                                 modifier = Modifier
@@ -568,8 +572,8 @@ class MainActivity : ComponentActivity() {
                                             }
                                         ) {
                                             val rotation = if (isRefreshing) {
-                                                val infiniteTransition = rememberInfiniteTransition(label = "spin")
-                                                val rot by infiniteTransition.animateFloat(
+                                                val infiniteTransition = rememberUiInfiniteTransition("spin")
+                                                val rot = infiniteTransition?.animateFloat(
                                                     initialValue = 0f,
                                                     targetValue = 360f,
                                                     animationSpec = infiniteRepeatable(
@@ -577,13 +581,13 @@ class MainActivity : ComponentActivity() {
                                                         repeatMode = RepeatMode.Restart
                                                     ),
                                                     label = "rotation"
-                                                )
+                                                )?.value ?: 0f
                                                 rot
                                             } else 0f
 
                                             val blinkPhase = if (isRefreshBlinking) {
-                                                val infiniteTransition = rememberInfiniteTransition(label = "refresh_blink")
-                                                val phase by infiniteTransition.animateFloat(
+                                                val infiniteTransition = rememberUiInfiniteTransition("refresh_blink")
+                                                val phase = infiniteTransition?.animateFloat(
                                                     initialValue = 0f,
                                                     targetValue = 1f,
                                                     animationSpec = infiniteRepeatable(
@@ -591,7 +595,7 @@ class MainActivity : ComponentActivity() {
                                                         repeatMode = RepeatMode.Restart
                                                     ),
                                                     label = "blink_phase"
-                                                )
+                                                )?.value ?: 0f
                                                 phase
                                             } else 0f
 
@@ -750,6 +754,7 @@ class MainActivity : ComponentActivity() {
                             ru.nya.nyeios.ui.common.NierBackground {
                                 Crossfade(
                                     targetState = currentTab,
+                                    animationSpec = UiPreferencesManager.gated(tween()),
                                     label = "tab_transition",
                                     modifier = Modifier.fillMaxSize()
                                 ) { tab ->

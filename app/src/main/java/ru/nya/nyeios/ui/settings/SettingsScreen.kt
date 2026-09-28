@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -62,6 +61,7 @@ import ru.nya.nyeios.ui.theme.applyThemeWithRestart
 import ru.nya.nyeios.ui.theme.appRectShape
 import ru.nya.nyeios.ui.theme.isNycModern
 import ru.nya.nyeios.ui.theme.NierThemeMode
+import ru.nya.nyeios.ui.theme.UiAnimatedVisibility
 import ru.nya.nyeios.ui.theme.UiPreferencesManager
 import ru.nya.nyeios.ui.theme.ListDensityMode
 import ru.nya.nyeios.ui.theme.NierAmber
@@ -1210,7 +1210,7 @@ private fun EndpointHealthRow(item: EndpointHealthItem) {
         }
 
         // Выпадающий технический журнал запроса (drop-out с сырыми машинными логами)
-        AnimatedVisibility(visible = isExpanded) {
+        UiAnimatedVisibility(visible = isExpanded) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

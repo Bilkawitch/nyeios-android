@@ -1,6 +1,5 @@
 package ru.nya.nyeios.ui.curriculum
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -56,6 +55,8 @@ import ru.nya.nyeios.ui.theme.nycBadgeBg
 import ru.nya.nyeios.ui.theme.nycBadgeShape
 import ru.nya.nyeios.ui.theme.nycCard
 import ru.nya.nyeios.ui.theme.nycRaised
+import ru.nya.nyeios.ui.theme.UiAnimatedVisibility
+import ru.nya.nyeios.ui.theme.UiPreferencesManager
 import ru.nya.nyeios.ui.theme.nycWell
 
 // Parallel NyC-modern performance (БРС) interface from mockup
@@ -246,8 +247,8 @@ fun NycCurriculumScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .weight(1f),
-                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = UiPreferencesManager.listSpace(8.dp)),
+                                verticalArrangement = Arrangement.spacedBy(UiPreferencesManager.listSpace(8.dp))
                             ) {
                                 items(activeTerm.subjects) { subject ->
                                     NycSubjectCard(subject = subject)
@@ -545,7 +546,7 @@ private fun NycSubjectCard(subject: CurriculumSubject) {
         }
 
         // Drill-down preserved from the legacy expandable card.
-        AnimatedVisibility(visible = isExpanded) {
+        UiAnimatedVisibility(visible = isExpanded) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

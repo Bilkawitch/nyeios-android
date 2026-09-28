@@ -1,6 +1,5 @@
 package ru.nya.nyeios.ui.update
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
@@ -46,6 +45,7 @@ import ru.nya.nyeios.ui.theme.NierPanel
 import ru.nya.nyeios.ui.theme.NierRed
 import ru.nya.nyeios.ui.theme.RajdhaniFamily
 import ru.nya.nyeios.ui.theme.ShareTechMonoFamily
+import ru.nya.nyeios.ui.theme.UiAnimatedVisibility
 
 @Composable
 fun UpdateBanner(
@@ -58,7 +58,7 @@ fun UpdateBanner(
         || state is UpdateUiState.ReadyToInstall
         || state is UpdateUiState.Error
 
-    AnimatedVisibility(
+    UiAnimatedVisibility(
         visible = visible,
         enter = slideInVertically(initialOffsetY = { it }),
         exit = slideOutVertically(targetOffsetY = { it }),

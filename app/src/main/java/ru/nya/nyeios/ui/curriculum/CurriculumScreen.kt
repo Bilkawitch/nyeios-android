@@ -1,6 +1,5 @@
 package ru.nya.nyeios.ui.curriculum
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -61,6 +60,8 @@ import ru.nya.nyeios.ui.theme.PracticeGreenBg
 import ru.nya.nyeios.ui.theme.TextMuted
 import ru.nya.nyeios.ui.theme.TextPrimary
 import ru.nya.nyeios.ui.theme.TextSecondary
+import ru.nya.nyeios.ui.theme.UiAnimatedVisibility
+import ru.nya.nyeios.ui.theme.UiPreferencesManager
 
 @Composable
 fun CurriculumScreen(
@@ -272,8 +273,8 @@ fun CurriculumScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .weight(1f),
-                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = UiPreferencesManager.listSpace(8.dp)),
+                                verticalArrangement = Arrangement.spacedBy(UiPreferencesManager.listSpace(10.dp))
                             ) {
                                 items(activeTerm.subjects) { subject ->
                                     CurriculumSubjectCard(subject = subject)
@@ -529,7 +530,7 @@ fun CurriculumSubjectCard(subject: CurriculumSubject) {
             }
 
             // Expanded details block
-            AnimatedVisibility(visible = isExpanded) {
+            UiAnimatedVisibility(visible = isExpanded) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()

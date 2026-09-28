@@ -160,14 +160,6 @@ object LessonTimeUtils {
         }
     }
 
-    fun checkIfOngoing(
-        timeRangeStr: String,
-        isToday: Boolean = true,
-        now: LocalTime = getNow()
-    ): Boolean {
-        return computeLessonProgress(timeRangeStr, isToday, now)?.isOngoing == true
-    }
-
     fun formatLessonDuration(seconds: Long, locale: java.util.Locale = java.util.Locale.getDefault()): String {
         val sec = seconds.coerceAtLeast(0)
         val h = sec / 3600

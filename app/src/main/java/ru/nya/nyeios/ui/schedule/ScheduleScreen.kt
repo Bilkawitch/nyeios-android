@@ -338,30 +338,30 @@ fun ScheduleScreen(
                                 val animDuration = 240
                                 if (isForward) {
                                     (slideInHorizontally(
-                                        animationSpec = tween(animDuration, easing = FastOutSlowInEasing),
+                                        animationSpec = UiPreferencesManager.gated(tween(animDuration, easing = FastOutSlowInEasing)),
                                         initialOffsetX = { fullWidth -> (fullWidth * slideFraction).toInt() }
                                     ) + fadeIn(
-                                        animationSpec = tween(animDuration, easing = LinearEasing)
+                                        animationSpec = UiPreferencesManager.gated(tween(animDuration, easing = LinearEasing))
                                     )).togetherWith(
                                         slideOutHorizontally(
-                                            animationSpec = tween(animDuration, easing = FastOutSlowInEasing),
+                                            animationSpec = UiPreferencesManager.gated(tween(animDuration, easing = FastOutSlowInEasing)),
                                             targetOffsetX = { fullWidth -> -(fullWidth * slideFraction).toInt() }
                                         ) + fadeOut(
-                                            animationSpec = tween((animDuration * 0.75f).toInt(), easing = LinearEasing)
+                                            animationSpec = UiPreferencesManager.gated(tween((animDuration * 0.75f).toInt(), easing = LinearEasing))
                                         )
                                     )
                                 } else {
                                     (slideInHorizontally(
-                                        animationSpec = tween(animDuration, easing = FastOutSlowInEasing),
+                                        animationSpec = UiPreferencesManager.gated(tween(animDuration, easing = FastOutSlowInEasing)),
                                         initialOffsetX = { fullWidth -> -(fullWidth * slideFraction).toInt() }
                                     ) + fadeIn(
-                                        animationSpec = tween(animDuration, easing = LinearEasing)
+                                        animationSpec = UiPreferencesManager.gated(tween(animDuration, easing = LinearEasing))
                                     )).togetherWith(
                                         slideOutHorizontally(
-                                            animationSpec = tween(animDuration, easing = FastOutSlowInEasing),
+                                            animationSpec = UiPreferencesManager.gated(tween(animDuration, easing = FastOutSlowInEasing)),
                                             targetOffsetX = { fullWidth -> (fullWidth * slideFraction).toInt() }
                                         ) + fadeOut(
-                                            animationSpec = tween((animDuration * 0.75f).toInt(), easing = LinearEasing)
+                                            animationSpec = UiPreferencesManager.gated(tween((animDuration * 0.75f).toInt(), easing = LinearEasing))
                                         )
                                     )
                                 }.using(SizeTransform(clip = false))
@@ -429,8 +429,8 @@ fun ScheduleScreen(
                                 val lessons = currentDay.lessons
                                 LazyColumn(
                                     modifier = Modifier.fillMaxSize(),
-                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = UiPreferencesManager.listSpace(8.dp)),
+                                    verticalArrangement = Arrangement.spacedBy(UiPreferencesManager.listSpace(8.dp))
                                 ) {
                                     // Day summary header
                                     item {
@@ -819,7 +819,7 @@ fun LessonCard(
 
     val animatedProgress by animateFloatAsState(
         targetValue = progressInfo?.progress ?: 0f,
-        animationSpec = tween(durationMillis = 500),
+        animationSpec = UiPreferencesManager.gated(tween(durationMillis = 500)),
         label = "lesson_progress"
     )
 
@@ -1067,6 +1067,3 @@ fun LessonCard(
     }
 }
 
-private fun checkIfOngoing(timeRangeStr: String): Boolean {
-    return LessonTimeUtils.checkIfOngoing(timeRangeStr)
-}

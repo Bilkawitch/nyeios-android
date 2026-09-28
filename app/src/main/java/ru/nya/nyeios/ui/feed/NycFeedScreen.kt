@@ -70,6 +70,7 @@ import ru.nya.nyeios.data.model.FeedUiState
 import ru.nya.nyeios.ui.download.DownloadsBottomSheet
 import ru.nya.nyeios.ui.theme.NycCyan
 import ru.nya.nyeios.ui.theme.NycMonoFamily
+import ru.nya.nyeios.ui.theme.UiPreferencesManager
 import ru.nya.nyeios.ui.theme.NycSansFamily
 import ru.nya.nyeios.ui.theme.nycCard
 import ru.nya.nyeios.ui.theme.nycRaised
@@ -252,8 +253,8 @@ fun NycFeedScreen(
             is FeedUiState.Success -> {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = UiPreferencesManager.listSpace(10.dp)),
+                    verticalArrangement = Arrangement.spacedBy(UiPreferencesManager.listSpace(10.dp))
                 ) {
                     if (syncProgress.isSyncing) {
                         item {

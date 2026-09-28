@@ -20,10 +20,10 @@ class ChangelogHistoryTest {
     @Test
     fun `release notes follow the process locale`() {
         Locale.setDefault(Locale("ru"))
-        val russian = ChangelogHistory.releases.first().sections.first()
+        val russian = ChangelogHistory.releases.first { it.version == "0.2.6" }.sections.first()
 
         Locale.setDefault(Locale("en"))
-        val english = ChangelogHistory.releases.first().sections.first()
+        val english = ChangelogHistory.releases.first { it.version == "0.2.6" }.sections.first()
 
         assertEquals("РАСПИСАНИЕ", russian.title)
         assertEquals("SCHEDULE", english.title)
@@ -32,13 +32,17 @@ class ChangelogHistoryTest {
     }
 
     @Test
-    fun testLatestReleaseIs026() {
+    fun testLatestReleaseIs026a() {
         val releases = ChangelogHistory.releases
         assertTrue("Changelog should contain releases", releases.isNotEmpty())
 
         val latest = releases.first()
-        assertEquals("Latest release must be 0.2.6", "0.2.6", latest.version)
+        assertEquals("Latest release must be 0.2.6a", "0.2.6a", latest.version)
         assertTrue("Latest release should have isLatest = true", latest.isLatest)
+        assertTrue(
+            "Only the newest release may be marked as latest",
+            releases.drop(1).none { it.isLatest }
+        )
     }
 
     @Test

@@ -1,9 +1,23 @@
 package ru.nya.nyeios.ui.theme
 
 import android.content.Context
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.expandIn
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkOut
+import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.InfiniteTransition
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.snap
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -47,6 +61,24 @@ object UiPreferencesManager {
 
     val scheduleFontDelta: TextUnit
         get() = (if (largeScheduleFont) 2 else 0).sp
+
+    /** Vertical rhythm multiplier of list rows, driven by [listDensity]. */
+    val listSpacingScale: Float
+        get() = when (listDensity) {
+            ListDensityMode.COMPACT -> 0.75f
+            ListDensityMode.STANDARD -> 1f
+            ListDensityMode.SPACIOUS -> 1.3f
+        }
+
+    /** Scales a vertical list spacing or padding value by the selected [listDensity]. */
+    fun listSpace(base: Dp): Dp = base * listSpacingScale
+
+    /**
+     * Returns [spec] while the user allows transitions, otherwise an instant snap spec, so
+     * "Анимации переходов" really disables movement instead of only hiding it in the settings tab.
+     */
+    fun <T> gated(spec: FiniteAnimationSpec<T>): FiniteAnimationSpec<T> =
+        if (animationsEnabled) spec else snap()
 
     fun init(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -101,4 +133,37 @@ object UiPreferencesManager {
             .putString(KEY_LIST_DENSITY, value.name)
             .apply()
     }
+}
+
+/**
+ * An [InfiniteTransition] while the user allows animations, or `null` when they are disabled —
+ * callers then fall back to a static value instead of running a decorative loop (halo, blink,
+ * spinner, marching chevrons).
+ */
+@Composable
+fun rememberUiInfiniteTransition(label: String): InfiniteTransition? =
+    if (UiPreferencesManager.animationsEnabled) rememberInfiniteTransition(label = label) else null
+
+/**
+ * An [AnimatedVisibility] that respects "Анимации переходов": when the user turned them off the
+ * content appears/disappears instantly, otherwise [enter]/[exit] (the AnimatedVisibility
+ * defaults unless overridden) are used.
+ */
+@Composable
+fun UiAnimatedVisibility(
+    visible: Boolean,
+    modifier: Modifier = Modifier,
+    enter: EnterTransition = fadeIn() + expandIn(),
+    exit: ExitTransition = shrinkOut() + fadeOut(),
+    label: String = "ui_animated_visibility",
+    content: @Composable AnimatedVisibilityScope.() -> Unit
+) {
+    AnimatedVisibility(
+        visible = visible,
+        modifier = modifier,
+        enter = if (UiPreferencesManager.animationsEnabled) enter else EnterTransition.None,
+        exit = if (UiPreferencesManager.animationsEnabled) exit else ExitTransition.None,
+        label = label,
+        content = content
+    )
 }

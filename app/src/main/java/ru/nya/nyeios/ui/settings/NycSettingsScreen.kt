@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -66,6 +65,7 @@ import ru.nya.nyeios.ui.theme.NycMonoFamily
 import ru.nya.nyeios.ui.theme.NycSansFamily
 import ru.nya.nyeios.ui.theme.nycCard
 import ru.nya.nyeios.ui.theme.nycRaised
+import ru.nya.nyeios.ui.theme.UiAnimatedVisibility
 import ru.nya.nyeios.ui.theme.nycWell
 import ru.nya.nyeios.ui.update.UpdateViewModel
 import java.text.SimpleDateFormat
@@ -1017,7 +1017,7 @@ private fun NycEndpointHealthRow(item: EndpointHealthItem) {
             }
 
             // Выпадающий технический журнал запроса (drop-out с сырыми машинными логами)
-            AnimatedVisibility(visible = isExpanded) {
+            UiAnimatedVisibility(visible = isExpanded) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
