@@ -23,7 +23,9 @@ data class NetworkLogEntry(
     val tag: String,
     val message: String,
     val details: String? = null,
-    val isDegraded: Boolean = false
+    val isDegraded: Boolean = false,
+    val rawResponse: String? = null,
+    val httpCode: Int? = null
 )
 
 object NetworkLogger {
@@ -39,7 +41,9 @@ object NetworkLogger {
         tag: String,
         message: String,
         details: String? = null,
-        isDegraded: Boolean = false
+        isDegraded: Boolean = false,
+        rawResponse: String? = null,
+        httpCode: Int? = null
     ) {
         val entry = NetworkLogEntry(
             timestamp = timeFormat.format(Date()),
@@ -47,7 +51,9 @@ object NetworkLogger {
             tag = tag,
             message = message,
             details = details,
-            isDegraded = isDegraded
+            isDegraded = isDegraded,
+            rawResponse = rawResponse,
+            httpCode = httpCode
         )
         val current = _logs.value.toMutableList()
         current.add(0, entry) // Newest at the top
@@ -84,7 +90,8 @@ object NetworkLogger {
         durationMs: Long,
         details: String? = null,
         isDegraded: Boolean = false,
-        degradedReason: String? = null
+        degradedReason: String? = null,
+        rawResponse: String? = null
     ) {
         val level = when {
             isDegraded -> NetworkLogLevel.WARNING
@@ -123,7 +130,9 @@ object NetworkLogger {
             tag = tag,
             message = msg,
             details = detailsStr.trim(),
-            isDegraded = isDegraded
+            isDegraded = isDegraded,
+            rawResponse = rawResponse,
+            httpCode = code
         )
     }
 

@@ -249,4 +249,92 @@ class ScheduleParserTest {
         assertEquals("Философия", schedule.days[0].lessons[0].subject)
         assertEquals("301", schedule.days[0].lessons[0].room)
     }
+
+    @Test
+    fun testBitrixScriptOfflineMessageDoesNotBlockParsing() {
+        val htmlWithBitrixScripts = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Расписание занятий</title>
+                <script>
+                    BX.message({
+                        "BITRIX24_CS_OFFLINE" : "Отсутствует соединение с сервером",
+                        "IM_CS_OFFLINE" : "Отсутствует соединение с сервером"
+                    });
+                </script>
+            </head>
+            <body>
+                <div id="workarea">
+                    <div class="schedule-body">
+                        <h2>14.09.2026 — 20.09.2026</h2>
+                        <select id="group-select"><option selected>23АН-о-41</option></select>
+                        <table class="schedule-table">
+                            <thead>
+                                <tr><th>Время</th><th>Понедельник 14.09</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1 пара 08:30 - 10:00</td>
+                                    <td>
+                                        <table class="schedule-cell">
+                                            <tr><td>Информатика</td><td>417</td></tr>
+                                            <tr><td>Иванов И.И.</td><td>Практика</td></tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </body>
+            </html>
+        """.trimIndent()
+
+        val errMsg = ScheduleParser.extractErrorMessage(htmlWithBitrixScripts)
+        org.junit.Assert.assertNull(errMsg)
+
+        val schedule = ScheduleParser.parse(htmlWithBitrixScripts, offsetWeeks = 0, "14.09.2026", "20.09.2026")
+        assertNotNull(schedule)
+        assertEquals("23АН-о-41", schedule!!.group)
+        assertEquals(1, schedule.days[0].lessons.size)
+        assertEquals("Информатика", schedule.days[0].lessons[0].subject)
+        assertEquals("417", schedule.days[0].lessons[0].room)
+    }
+
+    @Test
+    fun testEmptyWeekScheduleWithNoticeErrorReturnsEmptyWeek() {
+        val emptyWeekHtml = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Расписание занятий</title>
+                <script>
+                    BX.message({ "BITRIX24_CS_OFFLINE" : "Отсутствует соединение с сервером" });
+                </script>
+            </head>
+            <body>
+                <div id="workarea">
+                    <div class="schedule-body">
+                        <div class="error-messages">
+                            <div class="content-edit-form-notice-error">Расписание работает в режиме отладки.</div>
+                        </div>
+                        Нет данных
+                        <h2>28.09.2026 — 04.10.2026</h2>
+                        <select id="group-select"><option selected>23АН-о-41</option></select>
+                    </div>
+                </div>
+            </body>
+            </html>
+        """.trimIndent()
+
+        val errMsg = ScheduleParser.extractErrorMessage(emptyWeekHtml)
+        org.junit.Assert.assertNull(errMsg)
+
+        val schedule = ScheduleParser.parse(emptyWeekHtml, offsetWeeks = 0, "28.09.2026", "04.10.2026")
+        assertNotNull(schedule)
+        assertEquals("23АН-о-41", schedule!!.group)
+        assertTrue(schedule.days.all { it.lessons.isEmpty() })
+    }
 }
+

@@ -206,26 +206,24 @@ class EiosRepository(private val context: Context) {
 
                 var isDegraded200 = false
                 var degradedReason: String? = null
+                var rawResponseBody: String? = null
                 if (response.code == 200) {
-                    val contentType = response.header("Content-Type") ?: ""
-                    if (contentType.isEmpty() || contentType.contains("text/html", ignoreCase = true)) {
-                        try {
-                            val peek = response.peekBody(65536L).string()
-                            val errText = ScheduleParser.extractErrorMessage(peek)
-                            if (errText != null) {
-                                isDegraded200 = true
-                                degradedReason = "Сбой сервера: $errText"
-                            } else if (peek.contains("Отсутствует соединение с сервером", ignoreCase = true)) {
-                                isDegraded200 = true
-                                degradedReason = "Отсутствует соединение со службой 1С"
-                            } else if (finalReq.url.encodedPath.contains("timetable") &&
-                                !peek.contains("schedule-table") && !peek.contains("bx_auth_serv")
-                            ) {
-                                isDegraded200 = true
-                                degradedReason = "Пустая страница расписания (таблица отсутствует)"
-                            }
-                        } catch (_: Exception) {}
-                    }
+                    try {
+                        rawResponseBody = response.peekBody(1048576L).string()
+                        val errText = ScheduleParser.extractErrorMessage(rawResponseBody)
+                        if (errText != null) {
+                            isDegraded200 = true
+                            degradedReason = "Сбой сервера: $errText"
+                        } else if (finalReq.url.encodedPath.contains("timetable") &&
+                            !rawResponseBody.contains("schedule-table") &&
+                            !rawResponseBody.contains("schedule-body") &&
+                            !rawResponseBody.contains("group-select") &&
+                            !rawResponseBody.contains("bx_auth_serv")
+                        ) {
+                            isDegraded200 = true
+                            degradedReason = "Пустая страница расписания (таблица и контейнер отсутствуют)"
+                        }
+                    } catch (_: Exception) {}
                 }
 
                 NetworkLogger.logResponse(
@@ -235,7 +233,8 @@ class EiosRepository(private val context: Context) {
                     durationMs = tookMs,
                     details = details.trim().ifEmpty { null },
                     isDegraded = isDegraded200,
-                    degradedReason = degradedReason
+                    degradedReason = degradedReason,
+                    rawResponse = rawResponseBody
                 )
 
                 if (finalReq.method.equals("GET", ignoreCase = true) && finalReq.url.host.contains("gukolomna.ru")) {
@@ -1211,7 +1210,7 @@ class EiosRepository(private val context: Context) {
             bodyStr = resp.body?.string() ?: ""
             val errText = ScheduleParser.extractErrorMessage(bodyStr)
             val isAuthReq = bodyStr.contains("bx_auth_serv") || ScheduleParser.isAuthRequired(bodyStr)
-            val hasTable = bodyStr.contains("schedule-table")
+            val hasTimetable = bodyStr.contains("schedule-table") || bodyStr.contains("schedule-body") || bodyStr.contains("group-select")
 
             val (status, message, verdict) = when {
                 !resp.isSuccessful -> {
@@ -1228,18 +1227,13 @@ class EiosRepository(private val context: Context) {
                         "Сервер отдал HTTP 200, но в теле страницы обнаружен текст ошибки 1С: «$errText»"
                     )
                 }
-                bodyStr.contains("Отсутствует соединение с сервером") -> {
-                    Triple(
-                        EndpointStatus.DEGRADED,
-                        "200 ОК, но служба 1С недоступна",
-                        "Сервер отдал HTTP 200, но связь веб-сервера со службой 1С:Университет отсутствует"
-                    )
-                }
-                hasTable -> {
+                hasTimetable -> {
                     Triple(
                         EndpointStatus.OK,
-                        "200 ОК · Таблица расписания получена (${latency} мс)",
-                        "Сервер ответил штатно. В HTML обнаружен контейнер <table class=\"schedule-table\">"
+                        if (bodyStr.contains("schedule-table")) "200 ОК · Таблица расписания получена (${latency} мс)"
+                        else "200 ОК · Расписание получено (нет пар на неделе) (${latency} мс)",
+                        if (bodyStr.contains("schedule-table")) "Сервер ответил штатно. В HTML обнаружен контейнер <table class=\"schedule-table\">"
+                        else "Сервер ответил штатно. В HTML обнаружен контейнер расписания (пар на выбранной неделе нет)"
                     )
                 }
                 isAuthReq -> {

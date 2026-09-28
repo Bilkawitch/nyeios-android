@@ -403,6 +403,7 @@ fun NetworkLogsBottomSheet(
 @Composable
 private fun LogEntryCard(entry: NetworkLogEntry, isAlt: Boolean) {
     var isExpanded by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     val (badgeColor, badgeLabel) = when (entry.level) {
         NetworkLogLevel.REQUEST -> Pair(NierBlue, entry.tag.ifEmpty { "REQ" })
@@ -412,6 +413,14 @@ private fun LogEntryCard(entry: NetworkLogEntry, isAlt: Boolean) {
         NetworkLogLevel.ERROR -> Pair(NierRed, entry.tag.ifEmpty { "ERR" })
         NetworkLogLevel.INFO -> Pair(NierAmber, entry.tag.ifEmpty { "INFO" })
     }
+
+    val is200Response = entry.httpCode == 200 ||
+            entry.tag.contains("200") ||
+            entry.isDegraded ||
+            entry.details?.contains("200") == true ||
+            entry.level == NetworkLogLevel.RESPONSE ||
+            entry.level == NetworkLogLevel.SUCCESS
+    val hasRawResponse = entry.rawResponse != null
 
     Column(
         modifier = Modifier
@@ -476,6 +485,32 @@ private fun LogEntryCard(entry: NetworkLogEntry, isAlt: Boolean) {
                     fontFamily = ShareTechMonoFamily,
                     color = NierDim
                 )
+            }
+
+            // Copy raw response button (icon only) for 200 responses (empty or non-empty)
+            if (is200Response || hasRawResponse) {
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .border(0.5.dp, NierBorderLight)
+                        .background(NierPanelAlt)
+                        .clickable {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            val text = entry.rawResponse.orEmpty()
+                            val clip = ClipData.newPlainText("NyEIOS Raw Response", text)
+                            clipboard.setPrimaryClip(clip)
+                            Toast.makeText(context, if (text.isEmpty()) "Ответ сервера пуст" else "Raw ответ скопирован", Toast.LENGTH_SHORT).show()
+                        }
+                        .padding(4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ContentCopy,
+                        contentDescription = "Скопировать raw ответ сервера",
+                        tint = NierBlue,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
             }
         }
 

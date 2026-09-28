@@ -1,6 +1,7 @@
 package ru.nya.nyeios.data.parser
 
 import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
 import ru.nya.nyeios.data.model.DaySchedule
 import ru.nya.nyeios.data.model.LessonItem
 import ru.nya.nyeios.data.model.LessonType
@@ -20,18 +21,22 @@ object ScheduleParser {
                 (html.contains("USER_LOGIN") && html.contains("USER_PASSWORD"))
     }
 
-    fun extractErrorMessage(html: String): String? {
-        val doc = Jsoup.parse(html)
+    fun extractErrorMessage(doc: Document): String? {
         val errorEl = doc.selectFirst(".errortext")
             ?: doc.selectFirst("font.errortext")
             ?: doc.selectFirst(".error")
         val text = errorEl?.text()?.trim()
         if (!text.isNullOrEmpty()) return text
 
-        if (html.contains("Отсутствует соединение с сервером")) {
+        val workareaText = doc.selectFirst("#workarea")?.text() ?: doc.body()?.text() ?: ""
+        if (workareaText.contains("Отсутствует соединение с сервером", ignoreCase = true)) {
             return "Отсутствует соединение с сервером. Повторите попытку позднее"
         }
         return null
+    }
+
+    fun extractErrorMessage(html: String): String? {
+        return extractErrorMessage(Jsoup.parse(html))
     }
 
     fun parse(html: String, offsetWeeks: Int = 0, startDateStr: String = "", endDateStr: String = ""): WeekSchedule? {
@@ -40,7 +45,7 @@ object ScheduleParser {
         val doc = Jsoup.parse(html)
 
         // If the page contains an explicit server error, it is not a valid empty schedule
-        if (extractErrorMessage(html) != null) {
+        if (extractErrorMessage(doc) != null) {
             return null
         }
 

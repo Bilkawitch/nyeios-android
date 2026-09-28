@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -423,6 +424,14 @@ private fun currentTime(): String =
 @Composable
 private fun NycLogEntryRow(entry: NetworkLogEntry, row: NycLogRow) {
     var isExpanded by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    val is200Response = entry.httpCode == 200 ||
+            row.code == 200 ||
+            row.isDegraded ||
+            entry.isDegraded ||
+            entry.tag.contains("200")
+    val hasRawResponse = entry.rawResponse != null
 
     Column(
         modifier = Modifier
@@ -492,6 +501,31 @@ private fun NycLogEntryRow(entry: NetworkLogEntry, row: NycLogRow) {
                         fontWeight = FontWeight.Bold,
                         fontSize = 8.5.sp,
                         color = cc
+                    )
+                }
+            }
+
+            if (is200Response || hasRawResponse) {
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color(150, 185, 235, alpha = 15))
+                        .border(1.dp, nycBlue.copy(alpha = 0.35f), RoundedCornerShape(6.dp))
+                        .clickable {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            val text = entry.rawResponse.orEmpty()
+                            val clip = ClipData.newPlainText("NyEIOS Raw Response", text)
+                            clipboard.setPrimaryClip(clip)
+                            Toast.makeText(context, if (text.isEmpty()) "Ответ сервера пуст" else "Raw ответ скопирован", Toast.LENGTH_SHORT).show()
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ContentCopy,
+                        contentDescription = "Скопировать raw ответ",
+                        tint = nycBlue,
+                        modifier = Modifier.size(12.dp)
                     )
                 }
             }
