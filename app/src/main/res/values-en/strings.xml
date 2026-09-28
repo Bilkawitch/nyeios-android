@@ -13,18 +13,59 @@
     <string name="settings_tab_version">VERSION</string>
     <string name="settings_tab_language">LANGUAGE</string>
 
-    <!-- Language Settings -->
+    <!-- Settings: Server Connection -->
+    <string name="settings_server_conn_title">[ 01 · SERVER CONNECTION EIOS.GUKOLOMNA.RU ]</string>
+    <string name="settings_server_label">SERVER</string>
+    <string name="settings_ping_label">PING (TCP RTT)</string>
+    <string name="settings_action_measure">MEASURE</string>
+    <string name="settings_last_get_time">LAST GET REQUEST TIME</string>
+    <string name="settings_request_label">Request:</string>
+    <string name="settings_endpoints_diag_title">ENDPOINT DIAGNOSTICS</string>
+    <string name="settings_endpoints_diag_desc">Check availability of website sections</string>
+    <string name="settings_action_check">CHECK</string>
+    <string name="settings_endpoint_not_checked">NOT CHECKED</string>
+    <string name="settings_endpoint_available">ONLINE</string>
+    <string name="settings_endpoint_error">ERROR</string>
+    <string name="settings_action_repeat_diag">RETRY NETWORK DIAGNOSTICS</string>
+    <string name="settings_external_ip_title">EXTERNAL IP ADDRESS</string>
+    <string name="settings_vpn_active">ACTIVE (VPN)</string>
+    <string name="settings_vpn_disabled">DISABLED</string>
+
+    <!-- Settings: Themes -->
+    <string name="theme_section_title">[ 01 · THEME SELECTION ]</string>
+    <string name="theme_special_title">[ 02 · SPECIAL THEMES ]</string>
+    <string name="theme_regular_title">YoRHa Regular (Light Theme)</string>
+    <string name="theme_regular_desc">Classic industrial NieR: Automata palette: sand-olive canvas, high-contrast dark text and accents</string>
+    <string name="theme_night_title">YoRHa Night (Dark Theme)</string>
+    <string name="theme_night_desc">Inverted NieR: Automata palette: deep dark canvas, warm beige text and panels</string>
+    <string name="theme_black_title">YoRHa Black (AMOLED)</string>
+    <string name="theme_black_desc">Pure black background for OLED screens with contrasting YoRHa dark accents</string>
+    <string name="theme_retro_title">YoRHa Retro (Vintage Theme)</string>
+    <string name="theme_retro_desc">Authentic warm parchment canvas, deep ink lettering and rich terminal blue accents</string>
+    <string name="theme_nyc_title">NyC Modern</string>
+    <string name="theme_nyc_desc">Parallel futuristic dark theme inspired by next-gen interfaces</string>
+    <string name="badge_active">ACTIVE</string>
+
+    <!-- Settings: Version -->
+    <string name="version_section_title">[ 01 · APP VERSION ]</string>
+    <string name="version_changelog_title">[ 02 · CHANGELOG ]</string>
+    <string name="version_current_label">CURRENT VERSION</string>
+    <string name="version_up_to_date">LATEST VERSION INSTALLED</string>
+    <string name="version_update_available">UPDATE AVAILABLE</string>
+    <string name="action_download_update">DOWNLOAD UPDATE</string>
+
+    <!-- Settings: Language -->
     <string name="language_settings_title">[ 01 · INTERFACE LANGUAGE ]</string>
     <string name="language_system_title">System default</string>
     <string name="language_system_desc">Use system language</string>
     <string name="language_ru_title">Русский (Russian)</string>
     <string name="language_ru_desc">Russian application interface</string>
     <string name="language_en_title">English</string>
-    <string name="language_en_desc">English user interface (work in progress)</string>
+    <string name="language_en_desc">English application interface</string>
     <string name="language_server_note_title">[ 02 · SERVER DATA &amp; TIMETABLE ]</string>
     <string name="language_server_note_desc">Academic process data (course names, instructor names, timetable, announcements and grades) is fetched directly from the university portal eios.gukolomna.ru and preserved in the original server language.</string>
 
-    <!-- Common Actions -->
+    <!-- Common Actions & Alerts -->
     <string name="action_refresh">Refresh</string>
     <string name="action_copy">Copy</string>
     <string name="action_copy_all">COPY ALL</string>
@@ -34,31 +75,77 @@
     <string name="action_cancel">Cancel</string>
     <string name="action_close">Close</string>
     <string name="action_retry">Retry</string>
+    <string name="action_retry_caps">RETRY</string>
     <string name="action_check_updates">CHECK FOR UPDATES</string>
+    <string name="system_alert_caps">SYSTEM ALERT</string>
 
     <!-- Timetable / Schedule Screen -->
     <string name="schedule_current_week">Current week</string>
     <string name="schedule_prev_week">Previous week</string>
     <string name="schedule_next_week">Next week</string>
     <string name="schedule_week_fmt">Week %1$d</string>
+    <string name="schedule_week_offset_fmt">%1$+d wk.</string>
     <string name="schedule_no_lessons_title">NO CLASSES THIS WEEK</string>
     <string name="schedule_no_lessons_desc">No scheduled classes found in the university timetable</string>
     <string name="schedule_empty_day">No classes</string>
+    <string name="schedule_empty_day_banner">— NO CLASSES · DAY OFF —</string>
+    <string name="schedule_empty_week_banner">— NO CLASSES THIS WEEK —</string>
     <string name="schedule_break_fmt">BREAK %1$d MIN</string>
     <string name="schedule_floor_fmt">FLOOR %1$d</string>
     <string name="schedule_dist_fmt">%1$d M</string>
     <string name="schedule_map_btn">MAP</string>
     <string name="schedule_offline_cache">OFFLINE CACHE</string>
+    <string name="schedule_cache_badge">CACHE</string>
+    <string name="schedule_network_badge">ONLINE</string>
+    <string name="schedule_loading">LOADING TIMETABLE...</string>
+    <string name="lesson_finished">Finished</string>
+    <string name="lesson_starts_in_fmt">Starts in: %1$s</string>
+
+    <!-- Days of Week -->
+    <string name="day_mon">MON</string>
+    <string name="day_tue">TUE</string>
+    <string name="day_wed">WED</string>
+    <string name="day_thu">THU</string>
+    <string name="day_fri">FRI</string>
+    <string name="day_sat">SAT</string>
+    <string name="day_sun">SUN</string>
+    <string name="day_full_mon">MONDAY</string>
+    <string name="day_full_tue">TUESDAY</string>
+    <string name="day_full_wed">WEDNESDAY</string>
+    <string name="day_full_thu">THURSDAY</string>
+    <string name="day_full_fri">FRIDAY</string>
+    <string name="day_full_sat">SATURDAY</string>
+    <string name="day_full_sun">SUNDAY</string>
+
+    <!-- Indoor Floor Map -->
+    <string name="map_floor_label">FLOOR</string>
+    <string name="map_connector_label">CONNECT</string>
+    <string name="map_from_label">FROM</string>
+    <string name="map_from_selecting">FROM ▼</string>
+    <string name="map_to_label">TO</string>
+    <string name="map_to_selecting">TO ▼</string>
+    <string name="map_reset_route">Reset route</string>
+    <string name="map_cross_floor_fmt">Cross-floor · %1$s · ≈ %2$d m</string>
+    <string name="map_single_floor_fmt">≈ %1$d m · ~%2$d min · Floor %3$d</string>
 
     <!-- Login -->
     <string name="login_title">EIOS LOGIN</string>
-    <string name="login_username_label">Login or Email</string>
-    <string name="login_password_label">Password</string>
+    <string name="login_username_label">EIOS USERNAME</string>
+    <string name="login_password_label">PASSWORD</string>
     <string name="login_remember_me">Remember session</string>
     <string name="login_submit">LOG IN TO EIOS</string>
     <string name="login_gate_title">AUTHORIZATION REQUIRED</string>
     <string name="login_gate_desc">To access schedule, grades and announcements, please log in with your eios.gukolomna.ru credentials.</string>
     <string name="login_error_credentials">Invalid username or password</string>
+    <string name="login_access_restricted">ACCESS RESTRICTED</string>
+    <string name="login_portal_auth_section">[ 01 ] PORTAL AUTHORIZATION</string>
+    <string name="login_conn_test_section">[ 02 ] CONNECTION TEST</string>
+    <string name="login_logged_in_fmt">Logged in as: %1$s</string>
+    <string name="login_action_logout">LOG OUT OF ACCOUNT</string>
+    <string name="login_server_title">SERVER: EIOS.GUKOLOMNA.RU</string>
+    <string name="login_hide_password">Hide password</string>
+    <string name="login_show_password">Show password</string>
+    <string name="action_login_account">LOG IN TO ACCOUNT</string>
 
     <!-- Network Logs -->
     <string name="network_logs_title">NETWORK LOGS</string>
@@ -67,22 +154,331 @@
     <string name="network_raw_response_copied">Raw response copied</string>
     <string name="network_raw_response_empty">Server response is empty</string>
     <string name="network_copy_raw_desc">Copy raw server response</string>
+    <string name="network_copied_toast">COPIED</string>
+    <string name="network_logs_copied_toast">Logs copied to clipboard</string>
+    <string name="network_logs_cleared_toast">Logs cleared</string>
 
     <!-- Feed / Live Feed -->
     <string name="feed_title">LIVE FEED</string>
     <string name="feed_empty_title">NO ANNOUNCEMENTS</string>
     <string name="feed_empty_desc">No posts available in the feed yet</string>
+    <string name="feed_loading_cached">Loading saved feed...</string>
+    <string name="feed_sync_dialog_title">Live Feed Synchronization</string>
+    <string name="feed_sync_dialog_desc">The university server generates the Live Feed as a single monolithic document (~7.5 MB). Depending on server load, generation may take between 20 seconds and several minutes.</string>
+    <string name="feed_sync_dialog_bullets">• During download, Timetable and Grades will remain available from cache.\n• A live timer and downloaded data volume are displayed.\n• You can cancel the synchronization at any time.</string>
+    <string name="feed_sync_start">Start download</string>
+    <string name="feed_fetch_from_server">FETCH FROM SERVER</string>
+    <string name="feed_sync_time_fmt">SYNCED %1$s</string>
+    <string name="feed_downloading_data">Fetching data from eios.gukolomna.ru</string>
+    <string name="feed_cancel_sync">CANCEL</string>
+    <string name="feed_downloads_title">DOWNLOADED FILES</string>
+    <string name="feed_no_downloads">NO DOWNLOADED FILES</string>
+    <string name="feed_action_open">OPEN</string>
+    <string name="feed_action_download">DOWNLOAD</string>
+    <string name="feed_action_share">SHARE</string>
+    <string name="feed_action_save">SAVE TO DOWNLOADS</string>
 
-    <!-- Curriculum / BRS -->
-    <string name="curriculum_title">CURRICULUM (BRS)</string>
-    <string name="curriculum_empty_title">NO GRADE DATA</string>
-    <string name="curriculum_empty_desc">Curriculum data is empty or not yet loaded</string>
+    <!-- Settings: Server Connection Details -->
+    <string name="settings_server_ip_subvalue">IP: 87.242.111.49:443 // ROSTELECOM, KOLOMNA</string>
+    <string name="settings_ping_measuring">MEASURING NETWORK LATENCY...</string>
+    <string name="settings_action_measuring">MEASURING...</string>
+    <string name="settings_ping_idle">— (NOT MEASURED)</string>
+    <string name="settings_ping_error_fmt">ERROR: %1$s</string>
+    <string name="settings_ms_fmt">%1$d ms</string>
+    <string name="settings_last_get_none">— (NO REQUESTS IN CURRENT SESSION)</string>
+    <string name="settings_action_checking">CHECKING...</string>
+    <string name="settings_endpoint_pending">QUEUED</string>
+    <string name="settings_endpoint_checking">CHECKING...</string>
+    <string name="settings_endpoint_degraded">200 DEGRADED / EMPTY</string>
+    <string name="settings_endpoint_auth_required">AUTH REQUIRED</string>
+    <string name="settings_raw_log_header">[ TECHNICAL REQUEST LOG ]</string>
+    <string name="settings_copy_log_btn">COPY LOG</string>
+    <string name="settings_log_copied_toast">Log copied to clipboard</string>
+    <string name="settings_github_limit_title">[ 02 · GITHUB API RATE LIMIT ]</string>
+    <string name="settings_quota_remaining_label">REMAINING QUOTA</string>
+    <string name="settings_quota_requests_fmt">%1$d / 60 REQUESTS</string>
+    <string name="settings_quota_not_checked">60 / 60 (NOT CHECKED YET)</string>
+    <string name="settings_quota_reset_fmt">GitHub quota window resets in ~%1$d min.</string>
+    <string name="settings_quota_sub_default">Saved from the last completed update API request</string>
+    <string name="settings_vpn_warning_title">WARNING // LOW QUOTA REMAINING</string>
+    <string name="settings_vpn_warning_vpn">Few update check requests remaining. At 0, NyEIOS will not be able to check for or download updates. You have VPN enabled, which is likely the cause.</string>
+    <string name="settings_vpn_warning_no_vpn">Few update check requests remaining. At 0, NyEIOS will not be able to check for or download updates. Could you be behind a router with VPN?</string>
+    <string name="settings_ip_section_title">[ 03 · DEVICE IP &amp; NETWORK INTERFACE ]</string>
+    <string name="settings_wan_ip_label">OUTBOUND IP (WAN)</string>
+    <string name="settings_lan_ip_label">LOCAL IP (LAN)</string>
+    <string name="settings_detecting">DETECTING...</string>
+    <string name="settings_not_detected">NOT DETECTED</string>
+    <string name="settings_wan_ip_desc">Address used for outbound requests to EIOS and GitHub</string>
+    <string name="settings_lan_ip_desc">Local device network interface</string>
+    <string name="settings_network_type_label">NETWORK TYPE</string>
+    <string name="settings_vpn_status_label">VPN STATUS</string>
 
-    <!-- Theme Settings -->
-    <string name="theme_section_title">[ 01 · THEME SELECTION ]</string>
-    <string name="theme_special_title">[ 02 · SPECIAL THEMES ]</string>
+    <!-- Settings: Themes & Interface Options -->
+    <string name="theme_large_font_title">Large schedule font</string>
+    <string name="theme_large_font_desc">1-SECOND RULE · +2 DP</string>
+    <string name="theme_animations_title">Transition animations</string>
+    <string name="theme_animations_desc">SHEETS, ROUTES, CHEVRONS</string>
+    <string name="theme_thick_borders_title">High-contrast borders</string>
+    <string name="theme_thick_borders_desc">1 DP → 2 DP BORDER</string>
+    <string name="theme_show_seconds_title">Seconds in sync indicator</string>
+    <string name="theme_show_seconds_desc">FORMAT HH:MM:SS</string>
+    <string name="theme_ui_section_title">[ 03 · INTERFACE ]</string>
+    <string name="theme_density_section_title">[ 04 · LIST DENSITY ]</string>
+    <string name="density_compact">COMPACT</string>
+    <string name="density_standard">STANDARD</string>
+    <string name="density_spacious">SPACIOUS</string>
 
-    <!-- Version Settings -->
-    <string name="version_section_title">[ 01 · APP VERSION ]</string>
-    <string name="version_changelog_title">[ 02 · CHANGELOG ]</string>
+    <!-- Settings: Version Details -->
+    <string name="version_label_fmt">VERSION: v%1$s (BUILD %2$d)</string>
+    <string name="version_available_fmt">AVAILABLE v%1$s</string>
+    <string name="version_latest_badge">LATEST VERSION</string>
+    <string name="version_installed_badge">INSTALLED</string>
+    <string name="version_checking_btn">CHECKING...</string>
+    <string name="version_check_btn">CHECK</string>
+    <string name="version_download_btn">DOWNLOAD</string>
+    <string name="version_quota_fmt">GITHUB API QUOTA: %1$s</string>
+
+    <!-- Timetable Extras -->
+    <string name="schedule_today">TODAY</string>
+    <string name="schedule_floor_transfer_fmt">FLOOR %1$d → %2$d</string>
+    <string name="lesson_now_badge">NOW</string>
+    <string name="lesson_ongoing_badge">IN PROGRESS</string>
+    <string name="lesson_no_teacher">Instructor not specified</string>
+    <string name="lesson_pair_fmt">PAIR %1$s</string>
+    <string name="lesson_left_min_fmt">%1$d MIN REMAINING</string>
+    <string name="lesson_left_sec_fmt">%1$d SEC REMAINING</string>
+    <string name="lesson_room_prefix">room %1$s</string>
+
+    <!-- Map Extras -->
+    <string name="map_route_cross_floor_title">Cross-floor Route</string>
+    <string name="map_route_between_lessons_title">Route between lessons</string>
+    <string name="map_navigation_title">Building Navigation</string>
+    <string name="map_university_name">SRSHU Main Campus</string>
+
+    <!-- Auth Extras -->
+    <string name="login_refresh_session">REFRESH SESSION</string>
+    <string name="login_save_keystore">Save in Android Keystore</string>
+    <string name="login_access_restricted_desc">NETWORK REQUESTS SUSPENDED UNTIL AUTHENTICATION. CACHE IS EMPTY.</string>
+
+    <!-- Update Banner -->
+    <string name="update_banner_available_fmt">UPDATE AVAILABLE v%1$s</string>
+    <string name="update_banner_downloading_fmt">DOWNLOADING v%1$s…</string>
+    <string name="update_banner_downloaded">UPDATE READY</string>
+    <string name="update_banner_install_desc">Tap to install APK</string>
+    <string name="update_banner_action_install">INSTALL</string>
+    <string name="update_banner_error">UPDATE ERROR</string>
+
+    <!-- Curriculum (BRS) -->
+    <string name="curriculum_loading">Loading grades (BRS)...</string>
+    <string name="curriculum_empty_title">No grade data available</string>
+    <string name="curriculum_empty_desc">No curriculum records found. Try synchronizing.</string>
+    <string name="curriculum_empty_term">No registered subjects in this semester.</string>
+    <string name="curriculum_stat_subjects">Subjects</string>
+    <string name="curriculum_stat_tests">Tests</string>
+    <string name="curriculum_stat_exams">Exams</string>
+    <string name="curriculum_detail_current_score">Current progress (score):</string>
+    <string name="curriculum_detail_current_rating">Current progress rating:</string>
+    <string name="curriculum_detail_term_rating">Semester rating:</string>
+    <string name="curriculum_detail_exam_score">Exam / test points:</string>
+    <string name="curriculum_detail_final_rating">Final rating:</string>
+    <string name="curriculum_detail_final_grade">Final grade:</string>
+    <string name="curriculum_score_points"> pts.</string>
+    <string name="curriculum_hours_fmt">%1$s H</string>
+    <string name="curriculum_zet_fmt">%1$s CR</string>
+    <string name="curriculum_mark_excellent">EXC.</string>
+    <string name="curriculum_mark_good">GOOD</string>
+    <string name="curriculum_mark_satisfactory">SAT.</string>
+    <string name="curriculum_mark_passed">PASS</string>
+    <string name="curriculum_mark_fail">FAIL</string>
+
+    <!-- Downloads Sheet -->
+    <string name="downloads_title">Downloads Manager</string>
+    <string name="downloads_storage_fmt">EIOS LOCAL STORAGE · %1$d FILES</string>
+    <string name="downloads_device_used">USED ON DEVICE</string>
+    <string name="downloads_device_usage_fmt">%1$d MB / %2$d GB</string>
+    <string name="downloads_downloading_count_fmt">[ DOWNLOADING: %1$d ]</string>
+    <string name="downloads_empty_title">NO FILES YET</string>
+    <string name="downloads_empty_desc">Tap attachments in Live Feed — they will be saved to app storage and available offline.</string>
+    <string name="downloads_no_files_category_fmt">NO FILES IN CATEGORY \"%1$s\"</string>
+    <string name="downloads_delete_all_confirm_title">DELETE ALL FILES?</string>
+    <string name="downloads_delete_all_confirm_desc">All downloaded attachments (%1$d files) will be deleted from local app storage. You can always download them again from Live Feed.</string>
+    <string name="downloads_delete_all_btn">DELETE ALL</string>
+    <string name="downloads_filter_all">ALL</string>
+    <string name="downloads_file_default">File</string>
+    <string name="downloads_loading_progress_fmt">Downloading... %1$s</string>
+    <string name="downloads_active_count_fmt">DOWNLOADING FILES: %1$d</string>
+    <string name="downloads_saved_count_fmt">LOCAL STORAGE · %1$d FILES</string>
+
+    <!-- Map Extras Continued -->
+    <string name="map_collapse">Collapse</string>
+    <string name="map_navigator_title">Navigator</string>
+    <string name="map_campus_floor_fmt">CAMPUS 1 · FLOOR %1$s</string>
+    <string name="map_to_target">To target</string>
+    <string name="map_route_label">ROUTE</string>
+    <string name="map_door_to_door">DOOR TO DOOR</string>
+    <string name="map_target_label">TARGET</string>
+    <string name="map_time_min_fmt">≈ %1$d MIN</string>
+    <string name="map_transition_fmt">TRANSFER: %1$s</string>
+    <string name="map_room_title_fmt">Room %1$s</string>
+    <string name="map_type_label">TYPE:</string>
+    <string name="map_stairs_label">STAIRCASE:</string>
+    <string name="map_floor_in_dev_title">Floor %1$d map in development</string>
+    <string name="map_floor_in_dev_desc">Floor %1$d room layout will be added in upcoming updates. Interactive 4th floor map is currently available.</string>
+    <string name="map_open_floor4_btn">▶ Open 4th floor</string>
+
+    <!-- Debug / Logs Extras -->
+    <string name="logs_filter_all">ALL</string>
+    <string name="logs_filter_empty">NO LOGS IN THIS FILTER</string>
+    <string name="logs_action_updates">UPDATES</string>
+    <string name="logs_checking_updates">Checking for updates…</string>
+    <string name="logs_update_request_details">Request to GitHub Releases API</string>
+    <string name="logs_update_available_fmt">Version %1$s available</string>
+    <string name="logs_update_none">No updates — latest version installed</string>
+    <string name="logs_update_error">Update check error</string>
+    <string name="logs_empty_toast">Logs are empty</string>
+
+    <!-- Auth Extras Continued -->
+    <string name="login_subtitle">EIOS PORTAL CLIENT · CAMPUS NAVIGATOR</string>
+    <string name="login_placeholder_user">portal user credentials</string>
+    <string name="login_button_short">LOG IN</string>
+    <string name="login_keystore_secure">PASSWORD ENCRYPTED BY HARDWARE KEYSTORE</string>
+    <string name="login_keystore_stored">PASSWORD STORED IN ANDROID KEYSTORE</string>
+    <string name="login_trouble_q">LOGIN TROUBLE?</string>
+    <string name="login_instruction_btn">GUIDE</string>
+    <string name="login_help_title">Logging in to SRSHU EIOS</string>
+    <string name="login_help_b1">• Use your student login (record book number or corporate email @gsgu.ru) as your username.</string>
+    <string name="login_help_b2">• Password is identical to your eios.gukolomna.ru portal password.</string>
+    <string name="login_help_b3">• If you forgot your password or your account is locked, contact IT center or dean\'s office.</string>
+    <string name="login_help_got_it">GOT IT</string>
+
+    <!-- Settings Telemetry Details -->
+    <string name="settings_ip_label">IP ADDRESS</string>
+    <string name="settings_provider_location">ROSTELECOM · KOLOMNA</string>
+    <string name="settings_ping_stamp_fmt">MEASURED %1$s</string>
+    <string name="settings_wan_short">WAN · OUTBOUND</string>
+    <string name="settings_lan_short">LAN · LOCAL</string>
+    <string name="settings_vpn_active_badge">VPN ACTIVE</string>
+    <string name="settings_vpn_disabled_badge">VPN DISABLED</string>
+    <string name="settings_last_get_title">LAST GET REQUEST DURATION</string>
+    <string name="settings_endpoint_diag_checking_msg">Request in progress...\nAwaiting server response (15s timeout).</string>
+    <string name="settings_endpoint_diag_pending_msg">Request is queued.\nWill start immediately after current test finishes.</string>
+    <string name="settings_endpoint_diag_idle_msg">Diagnostics for this endpoint have not run yet.\nPress \"CHECK\" above to perform a test request.</string>
+    <string name="settings_expand_log">Expand log</string>
+    <string name="settings_collapse_log">Collapse log</string>
+
+    <!-- Feed Screen Extras -->
+    <string name="feed_nyc_title">EIOS Live Feed</string>
+    <string name="feed_saved_count_fmt">SAVED ANNOUNCEMENTS: %1$d</string>
+    <string name="feed_empty_banner">— NO ANNOUNCEMENTS YET —</string>
+    <string name="feed_cache_count_fmt">FEED CACHE · %1$d</string>
+    <string name="error_open_file">Error opening</string>
+    <string name="error_send_file">Error sending</string>
+    <string name="error_save_file">Error saving</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_save_to_device">Save to device</string>
+
+    <!-- Additional UI & Units -->
+    <string name="feed_syncing">Syncing feed...</string>
+    <string name="profile_title">Profile</string>
+    <string name="unit_ms">ms</string>
+    <string name="unit_ms_caps">MS</string>
+    <string name="unit_sec">s</string>
+    <string name="unit_min">min</string>
+    <string name="unit_hour">h</string>
+    <string name="chip_swr_cache">SWR CACHE</string>
+    <string name="chip_offline_first">OFFLINE-FIRST</string>
+    <string name="map_room_deans_office">Dean\'s Office</string>
+    <string name="settings_endpoint_curriculum">ACADEMIC PERFORMANCE (BRS)</string>
+    <string name="downloads_progress_fmt">Loading %1$d%%...</string>
+    <string name="downloads_loading_default">Loading...</string>
+    <string name="login_active_session">Active session</string>
+    <string name="version_status_checking">CHECKING FOR UPDATES ON GITHUB...</string>
+    <string name="version_status_available_fmt">Update available: v%1$s</string>
+    <string name="version_status_latest">Latest version is installed (no updates)</string>
+    <string name="version_status_error_fmt">Check error: %1$s</string>
+    <string name="schedule_load_error">Failed to load schedule</string>
+    <string name="feed_load_error">Failed to load feed</string>
+    <string name="curriculum_load_error">Failed to load academic performance</string>
+    <string name="login_fill_credentials">Enter login and password</string>
+    <string name="login_invalid_credentials">Invalid login or password for EIOS portal</string>
+    <string name="login_auth_failed">Authorization failed</string>
+    <string name="file_not_downloaded_yet">File has not been downloaded yet</string>
+    <string name="error_no_server_connection">No connection to the server. Please try again later</string>
+    <string name="error_session_expired">Session expired. EIOS authorization required.</string>
+
+    <!-- Network Type Labels -->
+    <string name="network_type_unknown">UNKNOWN</string>
+    <string name="network_type_no_connection">NO CONNECTION</string>
+    <string name="network_type_connected">CONNECTED</string>
+    <string name="network_type_mobile">MOBILE</string>
+
+    <!-- Endpoint Check Status Messages -->
+    <string name="settings_endpoint_init_checking_fmt">Sending GET to %1$s with 15s timeout (1\15s)</string>
+    <string name="settings_endpoint_tick_fmt">Sending GET to %1$s with 15s timeout (%2$d\15s)</string>
+    <string name="settings_endpoint_queue_msg">Queued for check...</string>
+
+    <!-- Update Installer Errors -->
+    <string name="update_apk_not_found">APK file not found. Please try downloading again.</string>
+    <string name="update_installer_failed_fmt">Failed to launch installer: %1$s</string>
+
+    <!-- Theme Descriptions (for enum descResId) -->
+    <string name="theme_desc_regular">Classic industrial NieR: Automata palette: sand-olive canvas, high-contrast dark text and accents</string>
+    <string name="theme_desc_night">Inverted NieR: Automata palette: deep dark canvas, warm beige text and panels</string>
+    <string name="theme_desc_black">Pure black background for OLED screens with contrasting YoRHa dark accents</string>
+    <string name="theme_desc_retro">Authentic warm parchment canvas, deep ink lettering and rich terminal blue accents</string>
+    <string name="theme_desc_nyc_modern">Parallel futuristic dark theme inspired by next-gen interfaces</string>
+
+    <!-- NyC Log degraded badge -->
+    <string name="log_badge_degraded">200 EMPTY</string>
+
+    <!-- Feed initials fallback -->
+    <string name="feed_post_default_initials">EI</string>
+
+    <!-- Main chrome: post counters, sync status, content descriptions -->
+    <string name="nyc_posts_count_fmt">%1$d POSTS</string>
+    <string name="sync_feed_in_progress_toast">Live Feed synchronization is in progress. Timetable and grades are served from cache.</string>
+    <string name="sync_feed_short">Feed sync...</string>
+    <string name="cd_downloads">Downloads</string>
+    <string name="cd_profile">Profile</string>
+
+    <!-- Lesson type titles -->
+    <string name="lesson_type_lecture">Lecture</string>
+    <string name="lesson_type_seminar">Seminar</string>
+    <string name="lesson_type_practice">Practice</string>
+    <string name="lesson_type_lab">Laboratory</string>
+    <string name="lesson_type_exam">Exam / Credit test</string>
+    <string name="lesson_type_other">Class</string>
+
+    <!-- Room type titles -->
+    <string name="room_type_classroom">Classroom</string>
+    <string name="room_type_dean_office">Dean office</string>
+    <string name="room_type_stairs">Staircase</string>
+    <string name="room_type_restroom">Restroom</string>
+    <string name="room_type_other">Utility room</string>
+
+    <!-- Room wing titles -->
+    <string name="room_wing_top">North row (Top)</string>
+    <string name="room_wing_bottom">South row (Bottom)</string>
+    <string name="room_wing_vertical">East wing (Right)</string>
+    <string name="room_wing_left">West wing (Left)</string>
+
+    <!-- Floor and staircase names -->
+    <string name="floor_level_fmt">Floor %1$d</string>
+    <string name="stairs_west">West staircase</string>
+    <string name="stairs_central">Central staircase</string>
+    <string name="stairs_east">East staircase</string>
+
+    <!-- Curriculum term title -->
+    <string name="semester_fmt">Semester %1$d</string>
+
+    <!-- Feed / downloads controls -->
+    <string name="action_download">DOWNLOAD</string>
+    <string name="action_downloading">DOWNLOADING...</string>
+    <string name="action_update_caps">UPDATE</string>
+    <string name="downloads_manager_caps">DOWNLOADS MANAGER</string>
+    <string name="downloads_open_caps">OPEN</string>
+    <string name="downloads_downloading_fmt">DOWNLOADING: %1$d</string>
+    <string name="downloads_nyc_downloading_fmt">Downloading: %1$d</string>
+    <string name="downloads_saved_fmt">SAVED: %1$d · %2$s</string>
+    <string name="curriculum_title">GRADES (BRS)</string>
 </resources>

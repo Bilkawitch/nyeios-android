@@ -1,7 +1,10 @@
 package ru.nya.nyeios.data.net
 
+import ru.nya.nyeios.data.AppLocale
+
 import android.content.Context
 import android.content.SharedPreferences
+import ru.nya.nyeios.R
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import kotlinx.coroutines.Dispatchers
@@ -110,7 +113,7 @@ class NetworkMetricsTracker private constructor(private val context: Context) {
             _pingResult.value = result
             result
         } catch (e: Exception) {
-            val errorMsg = e.localizedMessage ?: e.message ?: "Сбой соединения"
+            val errorMsg = e.localizedMessage ?: e.message ?: AppLocale.pick("Сбой соединения", "Connection failure")
             val result = PingResult.Error(errorMsg)
             _pingResult.value = result
             result
@@ -206,19 +209,19 @@ class NetworkMetricsTracker private constructor(private val context: Context) {
     fun getNetworkTypeName(): String {
         return try {
             val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
-                ?: return "НЕИЗВЕСТНО"
-            val activeNetwork = cm.activeNetwork ?: return "НЕТ ПОДКЛЮЧЕНИЯ"
-            val caps = cm.getNetworkCapabilities(activeNetwork) ?: return "НЕТ ПОДКЛЮЧЕНИЯ"
+                ?: return context.getString(R.string.network_type_unknown)
+            val activeNetwork = cm.activeNetwork ?: return context.getString(R.string.network_type_no_connection)
+            val caps = cm.getNetworkCapabilities(activeNetwork) ?: return context.getString(R.string.network_type_no_connection)
 
             when {
                 caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN) -> "VPN"
                 caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> "WI-FI"
-                caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> "МОБИЛЬНАЯ СЕТЬ"
+                caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> context.getString(R.string.network_type_mobile)
                 caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> "ETHERNET"
-                else -> "ПОДКЛЮЧЕНО"
+                else -> context.getString(R.string.network_type_connected)
             }
         } catch (_: Exception) {
-            "НЕИЗВЕСТНО"
+            context.getString(R.string.network_type_unknown)
         }
     }
 

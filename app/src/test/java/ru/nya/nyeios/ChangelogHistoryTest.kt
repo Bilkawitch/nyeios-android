@@ -1,20 +1,43 @@
 package ru.nya.nyeios
 
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import ru.nya.nyeios.ui.settings.ChangelogHistory
+import java.util.Locale
 
 class ChangelogHistoryTest {
 
+    private val originalLocale: Locale = Locale.getDefault()
+
+    @After
+    fun tearDown() {
+        Locale.setDefault(originalLocale)
+    }
+
     @Test
-    fun testLatestReleaseIs025() {
+    fun `release notes follow the process locale`() {
+        Locale.setDefault(Locale("ru"))
+        val russian = ChangelogHistory.releases.first().sections.first()
+
+        Locale.setDefault(Locale("en"))
+        val english = ChangelogHistory.releases.first().sections.first()
+
+        assertEquals("РАСПИСАНИЕ", russian.title)
+        assertEquals("SCHEDULE", english.title)
+        assertTrue(russian.items.first().startsWith("Починил парсинг"))
+        assertTrue(english.items.first().startsWith("Fixed the schedule parsing"))
+    }
+
+    @Test
+    fun testLatestReleaseIs026() {
         val releases = ChangelogHistory.releases
         assertTrue("Changelog should contain releases", releases.isNotEmpty())
 
         val latest = releases.first()
-        assertEquals("Latest release must be 0.2.5", "0.2.5", latest.version)
+        assertEquals("Latest release must be 0.2.6", "0.2.6", latest.version)
         assertTrue("Latest release should have isLatest = true", latest.isLatest)
     }
 

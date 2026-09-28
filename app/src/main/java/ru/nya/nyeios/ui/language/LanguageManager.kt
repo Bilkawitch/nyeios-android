@@ -17,15 +17,14 @@ object LanguageManager {
     private const val PREFS_NAME = "nyeios_language_prefs"
     private const val KEY_LANGUAGE = "selected_language"
 
+    /** Device locale captured before the picker ever overrides [Locale.getDefault]. */
+    private val deviceDefaultLocale: Locale = Locale.getDefault()
+
     var currentLanguage: AppLanguage by mutableStateOf(AppLanguage.SYSTEM)
         private set
 
     val effectiveLocale: Locale
-        get() = when (currentLanguage) {
-            AppLanguage.RU -> Locale("ru")
-            AppLanguage.EN -> Locale("en")
-            AppLanguage.SYSTEM -> Locale.getDefault()
-        }
+        get() = localeFor(currentLanguage)
 
     fun init(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -35,22 +34,32 @@ object LanguageManager {
 
     fun setLanguage(context: Context, language: AppLanguage) {
         currentLanguage = language
+        // Switches happen in-place (no Activity restart), so the process locale must follow here:
+        // data-layer copy resolved through AppLocale has no Activity context of its own.
+        applyProcessLocale(language)
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
             .putString(KEY_LANGUAGE, language.code)
             .apply()
     }
 
+    /** Aligns [Locale.getDefault] with the picker without touching stored preferences. */
+    fun applyProcessLocale(language: AppLanguage = currentLanguage) {
+        Locale.setDefault(localeFor(language))
+    }
+
     fun applyLocaleContext(context: Context, language: AppLanguage = currentLanguage): Context {
-        val targetLocale = when (language) {
-            AppLanguage.RU -> Locale("ru")
-            AppLanguage.EN -> Locale("en")
-            AppLanguage.SYSTEM -> Locale.getDefault()
-        }
+        val targetLocale = localeFor(language)
         Locale.setDefault(targetLocale)
         val config = Configuration(context.resources.configuration)
         config.setLocale(targetLocale)
         config.setLayoutDirection(targetLocale)
         return context.createConfigurationContext(config)
+    }
+
+    private fun localeFor(language: AppLanguage): Locale = when (language) {
+        AppLanguage.RU -> Locale("ru")
+        AppLanguage.EN -> Locale("en")
+        AppLanguage.SYSTEM -> deviceDefaultLocale
     }
 }

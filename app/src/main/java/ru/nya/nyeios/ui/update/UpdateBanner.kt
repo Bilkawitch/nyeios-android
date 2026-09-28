@@ -25,6 +25,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import ru.nya.nyeios.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -99,7 +101,7 @@ private fun BannerAvailable(state: UpdateUiState.UpdateAvailable, viewModel: Upd
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    text = "ДОСТУПНО ОБНОВЛЕНИЕ v${state.info.version}",
+                    text = stringResource(R.string.update_banner_available_fmt, state.info.version),
                     fontFamily = RajdhaniFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp,
@@ -139,7 +141,7 @@ private fun BannerAvailable(state: UpdateUiState.UpdateAvailable, viewModel: Upd
                         modifier = Modifier.size(13.dp)
                     )
                     Text(
-                        text = "СКАЧАТЬ",
+                        text = stringResource(R.string.version_download_btn),
                         fontFamily = RajdhaniFamily,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
@@ -159,7 +161,7 @@ private fun BannerAvailable(state: UpdateUiState.UpdateAvailable, viewModel: Upd
         ) {
             Icon(
                 imageVector = Icons.Default.Close,
-                contentDescription = "Закрыть",
+                contentDescription = stringResource(R.string.action_close),
                 tint = NierDim,
                 modifier = Modifier.size(15.dp)
             )
@@ -178,7 +180,7 @@ private fun BannerDownloading(state: UpdateUiState.Downloading, viewModel: Updat
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "СКАЧИВАНИЕ v${state.info.version}…",
+                text = stringResource(R.string.update_banner_downloading_fmt, state.info.version),
                 fontFamily = RajdhaniFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 13.sp,
@@ -217,7 +219,7 @@ private fun BannerDownloading(state: UpdateUiState.Downloading, viewModel: Updat
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "ОТМЕНА",
+                text = stringResource(R.string.action_cancel).uppercase(),
                 fontFamily = ShareTechMonoFamily,
                 fontSize = 10.sp,
                 letterSpacing = 0.5.sp,
@@ -240,7 +242,7 @@ private fun BannerReadyToInstall(viewModel: UpdateViewModel) {
     ) {
         Column {
             Text(
-                text = "ОБНОВЛЕНИЕ ЗАГРУЖЕНО",
+                text = stringResource(R.string.update_banner_downloaded),
                 fontFamily = RajdhaniFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 13.sp,
@@ -248,7 +250,7 @@ private fun BannerReadyToInstall(viewModel: UpdateViewModel) {
                 color = NierDark
             )
             Text(
-                text = "Нажмите, чтобы установить APK",
+                text = stringResource(R.string.update_banner_install_desc),
                 fontFamily = ShareTechMonoFamily,
                 fontSize = 10.sp,
                 color = NierDim
@@ -263,7 +265,7 @@ private fun BannerReadyToInstall(viewModel: UpdateViewModel) {
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "УСТАНОВИТЬ",
+                text = stringResource(R.string.update_banner_action_install),
                 fontFamily = RajdhaniFamily,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
@@ -285,7 +287,7 @@ private fun BannerError(state: UpdateUiState.Error, viewModel: UpdateViewModel) 
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "ОШИБКА ОБНОВЛЕНИЯ",
+                text = stringResource(R.string.update_banner_error),
                 fontFamily = RajdhaniFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 13.sp,
@@ -308,7 +310,7 @@ private fun BannerError(state: UpdateUiState.Error, viewModel: UpdateViewModel) 
         ) {
             Icon(
                 imageVector = Icons.Default.Close,
-                contentDescription = "Закрыть",
+                contentDescription = stringResource(R.string.action_close),
                 tint = NierDim,
                 modifier = Modifier.size(15.dp)
             )
@@ -318,13 +320,15 @@ private fun BannerError(state: UpdateUiState.Error, viewModel: UpdateViewModel) 
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-private fun formatSize(bytes: Long): String {
-    if (bytes <= 0) return "0 Б"
+private fun formatSize(bytes: Long, locale: java.util.Locale = java.util.Locale.getDefault()): String {
+    val isEn = locale.language.equals("en", ignoreCase = true)
+    val (bUnit, kbUnit, mbUnit) = if (isEn) Triple("B", "KB", "MB") else Triple("Б", "КБ", "МБ")
+    if (bytes <= 0) return "0 $bUnit"
     val mb = bytes / 1_048_576.0
     val kb = bytes / 1024.0
     return when {
-        mb >= 1.0 -> String.format(java.util.Locale.US, "%.1f МБ", mb)
-        kb >= 1.0 -> String.format(java.util.Locale.US, "%.0f КБ", kb)
-        else -> "$bytes Б"
+        mb >= 1.0 -> String.format(java.util.Locale.US, "%.1f $mbUnit", mb)
+        kb >= 1.0 -> String.format(java.util.Locale.US, "%.0f $kbUnit", kb)
+        else -> "$bytes $bUnit"
     }
 }

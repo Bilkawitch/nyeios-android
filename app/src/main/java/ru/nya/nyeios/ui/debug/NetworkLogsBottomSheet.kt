@@ -35,6 +35,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.ui.res.stringResource
+import ru.nya.nyeios.R
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -136,7 +138,7 @@ fun NetworkLogsBottomSheet(
                     }
 
                     Text(
-                        text = "СЕТЕВЫЕ ЛОГИ",
+                        text = stringResource(R.string.network_logs_title),
                         color = NierDark,
                         fontFamily = RajdhaniFamily,
                         fontWeight = FontWeight.Bold,
@@ -175,8 +177,8 @@ fun NetworkLogsBottomSheet(
                                     scope.launch(Dispatchers.IO) {
                                         NetworkLogger.logInfo(
                                             tag = "UPDATE",
-                                            message = "Проверка обновлений…",
-                                            details = "Запрос к GitHub Releases API"
+                                            message = context.getString(R.string.logs_checking_updates),
+                                            details = context.getString(R.string.logs_update_request_details)
                                         )
                                         try {
                                             val repo = UpdateRepository.getInstance(context)
@@ -184,8 +186,8 @@ fun NetworkLogsBottomSheet(
                                             if (info != null) {
                                                 NetworkLogger.logSuccess(
                                                     tag = "UPDATE",
-                                                    message = "Доступна версия ${info.version}",
-                                                    details = "APK: ${info.apkUrl}\nРазмер: ${info.apkSize / 1_048_576.0} МБ\n\nЧто нового:\n${info.changelog}"
+                                                    message = context.getString(R.string.logs_update_available_fmt, info.version),
+                                                    details = "APK: ${info.apkUrl}\n${context.getString(R.string.downloads_device_used)}: ${info.apkSize / 1_048_576.0} MB\n\n${context.getString(R.string.version_changelog_title)}:\n${info.changelog}"
                                                 )
                                                 withContext(Dispatchers.Main) {
                                                     updateViewModel?.setUpdateAvailable(info)
@@ -193,13 +195,13 @@ fun NetworkLogsBottomSheet(
                                             } else {
                                                 NetworkLogger.logInfo(
                                                     tag = "UPDATE",
-                                                    message = "Обновлений нет — установлена актуальная версия"
+                                                    message = context.getString(R.string.logs_update_none)
                                                 )
                                             }
                                         } catch (e: Exception) {
                                             NetworkLogger.logError(
                                                 tag = "UPDATE",
-                                                message = "Ошибка проверки обновлений",
+                                                message = context.getString(R.string.logs_update_error),
                                                 error = e
                                             )
                                         } finally {
@@ -219,7 +221,7 @@ fun NetworkLogsBottomSheet(
                         } else {
                             Icon(
                                 imageVector = Icons.Default.SystemUpdate,
-                                contentDescription = "Проверить обновления",
+                                contentDescription = stringResource(R.string.action_check_updates),
                                 tint = NierDark,
                                 modifier = Modifier.size(15.dp)
                             )
@@ -237,7 +239,7 @@ fun NetworkLogsBottomSheet(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = "Закрыть",
+                            contentDescription = stringResource(R.string.action_close),
                             tint = NierDark,
                             modifier = Modifier.size(15.dp)
                         )
@@ -263,9 +265,9 @@ fun NetworkLogsBottomSheet(
                                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                 val clip = ClipData.newPlainText("NyEIOS Network Logs", formatted)
                                 clipboard.setPrimaryClip(clip)
-                                Toast.makeText(context, "Логи скопированы в буфер", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.network_logs_copied_toast), Toast.LENGTH_SHORT).show()
                             } else {
-                                Toast.makeText(context, "Логи пусты", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.logs_empty_toast), Toast.LENGTH_SHORT).show()
                             }
                         }
                         .padding(vertical = 7.dp),
@@ -282,7 +284,7 @@ fun NetworkLogsBottomSheet(
                             tint = NierDark
                         )
                         Text(
-                            text = "КОПИРОВАТЬ ВСЁ",
+                            text = stringResource(R.string.action_copy_all),
                             fontFamily = ShareTechMonoFamily,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
@@ -299,7 +301,7 @@ fun NetworkLogsBottomSheet(
                         .background(NierPanelAlt)
                         .clickable {
                             NetworkLogger.clear()
-                            Toast.makeText(context, "Журнал очищен", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.network_logs_cleared_toast), Toast.LENGTH_SHORT).show()
                         }
                         .padding(vertical = 7.dp),
                     contentAlignment = Alignment.Center
@@ -315,7 +317,7 @@ fun NetworkLogsBottomSheet(
                             tint = NierRed
                         )
                         Text(
-                            text = "ОЧИСТИТЬ",
+                            text = stringResource(R.string.action_clear),
                             fontFamily = ShareTechMonoFamily,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
@@ -356,7 +358,7 @@ fun NetworkLogsBottomSheet(
                         }
 
                         Text(
-                            text = "СЕТЕВЫХ ЗАПРОСОВ ПОКА НЕТ",
+                            text = stringResource(R.string.network_logs_empty_title),
                             color = NierDark,
                             fontFamily = RajdhaniFamily,
                             fontWeight = FontWeight.Bold,
@@ -365,7 +367,7 @@ fun NetworkLogsBottomSheet(
                         )
 
                         Text(
-                            text = "Журнал запросов начнет наполняться при синхронизации расписания, Живой ленты или учебного плана.",
+                            text = stringResource(R.string.network_logs_empty_desc),
                             color = NierDim,
                             fontFamily = ShareTechMonoFamily,
                             fontSize = 11.sp,
@@ -409,7 +411,7 @@ private fun LogEntryCard(entry: NetworkLogEntry, isAlt: Boolean) {
         NetworkLogLevel.REQUEST -> Pair(NierBlue, entry.tag.ifEmpty { "REQ" })
         NetworkLogLevel.RESPONSE -> Pair(NierGreen, entry.tag.ifEmpty { "RES" })
         NetworkLogLevel.SUCCESS -> Pair(NierGreen, entry.tag.ifEmpty { "OK" })
-        NetworkLogLevel.WARNING -> Pair(NierAmber, entry.tag.ifEmpty { "200 ПУСТО" })
+        NetworkLogLevel.WARNING -> Pair(NierAmber, entry.tag.ifEmpty { context.getString(R.string.log_badge_degraded) })
         NetworkLogLevel.ERROR -> Pair(NierRed, entry.tag.ifEmpty { "ERR" })
         NetworkLogLevel.INFO -> Pair(NierAmber, entry.tag.ifEmpty { "INFO" })
     }
@@ -499,14 +501,14 @@ private fun LogEntryCard(entry: NetworkLogEntry, isAlt: Boolean) {
                             val text = entry.rawResponse.orEmpty()
                             val clip = ClipData.newPlainText("NyEIOS Raw Response", text)
                             clipboard.setPrimaryClip(clip)
-                            Toast.makeText(context, if (text.isEmpty()) "Ответ сервера пуст" else "Raw ответ скопирован", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, if (text.isEmpty()) context.getString(R.string.network_raw_response_empty) else context.getString(R.string.network_raw_response_copied), Toast.LENGTH_SHORT).show()
                         }
                         .padding(4.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.ContentCopy,
-                        contentDescription = "Скопировать raw ответ сервера",
+                        contentDescription = stringResource(R.string.network_copy_raw_desc),
                         tint = NierBlue,
                         modifier = Modifier.size(16.dp)
                     )

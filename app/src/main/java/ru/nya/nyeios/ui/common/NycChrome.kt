@@ -194,7 +194,7 @@ fun NycTopBar(
                         color = Color(0xFF46E08C)
                     )
                     Text(
-                        text = "Синхр. ленты...",
+                        text = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.feed_syncing),
                         fontFamily = NycMonoFamily,
                         fontSize = 9.5.sp,
                         color = Color(0xFF46E08C)
@@ -222,7 +222,7 @@ fun NycTopBar(
             NycIconButton(
                 onClick = onDownloads,
                 badgeCount = downloadCount,
-                contentDescription = "Загрузки"
+                contentDescription = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.downloads_title)
             ) {
                 Icon(
                     imageVector = Icons.Default.FileDownload,
@@ -243,7 +243,7 @@ fun NycTopBar(
         ) {
             Icon(
                 imageVector = Icons.Default.AccountCircle,
-                contentDescription = "Профиль",
+                contentDescription = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.profile_title),
                 tint = if (isLoggedIn) Color(0xFF46E08C) else muted,
                 modifier = Modifier.size(20.dp)
             )
@@ -286,7 +286,7 @@ fun NycTopBar(
             ) {
                 Icon(
                     imageVector = Icons.Default.Refresh,
-                    contentDescription = "Обновить",
+                    contentDescription = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.action_refresh),
                     tint = if (isRefreshing) NycCyan else muted,
                     modifier = Modifier
                         .size(20.dp)

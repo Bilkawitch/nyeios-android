@@ -33,6 +33,9 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
+import ru.nya.nyeios.R
+import ru.nya.nyeios.ui.language.typewriterText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -220,7 +223,7 @@ private fun GeneralSettingsContent(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         // ── 01. ПОДКЛЮЧЕНИЕ К СЕРВЕРУ ЭИОС ───────────────────────────────
-        SectionHeader(title = "[ 01 · СВЯЗЬ С СЕРВЕРОМ EIOS.GUKOLOMNA.RU ]")
+        SectionHeader(title = stringResource(R.string.settings_server_conn_title))
 
         NierCard {
             Column(
@@ -229,9 +232,9 @@ private fun GeneralSettingsContent(
             ) {
                 // Host info
                 DiagnosticRow(
-                    label = "СЕРВЕР",
+                    label = stringResource(R.string.settings_server_label),
                     value = "eios.gukolomna.ru",
-                    subValue = "IP: 87.242.111.49:443 // РОСТЕЛЕКОМ, Г. КОЛОМНА"
+                    subValue = stringResource(R.string.settings_server_ip_subvalue)
                 )
 
                 // Ping Section
@@ -242,7 +245,7 @@ private fun GeneralSettingsContent(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "ПИНГ (TCP RTT)",
+                            text = stringResource(R.string.settings_ping_label),
                             color = NierDim,
                             fontSize = 10.sp,
                             fontFamily = RajdhaniFamily,
@@ -262,7 +265,7 @@ private fun GeneralSettingsContent(
                                         color = NierBlue
                                     )
                                     Text(
-                                        text = "ЗАМЕР СЕТЕВОЙ ЗАДЕРЖКИ...",
+                                        text = stringResource(R.string.settings_ping_measuring),
                                         color = NierBlue,
                                         fontSize = 12.sp,
                                         fontFamily = ShareTechMonoFamily
@@ -276,7 +279,7 @@ private fun GeneralSettingsContent(
                                     else -> NierRed
                                 }
                                 Text(
-                                    text = "${ping.latencyMs} мс",
+                                    text = stringResource(R.string.settings_ms_fmt, ping.latencyMs),
                                     color = pingColor,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
@@ -285,7 +288,7 @@ private fun GeneralSettingsContent(
                             }
                             is PingResult.Error -> {
                                 Text(
-                                    text = "ОШИБКА: ${ping.message}",
+                                    text = stringResource(R.string.settings_ping_error_fmt, ping.message),
                                     color = NierRed,
                                     fontSize = 12.sp,
                                     fontFamily = ShareTechMonoFamily
@@ -293,7 +296,7 @@ private fun GeneralSettingsContent(
                             }
                             is PingResult.Idle -> {
                                 Text(
-                                    text = "— (НЕ ЗАМЕРЯЛСЯ)",
+                                    text = stringResource(R.string.settings_ping_idle),
                                     color = NierDim,
                                     fontSize = 12.sp,
                                     fontFamily = ShareTechMonoFamily
@@ -304,7 +307,7 @@ private fun GeneralSettingsContent(
 
                     // Button to measure ping
                     NieROutlineButton(
-                        text = if (uiState.isMeasuringPing) "ЗАМЕР..." else "ЗАМЕРИТЬ",
+                        text = if (uiState.isMeasuringPing) stringResource(R.string.settings_action_measuring) else stringResource(R.string.settings_action_measure),
                         enabled = !uiState.isMeasuringPing,
                         color = NierBlue,
                         onClick = onMeasurePing
@@ -336,7 +339,7 @@ private fun GeneralSettingsContent(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "ДИАГНОСТИКА ЭНДПОИНТОВ",
+                            text = stringResource(R.string.settings_endpoints_diag_title),
                             color = NierDim,
                             fontSize = 10.sp,
                             fontFamily = RajdhaniFamily,
@@ -344,7 +347,7 @@ private fun GeneralSettingsContent(
                             letterSpacing = 0.5.sp
                         )
                         Text(
-                            text = "Проверка доступности разделов сайта",
+                            text = stringResource(R.string.settings_endpoints_diag_desc),
                             color = NierDarkSecondary,
                             fontSize = 11.sp,
                             fontFamily = RajdhaniFamily
@@ -352,7 +355,7 @@ private fun GeneralSettingsContent(
                     }
 
                     NieROutlineButton(
-                        text = if (uiState.isCheckingEndpoints) "ПРОВЕРКА..." else "ПРОВЕРИТЬ",
+                        text = if (uiState.isCheckingEndpoints) stringResource(R.string.settings_action_checking) else stringResource(R.string.settings_action_check),
                         enabled = !uiState.isCheckingEndpoints,
                         color = NierBlue,
                         onClick = onCheckEndpoints
@@ -371,7 +374,7 @@ private fun GeneralSettingsContent(
         }
 
         // ── 02. РЕЙТ-ЛИМИТ GITHUB API ─────────────────────────────────────
-        SectionHeader(title = "[ 02 · ЛИМИТ ЗАПРОСОВ GITHUB API ]")
+        SectionHeader(title = stringResource(R.string.settings_github_limit_title))
 
         NierCard {
             Column(
@@ -382,13 +385,13 @@ private fun GeneralSettingsContent(
                 val resetMs = uiState.githubRateLimit.resetTimeMs
 
                 DiagnosticRow(
-                    label = "ОСТАТОК КВОТЫ",
-                    value = if (remaining != null) "$remaining / 60 ЗАПРОСОВ" else "60 / 60 (ПРОВЕРКА ЕЩЁ НЕ ВЫПОЛНЯЛАСЬ)",
+                    label = stringResource(R.string.settings_quota_remaining_label),
+                    value = if (remaining != null) stringResource(R.string.settings_quota_requests_fmt, remaining) else stringResource(R.string.settings_quota_not_checked),
                     subValue = if (resetMs != null && resetMs > System.currentTimeMillis()) {
                         val minsLeft = maxOf(1, ((resetMs - System.currentTimeMillis()) / 60000).toInt())
-                        "Сброс окна квоты GitHub через ~$minsLeft мин."
+                        stringResource(R.string.settings_quota_reset_fmt, minsLeft)
                     } else {
-                        "Сохранено с последнего выполненного запроса к API обновлений"
+                        stringResource(R.string.settings_quota_sub_default)
                     },
                     valueColor = when {
                         remaining == null -> NierDark
@@ -406,7 +409,7 @@ private fun GeneralSettingsContent(
         }
 
         // ── 03. IP УСТРОЙСТВА И СЕТЕВОЙ ИНТЕРФЕЙС ─────────────────────────
-        SectionHeader(title = "[ 03 · IP УСТРОЙСТВА И СЕТЕВОЙ ИНТЕРФЕЙС ]")
+        SectionHeader(title = stringResource(R.string.settings_ip_section_title))
 
         NierCard {
             Column(
@@ -421,7 +424,7 @@ private fun GeneralSettingsContent(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "ИСХОДЯЩИЙ IP (WAN)",
+                            text = stringResource(R.string.settings_wan_ip_label),
                             color = NierDim,
                             fontSize = 10.sp,
                             fontFamily = RajdhaniFamily,
@@ -430,7 +433,7 @@ private fun GeneralSettingsContent(
                         )
 
                         Text(
-                            text = uiState.externalIp ?: if (uiState.isFetchingIp) "ОПРЕДЕЛЕНИЕ..." else "НЕ ОПРЕДЕЛЕН",
+                            text = uiState.externalIp ?: if (uiState.isFetchingIp) stringResource(R.string.settings_detecting) else stringResource(R.string.settings_not_detected),
                             color = NierDark,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
@@ -438,7 +441,7 @@ private fun GeneralSettingsContent(
                         )
 
                         Text(
-                            text = "Адрес, с которого отправляются запросы на ЭИОС и GitHub",
+                            text = stringResource(R.string.settings_wan_ip_desc),
                             color = NierDim,
                             fontSize = 10.sp,
                             lineHeight = 13.sp
@@ -446,7 +449,7 @@ private fun GeneralSettingsContent(
                     }
 
                     NieROutlineButton(
-                        text = if (uiState.isFetchingIp) "..." else "ОБНОВИТЬ",
+                        text = if (uiState.isFetchingIp) "..." else stringResource(R.string.action_refresh).uppercase(),
                         enabled = !uiState.isFetchingIp,
                         color = NierDark,
                         onClick = onRefreshIp
@@ -462,9 +465,9 @@ private fun GeneralSettingsContent(
 
                 // Local IP
                 DiagnosticRow(
-                    label = "ЛОКАЛЬНЫЙ IP (LAN)",
-                    value = uiState.localIp ?: "НЕ ОПРЕДЕЛЕН",
-                    subValue = "Интерфейс локальной подсети устройства"
+                    label = stringResource(R.string.settings_lan_ip_label),
+                    value = uiState.localIp ?: stringResource(R.string.settings_not_detected),
+                    subValue = stringResource(R.string.settings_lan_ip_desc)
                 )
 
                 Box(
@@ -481,7 +484,7 @@ private fun GeneralSettingsContent(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "ТИП СЕТИ",
+                            text = stringResource(R.string.settings_network_type_label),
                             color = NierDim,
                             fontSize = 10.sp,
                             fontFamily = RajdhaniFamily,
@@ -499,7 +502,7 @@ private fun GeneralSettingsContent(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "СТАТУС VPN",
+                            text = stringResource(R.string.settings_vpn_status_label),
                             color = NierDim,
                             fontSize = 10.sp,
                             fontFamily = RajdhaniFamily,
@@ -516,7 +519,7 @@ private fun GeneralSettingsContent(
                                     .background(if (uiState.isVpnActive) NierAmber else NierDim)
                             )
                             Text(
-                                text = if (uiState.isVpnActive) "АКТИВЕН (VPN)" else "ОТКЛЮЧЕН",
+                                text = if (uiState.isVpnActive) stringResource(R.string.settings_vpn_active) else stringResource(R.string.settings_vpn_disabled),
                                 color = if (uiState.isVpnActive) NierAmber else NierDim,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
@@ -549,7 +552,7 @@ private fun GeneralSettingsContent(
                     modifier = Modifier.size(15.dp)
                 )
                 Text(
-                    text = "ПОВТОРИТЬ ДИАГНОСТИКУ СЕТИ",
+                    text = stringResource(R.string.settings_action_repeat_diag),
                     color = NierDark,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
@@ -576,7 +579,7 @@ internal fun ThemeSettingsContent() {
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        SectionHeader(title = "[ 01 · ВЫБОР ТЕМЫ ОФОРМЛЕНИЯ ]")
+        SectionHeader(title = stringResource(R.string.theme_section_title))
 
         NierCard {
             Column(
@@ -585,8 +588,8 @@ internal fun ThemeSettingsContent() {
             ) {
                 // Theme 1: YoRHa Regular
                 ThemeItemRow(
-                    title = "YoRHa Regular (Светлая тема)",
-                    subtitle = "Классическая индустриальная палитра NieR: Automata: песочно-оливковый фон, темный контрастный текст и акценты",
+                    title = stringResource(R.string.theme_regular_title),
+                    subtitle = stringResource(R.string.theme_regular_desc),
                     isSelected = currentTheme == NierThemeMode.REGULAR,
                     onClick = { applyThemeWithRestart(context, NierThemeMode.REGULAR) }
                 )
@@ -600,8 +603,8 @@ internal fun ThemeSettingsContent() {
 
                 // Theme 2: YoRHa Night
                 ThemeItemRow(
-                    title = "YoRHa Night (Темная тема)",
-                    subtitle = "Инвертированная палитра NieR: Automata: глубокий темный фон, теплый бежевый текст и панели",
+                    title = stringResource(R.string.theme_night_title),
+                    subtitle = stringResource(R.string.theme_night_desc),
                     isSelected = currentTheme == NierThemeMode.NIGHT,
                     onClick = { applyThemeWithRestart(context, NierThemeMode.NIGHT) }
                 )
@@ -615,8 +618,8 @@ internal fun ThemeSettingsContent() {
 
                 // Theme 3: YoRHa Black (AMOLED)
                 ThemeItemRow(
-                    title = "YoRHa Black (AMOLED)",
-                    subtitle = "100% черный фон для OLED-экранов с контрастными элементами темного цвета палитры YoRHa",
+                    title = stringResource(R.string.theme_black_title),
+                    subtitle = stringResource(R.string.theme_black_desc),
                     isSelected = currentTheme == NierThemeMode.BLACK,
                     onClick = { applyThemeWithRestart(context, NierThemeMode.BLACK) }
                 )
@@ -630,8 +633,8 @@ internal fun ThemeSettingsContent() {
 
                 // Theme 4: YoRHa Retro
                 ThemeItemRow(
-                    title = "YoRHa Retro (Винтажная тема)",
-                    subtitle = "Аутентичный теплый песочный холст, глубокие чернила и насыщенный синий акцент терминала",
+                    title = stringResource(R.string.theme_retro_title),
+                    subtitle = stringResource(R.string.theme_retro_desc),
                     isSelected = currentTheme == NierThemeMode.RETRO,
                     onClick = { applyThemeWithRestart(context, NierThemeMode.RETRO) }
                 )
@@ -639,8 +642,7 @@ internal fun ThemeSettingsContent() {
         }
 
         // ── 02. ОСОБЫЕ ТЕМЫ ОФОРМЛЕНИЯ ─────────────────────────────────────
-        // Impeccable Operate: повторяет существующие SectionHeader/NierCard/ThemeItemRow,
-        SectionHeader(title = "[ 02 · ОСОБЫЕ ТЕМЫ ОФОРМЛЕНИЯ ]")
+        SectionHeader(title = stringResource(R.string.theme_special_title))
 
         NierCard {
             Column(
@@ -648,8 +650,8 @@ internal fun ThemeSettingsContent() {
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 ThemeItemRow(
-                    title = "NyC-modern (Мягкая тема)",
-                    subtitle = "Скругленная тема по мокапу Night Skeuomorph: циановый акцент и объемные панели",
+                    title = stringResource(R.string.theme_nyc_title),
+                    subtitle = stringResource(R.string.theme_nyc_desc),
                     isSelected = currentTheme == NierThemeMode.NYC_MODERN,
                     onClick = {
                         ThemeManager.setTheme(context, NierThemeMode.NYC_MODERN)
@@ -659,13 +661,13 @@ internal fun ThemeSettingsContent() {
         }
 
         // ── 03. ИНТЕРФЕЙС ─────────────────────────────────────────────────
-        SectionHeader(title = "[ 03 · ИНТЕРФЕЙС ]")
+        SectionHeader(title = stringResource(R.string.theme_ui_section_title))
 
         NierCard {
             Column {
                 NierToggleRow(
-                    title = "Крупный шрифт расписания",
-                    subtitle = "ПРАВИЛО 1 СЕКУНДЫ · +2 DP",
+                    title = stringResource(R.string.theme_large_font_title),
+                    subtitle = stringResource(R.string.theme_large_font_desc),
                     checked = UiPreferencesManager.largeScheduleFont,
                     onCheckedChange = { UiPreferencesManager.setLargeScheduleFont(context, it) }
                 )
@@ -673,8 +675,8 @@ internal fun ThemeSettingsContent() {
                 Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(NierBorderLight))
 
                 NierToggleRow(
-                    title = "Анимации переходов",
-                    subtitle = "ШТОРКИ, МАРШРУТЫ, ШЕВРОНЫ",
+                    title = stringResource(R.string.theme_animations_title),
+                    subtitle = stringResource(R.string.theme_animations_desc),
                     checked = UiPreferencesManager.animationsEnabled,
                     onCheckedChange = { UiPreferencesManager.setAnimationsEnabled(context, it) }
                 )
@@ -682,8 +684,8 @@ internal fun ThemeSettingsContent() {
                 Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(NierBorderLight))
 
                 NierToggleRow(
-                    title = "Усиленный контраст рамок",
-                    subtitle = "1 DP → 2 DP BORDER",
+                    title = stringResource(R.string.theme_thick_borders_title),
+                    subtitle = stringResource(R.string.theme_thick_borders_desc),
                     checked = UiPreferencesManager.thickBorders,
                     onCheckedChange = { UiPreferencesManager.setThickBorders(context, it) }
                 )
@@ -691,8 +693,8 @@ internal fun ThemeSettingsContent() {
                 Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(NierBorderLight))
 
                 NierToggleRow(
-                    title = "Секунды в индикаторе свежести",
-                    subtitle = "ФОРМАТ ЧЧ:ММ:СС",
+                    title = stringResource(R.string.theme_show_seconds_title),
+                    subtitle = stringResource(R.string.theme_show_seconds_desc),
                     checked = UiPreferencesManager.showSecondsInSync,
                     onCheckedChange = { UiPreferencesManager.setShowSecondsInSync(context, it) }
                 )
@@ -700,7 +702,7 @@ internal fun ThemeSettingsContent() {
         }
 
         // ── 04. ПЛОТНОСТЬ СПИСКОВ ─────────────────────────────────────────
-        SectionHeader(title = "[ 04 · ПЛОТНОСТЬ СПИСКОВ ]")
+        SectionHeader(title = stringResource(R.string.theme_density_section_title))
 
         NierCard {
             Row(
@@ -711,6 +713,11 @@ internal fun ThemeSettingsContent() {
             ) {
                 ListDensityMode.entries.forEach { density ->
                     val isSelected = density == UiPreferencesManager.listDensity
+                    val densityTitle = when (density) {
+                        ListDensityMode.COMPACT -> stringResource(R.string.density_compact)
+                        ListDensityMode.STANDARD -> stringResource(R.string.density_standard)
+                        ListDensityMode.SPACIOUS -> stringResource(R.string.density_spacious)
+                    }
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -725,7 +732,7 @@ internal fun ThemeSettingsContent() {
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = density.title,
+                            text = densityTitle,
                             color = if (isSelected) Color.White else NierDark,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
@@ -959,7 +966,7 @@ private fun ThemeItemRow(
                             .padding(horizontal = 6.dp, vertical = 1.dp)
                     ) {
                         Text(
-                            text = "АКТИВНО",
+                            text = stringResource(R.string.badge_active),
                             color = NierBg,
                             fontSize = 8.sp,
                             fontWeight = FontWeight.Bold,
@@ -982,9 +989,9 @@ private fun ThemeItemRow(
 @Composable
 private fun VpnRateLimitWarningBanner(isVpnActive: Boolean) {
     val warningText = if (isVpnActive) {
-        "Осталось мало запросов на проверку наличия обновлений, при 0 NyEIOS не сможет проверять наличие и скачивать обновления. У вас включен VPN, что скорее всего и является причиной."
+        stringResource(R.string.settings_vpn_warning_vpn)
     } else {
-        "Осталось мало запросов на проверку наличия обновлений, при 0 NyEIOS не сможет проверять наличие и скачивать обновления. Может быть, вы сидите за роутером с VPN?"
+        stringResource(R.string.settings_vpn_warning_no_vpn)
     }
 
     Box(
@@ -1013,7 +1020,7 @@ private fun VpnRateLimitWarningBanner(isVpnActive: Boolean) {
 
             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(
-                    text = "ВНИМАНИЕ // НИЗКИЙ ОСТАТОК КВОТЫ",
+                    text = stringResource(R.string.settings_vpn_warning_title),
                     color = NierDark,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
@@ -1036,7 +1043,7 @@ private fun VpnRateLimitWarningBanner(isVpnActive: Boolean) {
 private fun LastGetRow(getInfo: EiosLastGetInfo) {
     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
         Text(
-            text = "ВРЕМЯ ПОСЛЕДНЕГО GET С САЙТА",
+            text = stringResource(R.string.settings_last_get_time),
             color = NierDim,
             fontSize = 10.sp,
             fontFamily = RajdhaniFamily,
@@ -1054,7 +1061,7 @@ private fun LastGetRow(getInfo: EiosLastGetInfo) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = "${getInfo.durationMs} мс",
+                    text = stringResource(R.string.settings_ms_fmt, getInfo.durationMs),
                     color = NierDark,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
@@ -1072,7 +1079,7 @@ private fun LastGetRow(getInfo: EiosLastGetInfo) {
 
             if (!getInfo.path.isNullOrEmpty()) {
                 Text(
-                    text = "Запрос: ${getInfo.path}",
+                    text = "${stringResource(R.string.settings_request_label)} ${getInfo.path}",
                     color = NierDim,
                     fontSize = 10.sp,
                     fontFamily = ShareTechMonoFamily,
@@ -1081,7 +1088,7 @@ private fun LastGetRow(getInfo: EiosLastGetInfo) {
             }
         } else {
             Text(
-                text = "— (В ТЕКУЩЕЙ СЕССИИ ЗАПРОСОВ НЕ БЫЛО)",
+                text = stringResource(R.string.settings_last_get_none),
                 color = NierDim,
                 fontSize = 12.sp,
                 fontFamily = ShareTechMonoFamily
@@ -1097,13 +1104,13 @@ private fun EndpointHealthRow(item: EndpointHealthItem) {
     val context = LocalContext.current
 
     val (statusColor, statusBadge) = when (item.status) {
-        EndpointStatus.IDLE -> Pair(NierDim, "НЕ ПРОВЕРЯЛСЯ")
-        EndpointStatus.PENDING -> Pair(NierDim, "В ОЧЕРЕДИ")
-        EndpointStatus.CHECKING -> Pair(NierBlue, "ПРОВЕРКА...")
-        EndpointStatus.OK -> Pair(NierGreen, "ДОСТУПЕН")
-        EndpointStatus.DEGRADED -> Pair(NierAmber, "200 СБОЙ / ПУСТО")
-        EndpointStatus.AUTH_REQUIRED -> Pair(NierAmber, "ТРЕБУЕТСЯ ВХОД")
-        EndpointStatus.ERROR -> Pair(NierRed, "ОШИБКА")
+        EndpointStatus.IDLE -> Pair(NierDim, stringResource(R.string.settings_endpoint_not_checked))
+        EndpointStatus.PENDING -> Pair(NierDim, stringResource(R.string.settings_endpoint_pending))
+        EndpointStatus.CHECKING -> Pair(NierBlue, stringResource(R.string.settings_endpoint_checking))
+        EndpointStatus.OK -> Pair(NierGreen, stringResource(R.string.settings_endpoint_available))
+        EndpointStatus.DEGRADED -> Pair(NierAmber, stringResource(R.string.settings_endpoint_degraded))
+        EndpointStatus.AUTH_REQUIRED -> Pair(NierAmber, stringResource(R.string.settings_endpoint_auth_required))
+        EndpointStatus.ERROR -> Pair(NierRed, stringResource(R.string.settings_endpoint_error))
     }
 
     Column(
@@ -1121,8 +1128,14 @@ private fun EndpointHealthRow(item: EndpointHealthItem) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                val displayName = when (item.id) {
+                    "timetable" -> stringResource(R.string.tab_schedule).uppercase()
+                    "feed" -> stringResource(R.string.tab_feed).uppercase()
+                    "curriculum" -> stringResource(R.string.settings_endpoint_curriculum)
+                    else -> item.name
+                }
                 Text(
-                    text = item.name,
+                    text = displayName,
                     fontFamily = RajdhaniFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
@@ -1159,7 +1172,7 @@ private fun EndpointHealthRow(item: EndpointHealthItem) {
 
                 Icon(
                     imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                    contentDescription = if (isExpanded) "Свернуть лог" else "Развернуть лог",
+                    contentDescription = null,
                     tint = NierDim,
                     modifier = Modifier.size(16.dp)
                 )
@@ -1186,7 +1199,7 @@ private fun EndpointHealthRow(item: EndpointHealthItem) {
                 )
                 if (item.latencyMs != null) {
                     Text(
-                        text = "${item.latencyMs} мс",
+                        text = stringResource(R.string.settings_ms_fmt, item.latencyMs),
                         fontFamily = ShareTechMonoFamily,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
@@ -1213,7 +1226,7 @@ private fun EndpointHealthRow(item: EndpointHealthItem) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "[ ТЕХНИЧЕСКИЙ ЖУРНАЛ ЗАПРОСА ]",
+                        text = stringResource(R.string.settings_raw_log_header),
                         fontFamily = RajdhaniFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 10.sp,
@@ -1223,20 +1236,20 @@ private fun EndpointHealthRow(item: EndpointHealthItem) {
 
                     if (!item.rawLog.isNullOrEmpty()) {
                         NieROutlineButton(
-                            text = "СКОПИРОВАТЬ ЛОГ",
+                            text = stringResource(R.string.settings_copy_log_btn),
                             color = NierBlue,
                             onClick = {
                                 clipboardManager.setText(AnnotatedString(item.rawLog))
-                                Toast.makeText(context, "Лог скопирован в буфер", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.settings_log_copied_toast), Toast.LENGTH_SHORT).show()
                             }
                         )
                     }
                 }
 
                 val logText = item.rawLog ?: when (item.status) {
-                    EndpointStatus.CHECKING -> "Запрос выполняется в данный момент...\nОжидайте ответа сервера (таймаут 15 сек)."
-                    EndpointStatus.PENDING -> "Запрос находится в очереди.\nБудет запущен сразу после завершения текущего теста."
-                    else -> "Диагностика этого эндпоинта ещё не запускалась.\nНажмите кнопку «ПРОВЕРИТЬ» выше для отправки тестового запроса."
+                    EndpointStatus.CHECKING -> stringResource(R.string.settings_endpoint_diag_checking_msg)
+                    EndpointStatus.PENDING -> stringResource(R.string.settings_endpoint_diag_pending_msg)
+                    else -> stringResource(R.string.settings_endpoint_diag_idle_msg)
                 }
 
                 Box(
@@ -1383,7 +1396,7 @@ internal fun VersionSettingsContent(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         // ── 01. СВЕДЕНИЯ О ВЕРСИИ СИСТЕМЫ ─────────────────────────────────
-        SectionHeader(title = "[ 01 · СВЕДЕНИЯ О ВЕРСИИ СИСТЕМЫ ]")
+        SectionHeader(title = typewriterText(stringResource(R.string.version_section_title), 0.23f))
 
         NierCard {
             Column(
@@ -1424,7 +1437,14 @@ internal fun VersionSettingsContent(
                             letterSpacing = 0.5.sp
                         )
                         Text(
-                            text = "ВЕРСИЯ: v${uiState.currentVersion.ifEmpty { "0.2.3" }} (BUILD 17)",
+                            text = typewriterText(
+                                stringResource(
+                                    R.string.version_label_fmt,
+                                    uiState.currentVersion.ifEmpty { "0.2.3" },
+                                    17
+                                ),
+                                0.25f
+                            ),
                             color = NierDim,
                             fontSize = 12.sp,
                             fontFamily = ShareTechMonoFamily
@@ -1440,7 +1460,10 @@ internal fun VersionSettingsContent(
                                     .padding(horizontal = 6.dp, vertical = 2.dp)
                             ) {
                                 Text(
-                                    text = "ДОСТУПНА v${update.version}",
+                                    text = typewriterText(
+                                        stringResource(R.string.version_available_fmt, update.version),
+                                        0.27f
+                                    ),
                                     color = NierAmber,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
@@ -1457,7 +1480,10 @@ internal fun VersionSettingsContent(
                                     .padding(horizontal = 6.dp, vertical = 2.dp)
                             ) {
                                 Text(
-                                    text = "АКТУАЛЬНАЯ ВЕРСИЯ",
+                                    text = typewriterText(
+                                        stringResource(R.string.version_latest_badge),
+                                        0.27f
+                                    ),
                                     color = NierGreen,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
@@ -1487,7 +1513,13 @@ internal fun VersionSettingsContent(
                     ) {
                         val rem = uiState.githubRateLimit.remaining
                         Text(
-                            text = "GITHUB API КВОТА: ${if (rem != null) "$rem/60" else "60/60"}",
+                            text = typewriterText(
+                                stringResource(
+                                    R.string.version_quota_fmt,
+                                    if (rem != null) "$rem/60" else "60/60"
+                                ),
+                                0.29f
+                            ),
                             color = NierDim,
                             fontSize = 10.sp,
                             fontFamily = ShareTechMonoFamily
@@ -1504,14 +1536,17 @@ internal fun VersionSettingsContent(
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         NieROutlineButton(
-                            text = if (uiState.isCheckingUpdate) "ПРОВЕРКА..." else "ПРОВЕРИТЬ",
+                            text = if (uiState.isCheckingUpdate)
+                                stringResource(R.string.version_checking_btn)
+                            else
+                                stringResource(R.string.version_check_btn),
                             enabled = !uiState.isCheckingUpdate,
                             color = NierBlue,
                             onClick = onCheckForUpdates
                         )
                         if (uiState.availableUpdate != null) {
                             NieROutlineButton(
-                                text = "СКАЧАТЬ",
+                                text = stringResource(R.string.version_download_btn),
                                 color = NierGreen,
                                 onClick = { onDownloadUpdate(uiState.availableUpdate) }
                             )
@@ -1522,7 +1557,7 @@ internal fun VersionSettingsContent(
         }
 
         // ── 02. ИСТОРИЯ ИЗМЕНЕНИЙ // CHANGELOG ────────────────────────────
-        SectionHeader(title = "[ 02 · ИСТОРИЯ ИЗМЕНЕНИЙ // CHANGELOG ]")
+        SectionHeader(title = typewriterText(stringResource(R.string.version_changelog_title), 0.31f))
 
         ChangelogHistory.releases.forEach { release ->
             val isCurrentInstalled = release.version == uiState.currentVersion || (uiState.currentVersion.isEmpty() && release.isLatest)
@@ -1572,7 +1607,10 @@ internal fun VersionSettingsContent(
                                         .padding(horizontal = 6.dp, vertical = 1.dp)
                                 ) {
                                     Text(
-                                        text = "УСТАНОВЛЕНА",
+                                        text = typewriterText(
+                                            stringResource(R.string.version_installed_badge),
+                                            0.33f
+                                        ),
                                         color = NierSelectionText,
                                         fontSize = 8.sp,
                                         fontWeight = FontWeight.Bold,

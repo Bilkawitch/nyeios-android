@@ -38,6 +38,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.ui.res.stringResource
+import ru.nya.nyeios.R
+import ru.nya.nyeios.ui.common.localizeErrorMessage
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -144,7 +147,7 @@ fun LoginBottomSheet(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "[ 01 ]  АВТОРИЗАЦИЯ ПОРТАЛА",
+                            text = stringResource(R.string.login_portal_auth_section),
                             fontFamily = RajdhaniFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
@@ -184,7 +187,7 @@ fun LoginBottomSheet(
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Text(
-                                        text = "Вы авторизованы: ${authSession.username.ifEmpty { "Активная сессия" }}",
+                                        text = stringResource(R.string.login_logged_in_fmt, authSession.username.ifEmpty { stringResource(R.string.login_active_session) }),
                                         fontFamily = ShareTechMonoFamily,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 11.sp,
@@ -202,7 +205,7 @@ fun LoginBottomSheet(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "ВЫЙТИ ИЗ АККАУНТА",
+                                    text = stringResource(R.string.login_action_logout),
                                     color = NierRed,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
@@ -215,7 +218,7 @@ fun LoginBottomSheet(
                         // Username field
                         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text(
-                                text = "ЛОГИН ЭИОС",
+                                text = stringResource(R.string.login_username_label),
                                 fontSize = 9.sp,
                                 letterSpacing = 1.sp,
                                 fontFamily = ShareTechMonoFamily,
@@ -254,7 +257,7 @@ fun LoginBottomSheet(
                         // Password field
                         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text(
-                                text = "ПАРОЛЬ",
+                                text = stringResource(R.string.login_password_label),
                                 fontSize = 9.sp,
                                 letterSpacing = 1.sp,
                                 fontFamily = ShareTechMonoFamily,
@@ -269,7 +272,7 @@ fun LoginBottomSheet(
                                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                         Icon(
                                             imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                            contentDescription = if (passwordVisible) "Скрыть пароль" else "Показать пароль",
+                                            contentDescription = if (passwordVisible) stringResource(R.string.login_hide_password) else stringResource(R.string.login_show_password),
                                             tint = NierDim,
                                             modifier = Modifier.size(16.dp)
                                         )
@@ -326,7 +329,7 @@ fun LoginBottomSheet(
                                 )
                             } else {
                                 Text(
-                                    text = if (authSession.isLoggedIn) "ОБНОВИТЬ СЕССИЮ" else "ВОЙТИ В ЭИОС",
+                                    text = if (authSession.isLoggedIn) stringResource(R.string.login_refresh_session) else stringResource(R.string.login_submit),
                                     fontFamily = RajdhaniFamily,
                                     fontWeight = FontWeight.Bold,
                                     letterSpacing = 1.5.sp,
@@ -338,7 +341,7 @@ fun LoginBottomSheet(
 
                         if (errorMessage != null) {
                             Text(
-                                text = errorMessage,
+                                text = localizeErrorMessage(errorMessage),
                                 color = NierRed,
                                 fontSize = 11.sp,
                                 fontFamily = ShareTechMonoFamily
@@ -368,7 +371,7 @@ fun LoginBottomSheet(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "[ 02 ]  ПРОВЕРКА СОЕДИНЕНИЯ",
+                            text = stringResource(R.string.login_conn_test_section),
                             fontFamily = RajdhaniFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
@@ -441,11 +444,12 @@ fun LoginBottomSheet(
                             height = 6.dp
                         )
 
+                        val msUnit = stringResource(R.string.unit_ms_caps)
                         val rttText = when (val p = pingResult) {
-                            is PingResult.Success -> "TCP RTT ${p.latencyMs} МС"
-                            is PingResult.Measuring -> "TCP RTT ... МС"
+                            is PingResult.Success -> "TCP RTT ${p.latencyMs} $msUnit"
+                            is PingResult.Measuring -> "TCP RTT ... $msUnit"
                             is PingResult.Error -> "TCP RTT ERR"
-                            is PingResult.Idle -> "TCP RTT 98 МС"
+                            is PingResult.Idle -> "TCP RTT 98 $msUnit"
                         }
 
                         Row(

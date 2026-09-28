@@ -47,6 +47,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
+import ru.nya.nyeios.R
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -116,8 +118,9 @@ fun DownloadsBottomSheet(
         }
     }
 
-    var selectedFilter by remember { mutableStateOf("ВСЕ") }
-    val filterChips = remember { listOf("ВСЕ", "PDF", "DOCX", "MP4", "XLSX") }
+    val allLabel = stringResource(R.string.downloads_filter_all)
+    var selectedFilter by remember { mutableStateOf(allLabel) }
+    val filterChips = remember(allLabel) { listOf(allLabel, "PDF", "DOCX", "MP4", "XLSX") }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -167,14 +170,14 @@ fun DownloadsBottomSheet(
 
                     Column {
                         Text(
-                            text = "Менеджер загрузок",
+                            text = stringResource(R.string.downloads_title),
                             color = NierDark,
                             fontFamily = RajdhaniFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp
                         )
                         Text(
-                            text = "ЛОКАЛЬНОЕ ХРАНИЛИЩЕ ЭИОС · ${downloadedFiles.size} ФАЙЛОВ",
+                            text = stringResource(R.string.downloads_storage_fmt, downloadedFiles.size),
                             color = NierDim,
                             fontFamily = ShareTechMonoFamily,
                             fontSize = 9.sp,
@@ -197,7 +200,7 @@ fun DownloadsBottomSheet(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "ОЧИСТИТЬ",
+                                text = stringResource(R.string.action_clear),
                                 color = NierRed,
                                 fontFamily = ShareTechMonoFamily,
                                 fontSize = 9.sp,
@@ -216,7 +219,7 @@ fun DownloadsBottomSheet(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = "Закрыть",
+                            contentDescription = stringResource(R.string.action_close),
                             tint = NierDark,
                             modifier = Modifier.size(16.dp)
                         )
@@ -239,7 +242,7 @@ fun DownloadsBottomSheet(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "ЗАНЯТО НА УСТРОЙСТВЕ",
+                            text = stringResource(R.string.downloads_device_used),
                             fontFamily = ShareTechMonoFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 9.sp,
@@ -247,7 +250,7 @@ fun DownloadsBottomSheet(
                             color = NierDim
                         )
                         Text(
-                            text = "${storageStats.first} МБ / ${storageStats.second} ГБ",
+                            text = stringResource(R.string.downloads_device_usage_fmt, storageStats.first, storageStats.second),
                             fontFamily = ShareTechMonoFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 11.sp,
@@ -298,7 +301,7 @@ fun DownloadsBottomSheet(
             // Active Downloads Section
             if (activeDownloads.isNotEmpty()) {
                 Text(
-                    text = "[ ИДЁТ СКАЧИВАНИЕ: ${activeDownloads.size} ]",
+                    text = stringResource(R.string.downloads_downloading_count_fmt, activeDownloads.size),
                     color = NierBlue,
                     fontFamily = ShareTechMonoFamily,
                     fontSize = 11.sp,
@@ -355,7 +358,7 @@ fun DownloadsBottomSheet(
                         }
 
                         Text(
-                            text = "ФАЙЛОВ ПОКА НЕТ",
+                            text = stringResource(R.string.downloads_empty_title),
                             color = NierDark,
                             fontFamily = RajdhaniFamily,
                             fontWeight = FontWeight.Bold,
@@ -364,7 +367,7 @@ fun DownloadsBottomSheet(
                         )
 
                         Text(
-                            text = "Нажимайте на вложения в Живой ленте — они сохранятся в памяти приложения и будут доступны офлайн.",
+                            text = stringResource(R.string.downloads_empty_desc),
                             color = NierDim,
                             fontFamily = ShareTechMonoFamily,
                             fontSize = 11.sp,
@@ -376,7 +379,7 @@ fun DownloadsBottomSheet(
                 }
             } else if (downloadedFiles.isNotEmpty()) {
                 val filteredFiles = remember(downloadedFiles, selectedFilter) {
-                    if (selectedFilter == "ВСЕ") {
+                    if (selectedFilter == allLabel) {
                         downloadedFiles
                     } else {
                         downloadedFiles.filter { item ->
@@ -402,7 +405,7 @@ fun DownloadsBottomSheet(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "НЕТ ФАЙЛОВ В КАТЕГОРИИ \"$selectedFilter\"",
+                            text = stringResource(R.string.downloads_no_files_category_fmt, selectedFilter),
                             color = NierDim,
                             fontFamily = ShareTechMonoFamily,
                             fontSize = 11.sp,
@@ -445,7 +448,7 @@ fun DownloadsBottomSheet(
             modifier = Modifier.border(1.5.dp, NierDark),
             title = {
                 Text(
-                    text = "УДАЛИТЬ ВСЕ ФАЙЛЫ?",
+                    text = stringResource(R.string.downloads_delete_all_confirm_title),
                     color = NierDark,
                     fontFamily = RajdhaniFamily,
                     fontSize = 16.sp,
@@ -455,7 +458,7 @@ fun DownloadsBottomSheet(
             },
             text = {
                 Text(
-                    text = "Все скачанные вложения (${downloadedFiles.size} шт.) будут удалены из локального хранилища приложения. Вы всегда сможете скачать их заново из Живой ленты.",
+                    text = stringResource(R.string.downloads_delete_all_confirm_desc, downloadedFiles.size),
                     color = NierDarkSecondary,
                     fontFamily = ShareTechMonoFamily,
                     fontSize = 11.sp,
@@ -474,7 +477,7 @@ fun DownloadsBottomSheet(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "УДАЛИТЬ ВСЁ",
+                        text = stringResource(R.string.downloads_delete_all_btn),
                         color = Color.White,
                         fontFamily = ShareTechMonoFamily,
                         fontSize = 11.sp,
@@ -492,7 +495,7 @@ fun DownloadsBottomSheet(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "ОТМЕНА",
+                        text = stringResource(R.string.action_cancel).uppercase(),
                         color = NierDark,
                         fontFamily = ShareTechMonoFamily,
                         fontSize = 11.sp,
@@ -511,9 +514,10 @@ private fun ActiveDownloadItem(
     onCancel: () -> Unit,
     downloadManager: InternalDownloadManager
 ) {
-    val cleanName = remember(url) {
+    val defaultFileName = stringResource(R.string.downloads_file_default)
+    val cleanName = remember(url, defaultFileName) {
         val lastSegment = url.substringAfterLast("/").substringBefore("?")
-        if (lastSegment.isNotEmpty()) downloadManager.sanitizeFileName(lastSegment) else "Файл"
+        if (lastSegment.isNotEmpty()) downloadManager.sanitizeFileName(lastSegment) else defaultFileName
     }
 
     Column(
@@ -543,7 +547,7 @@ private fun ActiveDownloadItem(
                     text = if (state.totalBytes > 0) {
                         "${(state.progress * 100).toInt()}% • ${downloadManager.formatFileSize(state.bytesDownloaded)} / ${downloadManager.formatFileSize(state.totalBytes)}"
                     } else {
-                        "Загрузка... ${downloadManager.formatFileSize(state.bytesDownloaded)}"
+                        stringResource(R.string.downloads_loading_progress_fmt, downloadManager.formatFileSize(state.bytesDownloaded))
                     },
                     color = NierDim,
                     fontFamily = ShareTechMonoFamily,
@@ -561,7 +565,7 @@ private fun ActiveDownloadItem(
             ) {
                 Icon(
                     imageVector = Icons.Default.Close,
-                    contentDescription = "Отмена",
+                    contentDescription = stringResource(R.string.action_cancel),
                     tint = NierDark,
                     modifier = Modifier.size(14.dp)
                 )
@@ -674,7 +678,7 @@ private fun DownloadedFileItem(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                    contentDescription = "Открыть",
+                    contentDescription = stringResource(R.string.feed_action_open),
                     tint = NierDark,
                     modifier = Modifier.size(13.dp)
                 )
@@ -691,7 +695,7 @@ private fun DownloadedFileItem(
             ) {
                 Icon(
                     imageVector = Icons.Default.Share,
-                    contentDescription = "Поделиться",
+                    contentDescription = stringResource(R.string.feed_action_share),
                     tint = NierDark,
                     modifier = Modifier.size(13.dp)
                 )
@@ -708,7 +712,7 @@ private fun DownloadedFileItem(
             ) {
                 Icon(
                     imageVector = Icons.Default.SaveAlt,
-                    contentDescription = "Сохранить на устройство",
+                    contentDescription = stringResource(R.string.action_save_to_device),
                     tint = NierDark,
                     modifier = Modifier.size(13.dp)
                 )
@@ -725,7 +729,7 @@ private fun DownloadedFileItem(
             ) {
                 Icon(
                     imageVector = Icons.Default.DeleteOutline,
-                    contentDescription = "Удалить",
+                    contentDescription = stringResource(R.string.action_delete),
                     tint = NierRed,
                     modifier = Modifier.size(14.dp)
                 )

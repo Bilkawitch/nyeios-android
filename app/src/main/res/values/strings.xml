@@ -13,18 +13,59 @@
     <string name="settings_tab_version">ВЕРСИЯ</string>
     <string name="settings_tab_language">ЯЗЫК</string>
 
-    <!-- Language Settings -->
+    <!-- Settings: Server Connection -->
+    <string name="settings_server_conn_title">[ 01 · СВЯЗЬ С СЕРВЕРОМ EIOS.GUKOLOMNA.RU ]</string>
+    <string name="settings_server_label">СЕРВЕР</string>
+    <string name="settings_ping_label">ПИНГ (TCP RTT)</string>
+    <string name="settings_action_measure">ЗАМЕРИТЬ</string>
+    <string name="settings_last_get_time">ВРЕМЯ ПОСЛЕДНЕГО GET С САЙТА</string>
+    <string name="settings_request_label">Запрос:</string>
+    <string name="settings_endpoints_diag_title">ДИАГНОСТИКА ЭНДПОИНТОВ</string>
+    <string name="settings_endpoints_diag_desc">Проверка доступности разделов сайта</string>
+    <string name="settings_action_check">ПРОВЕРИТЬ</string>
+    <string name="settings_endpoint_not_checked">НЕ ПРОВЕРЯЛСЯ</string>
+    <string name="settings_endpoint_available">ДОСТУПЕН</string>
+    <string name="settings_endpoint_error">ОШИБКА</string>
+    <string name="settings_action_repeat_diag">ПОВТОРИТЬ ДИАГНОСТИКУ СЕТИ</string>
+    <string name="settings_external_ip_title">ВНЕШНИЙ IP-АДРЕС</string>
+    <string name="settings_vpn_active">АКТИВЕН (VPN)</string>
+    <string name="settings_vpn_disabled">ОТКЛЮЧЕН</string>
+
+    <!-- Settings: Themes -->
+    <string name="theme_section_title">[ 01 · ВЫБОР ТЕМЫ ОФОРМЛЕНИЯ ]</string>
+    <string name="theme_special_title">[ 02 · ОСОБЫЕ ТЕМЫ ОФОРМЛЕНИЯ ]</string>
+    <string name="theme_regular_title">YoRHa Regular (Светлая тема)</string>
+    <string name="theme_regular_desc">Классическая индустриальная палитра NieR: Automata: песочно-оливковый фон, темный контрастный текст и акценты</string>
+    <string name="theme_night_title">YoRHa Night (Темная тема)</string>
+    <string name="theme_night_desc">Инвертированная палитра NieR: Automata: глубокий темный фон, теплый бежевый текст и панели</string>
+    <string name="theme_black_title">YoRHa Black (AMOLED)</string>
+    <string name="theme_black_desc">100% черный фон для OLED-экранов с контрастными элементами темного цвета палитры YoRHa</string>
+    <string name="theme_retro_title">YoRHa Retro (Винтажная тема)</string>
+    <string name="theme_retro_desc">Аутентичный теплый песочный холст, глубокие чернила и насыщенный синий акцент терминала</string>
+    <string name="theme_nyc_title">NyC Modern</string>
+    <string name="theme_nyc_desc">Параллельный ультрасовременный темный стиль в духе интерфейсов будущего</string>
+    <string name="badge_active">АКТИВНО</string>
+
+    <!-- Settings: Version -->
+    <string name="version_section_title">[ 01 · ВЕРСИЯ ПРИЛОЖЕНИЯ ]</string>
+    <string name="version_changelog_title">[ 02 · ИСТОРИЯ ИЗМЕНЕНИЙ ]</string>
+    <string name="version_current_label">ТЕКУЩАЯ ВЕРСИЯ</string>
+    <string name="version_up_to_date">УСТАНОВЛЕНА ПОСЛЕДНЯЯ ВЕРСИЯ</string>
+    <string name="version_update_available">ДОСТУПНО ОБНОВЛЕНИЕ</string>
+    <string name="action_download_update">СКАЧАТЬ ОБНОВЛЕНИЕ</string>
+
+    <!-- Settings: Language -->
     <string name="language_settings_title">[ 01 · ВЫБОР ЯЗЫКА ИНТЕРФЕЙСА ]</string>
     <string name="language_system_title">Системный (по умолчанию)</string>
     <string name="language_system_desc">Использовать системный язык устройства</string>
     <string name="language_ru_title">Русский</string>
     <string name="language_ru_desc">Русский язык интерфейса приложения</string>
     <string name="language_en_title">English</string>
-    <string name="language_en_desc">English user interface (в разработке / ready for translation)</string>
+    <string name="language_en_desc">Английский язык интерфейса приложения</string>
     <string name="language_server_note_title">[ 02 · СЕРВЕРНЫЕ ДАННЫЕ И РАСПИСАНИЕ ]</string>
     <string name="language_server_note_desc">Данные учебного процесса (названия дисциплин, ФИО преподавателей, расписание занятий, объявления Живой ленты и оценки БРС) поступают с веб-портала eios.gukolomna.ru и отображаются на оригинальном языке сервера университета.</string>
 
-    <!-- Common Actions -->
+    <!-- Common Actions & Alerts -->
     <string name="action_refresh">Обновить</string>
     <string name="action_copy">Копировать</string>
     <string name="action_copy_all">КОПИРОВАТЬ ВСЁ</string>
@@ -34,31 +75,77 @@
     <string name="action_cancel">Отмена</string>
     <string name="action_close">Закрыть</string>
     <string name="action_retry">Повторить</string>
+    <string name="action_retry_caps">ПОВТОРИТЬ</string>
     <string name="action_check_updates">ПРОВЕРИТЬ ОБНОВЛЕНИЯ</string>
+    <string name="system_alert_caps">СИСТЕМНОЕ ОПОВЕЩЕНИЕ</string>
 
     <!-- Timetable / Schedule Screen -->
     <string name="schedule_current_week">Текущая неделя</string>
     <string name="schedule_prev_week">Предыдущая неделя</string>
     <string name="schedule_next_week">Следующая неделя</string>
     <string name="schedule_week_fmt">Неделя %1$d</string>
+    <string name="schedule_week_offset_fmt">%1$+d нед.</string>
     <string name="schedule_no_lessons_title">НА ЭТОЙ НЕДЕЛЕ ЗАНЯТИЙ НЕТ</string>
     <string name="schedule_no_lessons_desc">В расписании университета нет запланированных пар</string>
     <string name="schedule_empty_day">Пар нет</string>
+    <string name="schedule_empty_day_banner">— ЗАНЯТИЙ НЕТ · СВОБОДНЫЙ ДЕНЬ —</string>
+    <string name="schedule_empty_week_banner">— НА ЭТОЙ НЕДЕЛЕ ЗАНЯТИЙ НЕТ —</string>
     <string name="schedule_break_fmt">ПЕРЕРЫВ %1$d МИН</string>
     <string name="schedule_floor_fmt">%1$d ЭТАЖ</string>
     <string name="schedule_dist_fmt">%1$d М</string>
     <string name="schedule_map_btn">КАРТА</string>
     <string name="schedule_offline_cache">ОФЛАЙН-КЭШ</string>
+    <string name="schedule_cache_badge">КЭШ</string>
+    <string name="schedule_network_badge">СЕТЬ</string>
+    <string name="schedule_loading">ЗАГРУЗКА РАСПИСАНИЯ...</string>
+    <string name="lesson_finished">Завершена</string>
+    <string name="lesson_starts_in_fmt">До начала: %1$s</string>
+
+    <!-- Days of Week -->
+    <string name="day_mon">ПН</string>
+    <string name="day_tue">ВТ</string>
+    <string name="day_wed">СР</string>
+    <string name="day_thu">ЧТ</string>
+    <string name="day_fri">ПТ</string>
+    <string name="day_sat">СБ</string>
+    <string name="day_sun">ВС</string>
+    <string name="day_full_mon">ПОНЕДЕЛЬНИК</string>
+    <string name="day_full_tue">ВТОРНИК</string>
+    <string name="day_full_wed">СРЕДА</string>
+    <string name="day_full_thu">ЧЕТВЕРГ</string>
+    <string name="day_full_fri">ПЯТНИЦА</string>
+    <string name="day_full_sat">СУББОТА</string>
+    <string name="day_full_sun">ВОСКРЕСЕНЬЕ</string>
+
+    <!-- Indoor Floor Map -->
+    <string name="map_floor_label">ЭТАЖ</string>
+    <string name="map_connector_label">СВЯЗКА</string>
+    <string name="map_from_label">ОТ</string>
+    <string name="map_from_selecting">ОТ ▼</string>
+    <string name="map_to_label">ДО</string>
+    <string name="map_to_selecting">ДО ▼</string>
+    <string name="map_reset_route">Сбросить маршрут</string>
+    <string name="map_cross_floor_fmt">Межэтажный · %1$s · ≈ %2$d м</string>
+    <string name="map_single_floor_fmt">≈ %1$d м · ~%2$d мин · %3$d этаж</string>
 
     <!-- Login -->
     <string name="login_title">АВТОРИЗАЦИЯ В ЭИОС</string>
-    <string name="login_username_label">Логин или Email</string>
-    <string name="login_password_label">Пароль</string>
+    <string name="login_username_label">ЛОГИН ЭИОС</string>
+    <string name="login_password_label">ПАРОЛЬ</string>
     <string name="login_remember_me">Запомнить сессию</string>
     <string name="login_submit">ВОЙТИ В ЭИОС</string>
     <string name="login_gate_title">ТРЕБУЕТСЯ АВТОРИЗАЦИЯ</string>
     <string name="login_gate_desc">Для доступа к расписанию, оценкам и Живой ленте выполните вход с учетными данными портала eios.gukolomna.ru.</string>
     <string name="login_error_credentials">Неверный логин или пароль</string>
+    <string name="login_access_restricted">ДОСТУП ЗАБЛОКИРОВАН</string>
+    <string name="login_portal_auth_section">[ 01 ] АВТОРИЗАЦИЯ ПОРТАЛА</string>
+    <string name="login_conn_test_section">[ 02 ] ПРОВЕРКА СОЕДИНЕНИЯ</string>
+    <string name="login_logged_in_fmt">Вы авторизованы: %1$s</string>
+    <string name="login_action_logout">ВЫЙТИ ИЗ АККАУНТА</string>
+    <string name="login_server_title">СЕРВЕР: EIOS.GUKOLOMNA.RU</string>
+    <string name="login_hide_password">Скрыть пароль</string>
+    <string name="login_show_password">Показать пароль</string>
+    <string name="action_login_account">ВОЙТИ В АККАУНТ</string>
 
     <!-- Network Logs -->
     <string name="network_logs_title">СЕТЕВЫЕ ЛОГИ</string>
@@ -67,22 +154,331 @@
     <string name="network_raw_response_copied">Raw ответ скопирован</string>
     <string name="network_raw_response_empty">Ответ сервера пуст</string>
     <string name="network_copy_raw_desc">Скопировать raw ответ сервера</string>
+    <string name="network_copied_toast">СКОПИРОВАНО</string>
+    <string name="network_logs_copied_toast">Логи скопированы в буфер обмена</string>
+    <string name="network_logs_cleared_toast">Логи очищены</string>
 
     <!-- Feed / Live Feed -->
     <string name="feed_title">ЖИВАЯ ЛЕНТА</string>
     <string name="feed_empty_title">НЕТ ОБЪЯВЛЕНИЙ</string>
     <string name="feed_empty_desc">В Живой ленте пока нет записей</string>
+    <string name="feed_loading_cached">Загрузка сохранённой ленты...</string>
+    <string name="feed_sync_dialog_title">Синхронизация Живой ленты</string>
+    <string name="feed_sync_dialog_desc">Сервер университета формирует Живую ленту монолитным документом (~7.5 МБ). В зависимости от нагрузки генерация может занять от 20 секунд до нескольких минут.</string>
+    <string name="feed_sync_dialog_bullets">• Во время загрузки разделы «Расписание» и «БРС» будут работать из сохранённого кэша.\n• В приложении отображается живой таймер и объём скачанных данных.\n• Вы сможете отменить загрузку в любой момент.</string>
+    <string name="feed_sync_start">Начать загрузку</string>
+    <string name="feed_fetch_from_server">ЗАГРУЗИТЬ С СЕРВЕРА</string>
+    <string name="feed_sync_time_fmt">СИНХР. %1$s</string>
+    <string name="feed_downloading_data">Загрузка данных с eios.gukolomna.ru</string>
+    <string name="feed_cancel_sync">ОТМЕНА</string>
+    <string name="feed_downloads_title">ЗАГРУЖЕННЫЕ ФАЙЛЫ</string>
+    <string name="feed_no_downloads">НЕТ СКАЧАННЫХ ФАЙЛОВ</string>
+    <string name="feed_action_open">ОТКРЫТЬ</string>
+    <string name="feed_action_download">СКАЧАТЬ</string>
+    <string name="feed_action_share">ОТПРАВИТЬ</string>
+    <string name="feed_action_save">СОХРАНИТЬ В ЗАГРУЗКИ</string>
 
-    <!-- Curriculum / BRS -->
+    <!-- Settings: Server Connection Details -->
+    <string name="settings_server_ip_subvalue">IP: 87.242.111.49:443 // РОСТЕЛЕКОМ, Г. КОЛОМНА</string>
+    <string name="settings_ping_measuring">ЗАМЕР СЕТЕВОЙ ЗАДЕРЖКИ...</string>
+    <string name="settings_action_measuring">ЗАМЕР...</string>
+    <string name="settings_ping_idle">— (НЕ ЗАМЕРЯЛСЯ)</string>
+    <string name="settings_ping_error_fmt">ОШИБКА: %1$s</string>
+    <string name="settings_ms_fmt">%1$d мс</string>
+    <string name="settings_last_get_none">— (В ТЕКУЩЕЙ СЕССИИ ЗАПРОСОВ НЕ БЫЛО)</string>
+    <string name="settings_action_checking">ПРОВЕРКА...</string>
+    <string name="settings_endpoint_pending">В ОЧЕРЕДИ</string>
+    <string name="settings_endpoint_checking">ПРОВЕРКА...</string>
+    <string name="settings_endpoint_degraded">200 СБОЙ / ПУСТО</string>
+    <string name="settings_endpoint_auth_required">ТРЕБУЕТСЯ ВХОД</string>
+    <string name="settings_raw_log_header">[ ТЕХНИЧЕСКИЙ ЖУРНАЛ ЗАПРОСА ]</string>
+    <string name="settings_copy_log_btn">СКОПИРОВАТЬ ЛОГ</string>
+    <string name="settings_log_copied_toast">Лог скопирован в буфер</string>
+    <string name="settings_github_limit_title">[ 02 · ЛИМИТ ЗАПРОСОВ GITHUB API ]</string>
+    <string name="settings_quota_remaining_label">ОСТАТОК КВОТЫ</string>
+    <string name="settings_quota_requests_fmt">%1$d / 60 ЗАПРОСОВ</string>
+    <string name="settings_quota_not_checked">60 / 60 (ПРОВЕРКА ЕЩЁ НЕ ВЫПОЛНЯЛАСЬ)</string>
+    <string name="settings_quota_reset_fmt">Сброс окна квоты GitHub через ~%1$d мин.</string>
+    <string name="settings_quota_sub_default">Сохранено с последнего выполненного запроса к API обновлений</string>
+    <string name="settings_vpn_warning_title">ВНИМАНИЕ // НИЗКИЙ ОСТАТОК КВОТЫ</string>
+    <string name="settings_vpn_warning_vpn">Осталось мало запросов на проверку наличия обновлений, при 0 NyEIOS не сможет проверять наличие и скачивать обновления. У вас включен VPN, что скорее всего и является причиной.</string>
+    <string name="settings_vpn_warning_no_vpn">Осталось мало запросов на проверку наличия обновлений, при 0 NyEIOS не сможет проверять наличие и скачивать обновления. Может быть, вы сидите за роутером с VPN?</string>
+    <string name="settings_ip_section_title">[ 03 · IP УСТРОЙСТВА И СЕТЕВОЙ ИНТЕРФЕЙС ]</string>
+    <string name="settings_wan_ip_label">ИСХОДЯЩИЙ IP (WAN)</string>
+    <string name="settings_lan_ip_label">ЛОКАЛЬНЫЙ IP (LAN)</string>
+    <string name="settings_detecting">ОПРЕДЕЛЕНИЕ...</string>
+    <string name="settings_not_detected">НЕ ОПРЕДЕЛЕН</string>
+    <string name="settings_wan_ip_desc">Адрес, с которого отправляются запросы на ЭИОС и GitHub</string>
+    <string name="settings_lan_ip_desc">Интерфейс локальной подсети устройства</string>
+    <string name="settings_network_type_label">ТИП СЕТИ</string>
+    <string name="settings_vpn_status_label">СТАТУС VPN</string>
+
+    <!-- Settings: Themes & Interface Options -->
+    <string name="theme_large_font_title">Крупный шрифт расписания</string>
+    <string name="theme_large_font_desc">ПРАВИЛО 1 СЕКУНДЫ · +2 DP</string>
+    <string name="theme_animations_title">Анимации переходов</string>
+    <string name="theme_animations_desc">ШТОРКИ, МАРШРУТЫ, ШЕВРОНЫ</string>
+    <string name="theme_thick_borders_title">Усиленный контраст рамок</string>
+    <string name="theme_thick_borders_desc">1 DP → 2 DP BORDER</string>
+    <string name="theme_show_seconds_title">Секунды в индикаторе свежести</string>
+    <string name="theme_show_seconds_desc">ФОРМАТ ЧЧ:ММ:СС</string>
+    <string name="theme_ui_section_title">[ 03 · ИНТЕРФЕЙС ]</string>
+    <string name="theme_density_section_title">[ 04 · ПЛОТНОСТЬ СПИСКОВ ]</string>
+    <string name="density_compact">КОМПАКТНО</string>
+    <string name="density_standard">СТАНДАРТ</string>
+    <string name="density_spacious">ПРОСТОРНО</string>
+
+    <!-- Settings: Version Details -->
+    <string name="version_label_fmt">ВЕРСИЯ: v%1$s (BUILD %2$d)</string>
+    <string name="version_available_fmt">ДОСТУПНА v%1$s</string>
+    <string name="version_latest_badge">АКТУАЛЬНАЯ ВЕРСИЯ</string>
+    <string name="version_installed_badge">УСТАНОВЛЕНА</string>
+    <string name="version_checking_btn">ПРОВЕРКА...</string>
+    <string name="version_check_btn">ПРОВЕРИТЬ</string>
+    <string name="version_download_btn">СКАЧАТЬ</string>
+    <string name="version_quota_fmt">GITHUB API КВОТА: %1$s</string>
+
+    <!-- Timetable Extras -->
+    <string name="schedule_today">СЕГОДНЯ</string>
+    <string name="schedule_floor_transfer_fmt">%1$d → %2$d ЭТАЖ</string>
+    <string name="lesson_now_badge">СЕЙЧАС</string>
+    <string name="lesson_ongoing_badge">СЕЙЧАС ИДЁТ</string>
+    <string name="lesson_no_teacher">Преподаватель не указан</string>
+    <string name="lesson_pair_fmt">ПАРА %1$s</string>
+    <string name="lesson_left_min_fmt">ОСТАЛОСЬ %1$d МИН</string>
+    <string name="lesson_left_sec_fmt">ОСТАЛОСЬ %1$d С</string>
+    <string name="lesson_room_prefix">ауд. %1$s</string>
+
+    <!-- Map Extras -->
+    <string name="map_route_cross_floor_title">Межэтажный маршрут</string>
+    <string name="map_route_between_lessons_title">Маршрут между парами</string>
+    <string name="map_navigation_title">Навигация по корпусу</string>
+    <string name="map_university_name">ГОУ ВО МО «ГСГУ»</string>
+
+    <!-- Auth Extras -->
+    <string name="login_refresh_session">ОБНОВИТЬ СЕССИЮ</string>
+    <string name="login_save_keystore">Сохранить в Android Keystore</string>
+    <string name="login_access_restricted_desc">СЕТЕВЫЕ ЗАПРОСЫ ПРИОСТАНОВЛЕНЫ ДО АВТОРИЗАЦИИ. КЭШ ПУСТ.</string>
+
+    <!-- Update Banner -->
+    <string name="update_banner_available_fmt">ДОСТУПНО ОБНОВЛЕНИЕ v%1$s</string>
+    <string name="update_banner_downloading_fmt">СКАЧИВАНИЕ v%1$s…</string>
+    <string name="update_banner_downloaded">ОБНОВЛЕНИЕ ЗАГРУЖЕНО</string>
+    <string name="update_banner_install_desc">Нажмите, чтобы установить APK</string>
+    <string name="update_banner_action_install">УСТАНОВИТЬ</string>
+    <string name="update_banner_error">ОШИБКА ОБНОВЛЕНИЯ</string>
+
+    <!-- Curriculum (BRS) -->
+    <string name="curriculum_loading">Загрузка успеваемости (БРС)...</string>
+    <string name="curriculum_empty_title">Данные об успеваемости отсутствуют</string>
+    <string name="curriculum_empty_desc">Не удалось найти записи в учебном плане. Попробуйте синхронизировать.</string>
+    <string name="curriculum_empty_term">В этом семестре нет зарегистрированных дисциплин.</string>
+    <string name="curriculum_stat_subjects">Предметов</string>
+    <string name="curriculum_stat_tests">Зачётов</string>
+    <string name="curriculum_stat_exams">Экзаменов</string>
+    <string name="curriculum_detail_current_score">Текущий контроль (балл):</string>
+    <string name="curriculum_detail_current_rating">Рейтинг текущей успеваемости:</string>
+    <string name="curriculum_detail_term_rating">Семестровый рейтинг:</string>
+    <string name="curriculum_detail_exam_score">Баллы на экзамене / зачёте:</string>
+    <string name="curriculum_detail_final_rating">Итоговый рейтинг:</string>
+    <string name="curriculum_detail_final_grade">Итоговая оценка:</string>
+    <string name="curriculum_score_points"> б.</string>
+    <string name="curriculum_hours_fmt">%1$s Ч</string>
+    <string name="curriculum_zet_fmt">%1$s ЗЕТ</string>
+    <string name="curriculum_mark_excellent">ОТЛ.</string>
+    <string name="curriculum_mark_good">ХОР.</string>
+    <string name="curriculum_mark_satisfactory">УД.</string>
+    <string name="curriculum_mark_passed">ЗАЧТ.</string>
+    <string name="curriculum_mark_fail">НЕУД.</string>
+
+    <!-- Downloads Sheet -->
+    <string name="downloads_title">Менеджер загрузок</string>
+    <string name="downloads_storage_fmt">ЛОКАЛЬНОЕ ХРАНИЛИЩЕ ЭИОС · %1$d ФАЙЛОВ</string>
+    <string name="downloads_device_used">ЗАНЯТО НА УСТРОЙСТВЕ</string>
+    <string name="downloads_device_usage_fmt">%1$d МБ / %2$d ГБ</string>
+    <string name="downloads_downloading_count_fmt">[ ИДЁТ СКАЧИВАНИЕ: %1$d ]</string>
+    <string name="downloads_empty_title">ФАЙЛОВ ПОКА НЕТ</string>
+    <string name="downloads_empty_desc">Нажимайте на вложения в Живой ленте — они сохранятся в памяти приложения и будут доступны офлайн.</string>
+    <string name="downloads_no_files_category_fmt">НЕТ ФАЙЛОВ В КАТЕГОРИИ \"%1$s\"</string>
+    <string name="downloads_delete_all_confirm_title">УДАЛИТЬ ВСЕ ФАЙЛЫ?</string>
+    <string name="downloads_delete_all_confirm_desc">Все скачанные вложения (%1$d шт.) будут удалены из локального хранилища приложения. Вы всегда сможете скачать их заново из Живой ленты.</string>
+    <string name="downloads_delete_all_btn">УДАЛИТЬ ВСЁ</string>
+    <string name="downloads_filter_all">ВСЕ</string>
+    <string name="downloads_file_default">Файл</string>
+    <string name="downloads_loading_progress_fmt">Загрузка... %1$s</string>
+    <string name="downloads_active_count_fmt">СКАЧИВАЕТСЯ ФАЙЛОВ: %1$d</string>
+    <string name="downloads_saved_count_fmt">ЛОКАЛЬНОЕ ХРАНИЛИЩЕ · %1$d ФАЙЛОВ</string>
+
+    <!-- Map Extras Continued -->
+    <string name="map_collapse">Свернуть</string>
+    <string name="map_navigator_title">Навигатор</string>
+    <string name="map_campus_floor_fmt">КОРПУС 1 · ЭТАЖ %1$s</string>
+    <string name="map_to_target">К цели</string>
+    <string name="map_route_label">МАРШРУТ</string>
+    <string name="map_door_to_door">ОТ ДВЕРИ К ДВЕРИ</string>
+    <string name="map_target_label">ЦЕЛЬ</string>
+    <string name="map_time_min_fmt">≈ %1$d МИН</string>
+    <string name="map_transition_fmt">ПЕРЕХОД: %1$s</string>
+    <string name="map_room_title_fmt">Кабинет %1$s</string>
+    <string name="map_type_label">ТИП:</string>
+    <string name="map_stairs_label">ЛЕСТНИЦА:</string>
+    <string name="map_floor_in_dev_title">Схема %1$d этажа в разработке</string>
+    <string name="map_floor_in_dev_desc">План аудиторий %1$d этажа будет добавлен в одном из следующих обновлений. Сейчас доступна интерактивная карта 4 этажа.</string>
+    <string name="map_open_floor4_btn">▶ Открыть 4 этаж</string>
+
+    <!-- Debug / Logs Extras -->
+    <string name="logs_filter_all">ВСЕ</string>
+    <string name="logs_filter_empty">В ЭТОМ ФИЛЬТРЕ ПУСТО</string>
+    <string name="logs_action_updates">ОБНОВЛЕНИЯ</string>
+    <string name="logs_checking_updates">Проверка обновлений…</string>
+    <string name="logs_update_request_details">Запрос к GitHub Releases API</string>
+    <string name="logs_update_available_fmt">Доступна версия %1$s</string>
+    <string name="logs_update_none">Обновлений нет — установлена актуальная версия</string>
+    <string name="logs_update_error">Ошибка проверки обновлений</string>
+    <string name="logs_empty_toast">Логи пусты</string>
+
+    <!-- Auth Extras Continued -->
+    <string name="login_subtitle">КЛИЕНТ ПОРТАЛА ЭИОС · НАВИГАТОР КОРПУСА</string>
+    <string name="login_placeholder_user">учётная запись портала</string>
+    <string name="login_button_short">ВОЙТИ</string>
+    <string name="login_keystore_secure">ПАРОЛЬ ШИФРУЕТСЯ АППАРАТНЫМ KEYSTORE</string>
+    <string name="login_keystore_stored">ПАРОЛЬ ХРАНИТСЯ В ANDROID KEYSTORE</string>
+    <string name="login_trouble_q">ПРОБЛЕМЫ СО ВХОДОМ?</string>
+    <string name="login_instruction_btn">ИНСТРУКЦИЯ</string>
+    <string name="login_help_title">Вход в ЭИОС ГСГУ</string>
+    <string name="login_help_b1">• В качестве логина используйте ваш студенческий логин (номер зачётки или корпоративную почту @gsgu.ru).</string>
+    <string name="login_help_b2">• Пароль совпадает с паролем от портала eios.gukolomna.ru.</string>
+    <string name="login_help_b3">• Если вы забыли пароль или учетная запись заблокирована, обратитесь в ИВЦ или деканат вашего факультета.</string>
+    <string name="login_help_got_it">ПОНЯТНО</string>
+
+    <!-- Settings Telemetry Details -->
+    <string name="settings_ip_label">IP-АДРЕС</string>
+    <string name="settings_provider_location">РОСТЕЛЕКОМ · Г. КОЛОМНА</string>
+    <string name="settings_ping_stamp_fmt">ЗАМЕР %1$s</string>
+    <string name="settings_wan_short">WAN · ИСХОДЯЩИЙ</string>
+    <string name="settings_lan_short">LAN · ЛОКАЛЬНЫЙ</string>
+    <string name="settings_vpn_active_badge">VPN АКТИВЕН</string>
+    <string name="settings_vpn_disabled_badge">VPN ОТКЛЮЧЕН</string>
+    <string name="settings_last_get_title">ВРЕМЯ ПОСЛЕДНЕГО GET С САЙТА</string>
+    <string name="settings_endpoint_diag_checking_msg">Запрос выполняется в данный момент...\nОжидайте ответа сервера (таймаут 15 сек).</string>
+    <string name="settings_endpoint_diag_pending_msg">Запрос находится в очереди.\nБудет запущен сразу после завершения текущего теста.</string>
+    <string name="settings_endpoint_diag_idle_msg">Диагностика этого эндпоинта ещё не запускалась.\nНажмите кнопку «ПРОВЕРИТЬ» выше для отправки тестового запроса.</string>
+    <string name="settings_expand_log">Развернуть лог</string>
+    <string name="settings_collapse_log">Свернуть лог</string>
+
+    <!-- Feed Screen Extras -->
+    <string name="feed_nyc_title">Живая лента ЭИОС</string>
+    <string name="feed_saved_count_fmt">СОХРАНЕНО ОБЪЯВЛЕНИЙ: %1$d</string>
+    <string name="feed_empty_banner">— ОБЪЯВЛЕНИЙ ПОКА НЕТ —</string>
+    <string name="feed_cache_count_fmt">КЭШ ЛЕНТЫ · %1$d</string>
+    <string name="error_open_file">Ошибка открытия</string>
+    <string name="error_send_file">Ошибка отправки</string>
+    <string name="error_save_file">Ошибка сохранения</string>
+    <string name="action_delete">Удалить</string>
+    <string name="action_save_to_device">Сохранить на устройство</string>
+
+    <!-- Additional UI & Units -->
+    <string name="feed_syncing">Синхр. ленты...</string>
+    <string name="profile_title">Профиль</string>
+    <string name="unit_ms">мс</string>
+    <string name="unit_ms_caps">МС</string>
+    <string name="unit_sec">с</string>
+    <string name="unit_min">мин</string>
+    <string name="unit_hour">ч</string>
+    <string name="chip_swr_cache">SWR-КЭШ</string>
+    <string name="chip_offline_first">OFFLINE-FIRST</string>
+    <string name="map_room_deans_office">Деканат</string>
+    <string name="settings_endpoint_curriculum">УСПЕВАЕМОСТЬ (БРС)</string>
+    <string name="downloads_progress_fmt">Загрузка %1$d%%...</string>
+    <string name="downloads_loading_default">Загрузка...</string>
+    <string name="login_active_session">Активная сессия</string>
+    <string name="version_status_checking">ПРОВЕРКА ОБНОВЛЕНИЙ НА GITHUB...</string>
+    <string name="version_status_available_fmt">Доступно обновление: v%1$s</string>
+    <string name="version_status_latest">Установлена последняя версия (обновлений нет)</string>
+    <string name="version_status_error_fmt">Ошибка проверки: %1$s</string>
+    <string name="schedule_load_error">Не удалось загрузить расписание</string>
+    <string name="feed_load_error">Не удалось загрузить живую ленту</string>
+    <string name="curriculum_load_error">Не удалось загрузить успеваемость</string>
+    <string name="login_fill_credentials">Заполните логин и пароль</string>
+    <string name="login_invalid_credentials">Неверный логин или пароль портала ЭИОС</string>
+    <string name="login_auth_failed">Ошибка авторизации</string>
+    <string name="file_not_downloaded_yet">Файл еще не скачан</string>
+    <string name="error_no_server_connection">Отсутствует соединение с сервером. Повторите попытку позже</string>
+    <string name="error_session_expired">Сессия завершена. Требуется авторизация в ЭИОС.</string>
+
+    <!-- Network Type Labels -->
+    <string name="network_type_unknown">НЕИЗВЕСТНО</string>
+    <string name="network_type_no_connection">НЕТ ПОДКЛЮЧЕНИЯ</string>
+    <string name="network_type_connected">ПОДКЛЮЧЕНО</string>
+    <string name="network_type_mobile">МОБИЛЬНАЯ СЕТЬ</string>
+
+    <!-- Endpoint Check Status Messages -->
+    <string name="settings_endpoint_init_checking_fmt">Кидаю GET на %1$s с таймаутом в 15с (1\15с)</string>
+    <string name="settings_endpoint_tick_fmt">Кидаю GET на %1$s с таймаутом в 15с (%2$d\15с)</string>
+    <string name="settings_endpoint_queue_msg">В очереди на проверку...</string>
+
+    <!-- Update Installer Errors -->
+    <string name="update_apk_not_found">Файл APK не найден. Попробуйте скачать снова.</string>
+    <string name="update_installer_failed_fmt">Не удалось запустить установщик: %1$s</string>
+
+    <!-- Theme Descriptions (for enum descResId) -->
+    <string name="theme_desc_regular">Классическая индустриальная палитра NieR: Automata: песочно-оливковый фон, темный контрастный текст и акценты</string>
+    <string name="theme_desc_night">Инвертированная палитра NieR: Automata: глубокий темный фон, теплый бежевый текст и панели</string>
+    <string name="theme_desc_black">100% черный фон для OLED-экранов с контрастными элементами темного цвета палитры YoRHa</string>
+    <string name="theme_desc_retro">Аутентичный теплый песочный холст, глубокие чернила и насыщенный синий акцент терминала</string>
+    <string name="theme_desc_nyc_modern">Параллельный ультрасовременный темный стиль в духе интерфейсов будущего</string>
+
+    <!-- NyC Log degraded badge -->
+    <string name="log_badge_degraded">200 ПУСТО</string>
+
+    <!-- Feed initials fallback -->
+    <string name="feed_post_default_initials">ЭИ</string>
+
+    <!-- Main chrome: post counters, sync status, content descriptions -->
+    <string name="nyc_posts_count_fmt">%1$d ЗАПИСЕЙ</string>
+    <string name="sync_feed_in_progress_toast">Идёт синхронизация Живой ленты. Расписание и успеваемость работают из кэша.</string>
+    <string name="sync_feed_short">Синхр. ленты...</string>
+    <string name="cd_downloads">Загрузки</string>
+    <string name="cd_profile">Профиль</string>
+
+    <!-- Lesson type titles -->
+    <string name="lesson_type_lecture">Лекция</string>
+    <string name="lesson_type_seminar">Семинар</string>
+    <string name="lesson_type_practice">Практика</string>
+    <string name="lesson_type_lab">Лабораторная</string>
+    <string name="lesson_type_exam">Экзамен / Зачёт</string>
+    <string name="lesson_type_other">Занятие</string>
+
+    <!-- Room type titles -->
+    <string name="room_type_classroom">Учебная аудитория</string>
+    <string name="room_type_dean_office">Деканат</string>
+    <string name="room_type_stairs">Лестница</string>
+    <string name="room_type_restroom">Санузел</string>
+    <string name="room_type_other">Служебное помещение</string>
+
+    <!-- Room wing titles -->
+    <string name="room_wing_top">Северный ряд (Верх)</string>
+    <string name="room_wing_bottom">Южный ряд (Низ)</string>
+    <string name="room_wing_vertical">Восточное крыло (Право)</string>
+    <string name="room_wing_left">Западное крыло (Лево)</string>
+
+    <!-- Floor and staircase names -->
+    <string name="floor_level_fmt">%1$d этаж</string>
+    <string name="stairs_west">Западная лестница</string>
+    <string name="stairs_central">Центральная лестница</string>
+    <string name="stairs_east">Восточная лестница</string>
+
+    <!-- Curriculum term title -->
+    <string name="semester_fmt">%1$d семестр</string>
+
+    <!-- Feed / downloads controls -->
+    <string name="action_download">СКАЧАТЬ</string>
+    <string name="action_downloading">ЗАГРУЗКА...</string>
+    <string name="action_update_caps">ОБНОВИТЬ</string>
+    <string name="downloads_manager_caps">МЕНЕДЖЕР ЗАГРУЗОК</string>
+    <string name="downloads_open_caps">ОТКРЫТЬ</string>
+    <string name="downloads_downloading_fmt">ЗАГРУЖАЕТСЯ: %1$d</string>
+    <string name="downloads_nyc_downloading_fmt">Загрузка: %1$d</string>
+    <string name="downloads_saved_fmt">СОХРАНЕНО: %1$d · %2$s</string>
     <string name="curriculum_title">УСПЕВАЕМОСТЬ (БРС)</string>
-    <string name="curriculum_empty_title">НЕТ ДАННЫХ УСПЕВАЕМОСТИ</string>
-    <string name="curriculum_empty_desc">Учебный план пуст или еще не загружен</string>
-
-    <!-- Theme Settings -->
-    <string name="theme_section_title">[ 01 · ВЫБОР ТЕМЫ ОФОРМЛЕНИЯ ]</string>
-    <string name="theme_special_title">[ 02 · ОСОБЫЕ ТЕМЫ ОФОРМЛЕНИЯ ]</string>
-
-    <!-- Version Settings -->
-    <string name="version_section_title">[ 01 · ВЕРСИЯ ПРИЛОЖЕНИЯ ]</string>
-    <string name="version_changelog_title">[ 02 · ИСТОРИЯ ИЗМЕНЕНИЙ ]</string>
 </resources>

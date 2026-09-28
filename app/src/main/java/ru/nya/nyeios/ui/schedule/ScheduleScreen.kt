@@ -59,6 +59,9 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.Warning
 import ru.nya.nyeios.data.floormap.FloorMapRepository
+import ru.nya.nyeios.ui.common.isAuthRelatedMessage
+import ru.nya.nyeios.ui.common.localizeErrorMessage
+import ru.nya.nyeios.ui.common.localizedLessonType
 import ru.nya.nyeios.ui.theme.UiPreferencesManager
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -187,7 +190,7 @@ fun ScheduleScreen(
                                     modifier = Modifier.size(36.dp)
                                 )
                                 Text(
-                                    text = "ЗАГРУЗКА РАСПИСАНИЯ...",
+                                    text = stringResource(R.string.schedule_loading),
                                     fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
                                     fontWeight = FontWeight.Bold,
                                     color = ru.nya.nyeios.ui.theme.NierDim,
@@ -229,7 +232,7 @@ fun ScheduleScreen(
                                             .background(ru.nya.nyeios.ui.theme.NierRed)
                                     )
                                     Text(
-                                        text = "СИСТЕМНОЕ ОПОВЕЩЕНИЕ",
+                                        text = stringResource(R.string.system_alert_caps),
                                         fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 11.sp,
@@ -256,7 +259,7 @@ fun ScheduleScreen(
                                 Spacer(Modifier.height(14.dp))
 
                                 Text(
-                                    text = uiState.message,
+                                    text = localizeErrorMessage(uiState.message),
                                     color = ru.nya.nyeios.ui.theme.NierDark,
                                     fontSize = 13.sp,
                                     fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
@@ -284,7 +287,7 @@ fun ScheduleScreen(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
-                                            text = "ПОВТОРИТЬ",
+                                            text = stringResource(R.string.action_retry_caps),
                                             fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 12.sp,
@@ -293,9 +296,7 @@ fun ScheduleScreen(
                                         )
                                     }
 
-                                    val isAuthIssue = uiState.message.contains("авториз", ignoreCase = true) ||
-                                            uiState.message.contains("сесси", ignoreCase = true) ||
-                                            uiState.message.contains("аккаунт", ignoreCase = true)
+                                    val isAuthIssue = isAuthRelatedMessage(uiState.message)
 
                                     if (isAuthIssue) {
                                         Box(
@@ -308,7 +309,7 @@ fun ScheduleScreen(
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Text(
-                                                text = "ВОЙТИ В АККАУНТ",
+                                                text = stringResource(R.string.action_login_account),
                                                 fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 12.sp,
@@ -392,7 +393,7 @@ fun ScheduleScreen(
                                             verticalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
                                             Text(
-                                                text = if (allDaysEmpty) stringResource(R.string.schedule_no_lessons_title) else "— ЗАНЯТИЙ НЕТ · СВОБОДНЫЙ ДЕНЬ —",
+                                                text = if (allDaysEmpty) stringResource(R.string.schedule_no_lessons_title) else stringResource(R.string.schedule_empty_day_banner),
                                                 fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 11.sp,
@@ -433,7 +434,7 @@ fun ScheduleScreen(
                                 ) {
                                     // Day summary header
                                     item {
-                                        val dayNameUpper = currentDay.dayTitle.substringBefore(' ').uppercase()
+                                        val dayNameUpper = localizedDayName(currentDay.dayTitle.substringBefore(' '))
                                         val lessonCountText = LessonTimeUtils.formatLessonCount(lessons.size)
                                         val timeRangeText = LessonTimeUtils.computeDayTimeRange(lessons)
                                         val summaryText = if (timeRangeText.isNotEmpty()) {
@@ -467,7 +468,7 @@ fun ScheduleScreen(
                                                     modifier = Modifier.size(11.dp)
                                                 )
                                                 Text(
-                                                    text = if (uiState.schedule.isCached) "КЭШ" else "СЕТЬ",
+                                                    text = if (uiState.schedule.isCached) stringResource(R.string.schedule_cache_badge) else stringResource(R.string.schedule_network_badge),
                                                     fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
                                                     fontSize = 9.sp,
                                                     letterSpacing = 1.sp,
@@ -533,10 +534,11 @@ fun WeekNavigator(
     onToday: () -> Unit
 ) {
     val schedule = (uiState as? ScheduleUiState.Success)?.schedule
+    val weekStr = stringResource(R.string.schedule_week_fmt, weekOffset)
     val dateSubtitle = if (schedule != null && schedule.startDate.isNotEmpty()) {
-        "${schedule.startDate} – ${schedule.endDate} · Неделя $weekOffset"
+        "${schedule.startDate} – ${schedule.endDate} · $weekStr"
     } else {
-        "Неделя $weekOffset"
+        weekStr
     }
 
     Row(
@@ -574,7 +576,7 @@ fun WeekNavigator(
                     0 -> stringResource(R.string.schedule_current_week)
                     1 -> stringResource(R.string.schedule_next_week)
                     -1 -> stringResource(R.string.schedule_prev_week)
-                    else -> if (weekOffset > 0) "+$weekOffset нед." else "$weekOffset нед."
+                    else -> stringResource(R.string.schedule_week_offset_fmt, weekOffset)
                 },
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
@@ -611,6 +613,20 @@ fun WeekNavigator(
                 )
             }
         }
+    }
+}
+
+@Composable
+fun localizedDayName(name: String): String {
+    return when (name.trim().lowercase()) {
+        "пн", "mon", "понедельник", "monday" -> stringResource(R.string.day_mon)
+        "вт", "tue", "вторник", "tuesday" -> stringResource(R.string.day_tue)
+        "ср", "wed", "среда", "wednesday" -> stringResource(R.string.day_wed)
+        "чт", "thu", "четверг", "thursday" -> stringResource(R.string.day_thu)
+        "пт", "fri", "пятница", "friday" -> stringResource(R.string.day_fri)
+        "сб", "sat", "суббота", "saturday" -> stringResource(R.string.day_sat)
+        "вс", "sun", "воскресенье", "sunday" -> stringResource(R.string.day_sun)
+        else -> name.uppercase()
     }
 }
 
@@ -675,7 +691,7 @@ fun DaySelectorRow(
                     verticalArrangement = Arrangement.spacedBy(1.dp)
                 ) {
                     Text(
-                        text = day.dayName.uppercase(),
+                        text = localizedDayName(day.dayName),
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
                         fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
                         fontSize = 11.sp,
@@ -706,7 +722,7 @@ fun ScheduleTransferItem(
         LessonTimeUtils.computeBreakMinutes(prevLesson.time, nextLesson.time)
     } ?: 10L
 
-    val routeDetails = remember(prevLesson.room, nextLesson.room) {
+    val routeInfo = remember(prevLesson.room, nextLesson.room) {
         if (prevLesson.room.isNotBlank() && nextLesson.room.isNotBlank()) {
             val fromRoom = FloorMapRepository.findRoom(prevLesson.room)
             val toRoom = FloorMapRepository.findRoom(nextLesson.room)
@@ -729,21 +745,24 @@ fun ScheduleTransferItem(
                     }
                     (px * 0.11f).toInt().coerceAtLeast(10)
                 } else null
-
-                val floorStr = if (fromRoom.floor == toRoom.floor) {
-                    "${fromRoom.floor} ЭТАЖ"
-                } else {
-                    "${fromRoom.floor} → ${toRoom.floor} ЭТАЖ"
-                }
-                if (distMeters != null) "$floorStr · $distMeters М" else floorStr
+                Triple(fromRoom.floor, toRoom.floor, distMeters)
             } else null
         } else null
     }
 
+    val breakStr = stringResource(R.string.schedule_break_fmt, breakMinutes)
+    val routeDetails = routeInfo?.let { (fromFloor, toFloor, distMeters) ->
+        val floorStr = if (fromFloor == toFloor) {
+            stringResource(R.string.schedule_floor_fmt, fromFloor)
+        } else {
+            stringResource(R.string.schedule_floor_transfer_fmt, fromFloor, toFloor)
+        }
+        if (distMeters != null) "$floorStr · ${stringResource(R.string.schedule_dist_fmt, distMeters)}" else floorStr
+    }
     val transferText = if (routeDetails != null) {
-        "ПЕРЕРЫВ $breakMinutes МИН · $routeDetails"
+        "$breakStr · $routeDetails"
     } else {
-        "ПЕРЕРЫВ $breakMinutes МИН"
+        breakStr
     }
 
     Row(
@@ -874,7 +893,7 @@ fun LessonCard(
                         }
                         if (lesson.lessonNumber.isNotEmpty()) {
                             Text(
-                                text = "ПАРА ${lesson.lessonNumber}",
+                                text = stringResource(R.string.lesson_pair_fmt, lesson.lessonNumber),
                                 fontSize = 8.sp,
                                 fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
                                 color = ru.nya.nyeios.ui.theme.NierDim,
@@ -907,7 +926,7 @@ fun LessonCard(
                                     .padding(horizontal = 5.dp, vertical = 2.dp)
                             ) {
                                 Text(
-                                    text = lesson.type.title.uppercase(),
+                                    text = localizedLessonType(lesson.type).uppercase(),
                                     fontSize = (9 + fontDelta).sp,
                                     fontWeight = FontWeight.Bold,
                                     fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
@@ -947,9 +966,9 @@ fun LessonCard(
                                         .size(4.dp)
                                         .clip(CircleShape)
                                         .background(ru.nya.nyeios.ui.theme.NierGreen)
-                                )
+                                    )
                                 Text(
-                                    text = "СЕЙЧАС",
+                                    text = stringResource(R.string.lesson_now_badge),
                                     fontSize = 8.sp,
                                     fontWeight = FontWeight.Bold,
                                     fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
@@ -977,7 +996,7 @@ fun LessonCard(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = lesson.teacher.ifEmpty { "Преподаватель не указан" },
+                            text = lesson.teacher.ifEmpty { stringResource(R.string.lesson_no_teacher) },
                             fontSize = (10 + fontDelta).sp,
                             fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
                             color = ru.nya.nyeios.ui.theme.NierDim,
@@ -991,8 +1010,9 @@ fun LessonCard(
                                     lesson.room.contains("ЭОР", ignoreCase = true)
 
                             val roomObj = remember(lesson.room) { FloorMapRepository.findRoom(lesson.room) }
+                            val floorChar = stringResource(R.string.map_floor_label).take(1)
                             val roomBadgeText = if (roomObj != null && !isDotRoom) {
-                                "${lesson.room} / ${roomObj.floor}Э"
+                                "${lesson.room} / ${roomObj.floor}$floorChar"
                             } else {
                                 lesson.room
                             }

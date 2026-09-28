@@ -1,5 +1,7 @@
 package ru.nya.nyeios.data.repository
 
+import ru.nya.nyeios.data.AppLocale
+
 import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
@@ -115,8 +117,17 @@ class EiosRepository(private val context: Context) {
 
     companion object {
         const val BROWSER_USER_AGENT = "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36"
-        const val ERROR_SERVER_EMPTY_OR_DOWN = "Ошибка со стороны сервера, сервер вернул пустую страницу. Попробуйте позже, может починят"
-        const val ERROR_NO_CONNECTION = "Ошибка со стороны сервера... или вашего интернета. Сайт никак не отреагировал"
+        /** Resolved per call: the data layer has no Activity context, so these follow [AppLocale]. */
+        val ERROR_SERVER_EMPTY_OR_DOWN: String
+            get() = AppLocale.pick(
+                "Ошибка со стороны сервера, сервер вернул пустую страницу. Попробуйте позже, может починят",
+                "Server-side error: the server returned an empty page. Try again later"
+            )
+        val ERROR_NO_CONNECTION: String
+            get() = AppLocale.pick(
+                "Ошибка со стороны сервера... или вашего интернета. Сайт никак не отреагировал",
+                "Server-side error... or your own connection. The site did not respond at all"
+            )
 
         @Volatile
         private var INSTANCE: EiosRepository? = null
@@ -168,7 +179,7 @@ class EiosRepository(private val context: Context) {
                 val startNs = System.nanoTime()
                 val isLogin = finalReq.url.encodedPath.contains("login") || finalReq.url.query?.contains("login=yes") == true
                 val requestInfo = if (isLogin) {
-                    "Отправка данных входа (AUTH_FORM=Y, TYPE=AUTH, USER_REMEMBER=Y, логин и пароль переданы)"
+                    AppLocale.pick("Отправка данных входа (AUTH_FORM=Y, TYPE=AUTH, USER_REMEMBER=Y, логин и пароль переданы)", "Submitting login data (AUTH_FORM=Y, TYPE=AUTH, USER_REMEMBER=Y, login and password sent)")
                 } else null
 
                 NetworkLogger.logRequest(
@@ -185,7 +196,7 @@ class EiosRepository(private val context: Context) {
                     val tookMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNs)
                     NetworkLogger.logError(
                         tag = "NET / ERROR",
-                        message = "Ошибка сети: ${e.javaClass.simpleName} (${e.localizedMessage ?: e.message})",
+                        message = AppLocale.pick("Ошибка сети: ${e.javaClass.simpleName} (${e.localizedMessage ?: e.message})", "Network error: ${e.javaClass.simpleName} (${e.localizedMessage ?: e.message})"),
                         error = e,
                         durationMs = tookMs
                     )
@@ -198,10 +209,15 @@ class EiosRepository(private val context: Context) {
                 }
                 val redirectLoc = response.header("Location")
                 val details = buildString {
-                    if (!redirectLoc.isNullOrEmpty()) append("Редирект на: $redirectLoc\n")
-                    if (setCookies.isNotEmpty()) append("Установлены куки: ${setCookies.joinToString(", ")}\n")
+                    if (!redirectLoc.isNullOrEmpty()) append(AppLocale.pick("Редирект на: $redirectLoc\n", "Redirect to: $redirectLoc\n"))
+                    if (setCookies.isNotEmpty()) append(
+                        AppLocale.pick(
+                            "Установлены куки: ${setCookies.joinToString(", ")}\n",
+                            "Cookies set: ${setCookies.joinToString(", ")}\n"
+                        )
+                    )
                     val cl = response.body?.contentLength() ?: -1L
-                    if (cl > 0) append("Размер ответа: $cl байт\n")
+                    if (cl > 0) append(AppLocale.pick("Размер ответа: $cl байт\n", "Response size: $cl bytes\n"))
                 }
 
                 var isDegraded200 = false
@@ -213,7 +229,7 @@ class EiosRepository(private val context: Context) {
                         val errText = ScheduleParser.extractErrorMessage(rawResponseBody)
                         if (errText != null) {
                             isDegraded200 = true
-                            degradedReason = "Сбой сервера: $errText"
+                            degradedReason = AppLocale.pick("Сбой сервера: $errText", "Server failure: $errText")
                         } else if (finalReq.url.encodedPath.contains("timetable") &&
                             !rawResponseBody.contains("schedule-table") &&
                             !rawResponseBody.contains("schedule-body") &&
@@ -221,7 +237,7 @@ class EiosRepository(private val context: Context) {
                             !rawResponseBody.contains("bx_auth_serv")
                         ) {
                             isDegraded200 = true
-                            degradedReason = "Пустая страница расписания (таблица и контейнер отсутствуют)"
+                            degradedReason = AppLocale.pick("Пустая страница расписания (таблица и контейнер отсутствуют)", "Empty schedule page (table and container are missing)")
                         }
                     } catch (_: Exception) {}
                 }
@@ -404,7 +420,7 @@ class EiosRepository(private val context: Context) {
     suspend fun login(username: String, pass: String): Result<String> = networkMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
-                NetworkLogger.logInfo("AUTH", "Инициализация входа в аккаунт: ${username.take(3)}***@...")
+                NetworkLogger.logInfo("AUTH", AppLocale.pick("Инициализация входа в аккаунт: ${username.take(3)}***@...", "Initializing account login: ${username.take(3)}***@..."))
 
                 val loginUrl = "https://eios.gukolomna.ru/index.php?login=yes"
                 val formBody = FormBody.Builder()
@@ -490,13 +506,16 @@ class EiosRepository(private val context: Context) {
 
                     NetworkLogger.logSuccess(
                         tag = "AUTH",
-                        message = "Авторизация успешна (HTTP ${response.code})",
-                        details = "Установлены куки: ${collectedCookies.keys.joinToString(", ")}"
+                        message = AppLocale.pick("Авторизация успешна (HTTP ${response.code})", "Authorization successful (HTTP ${response.code})"),
+                        details = AppLocale.pick(
+                            "Установлены куки: ${collectedCookies.keys.joinToString(", ")}",
+                            "Cookies set: ${collectedCookies.keys.joinToString(", ")}"
+                        )
                     )
 
                     updateProfileIfFound(html)
                     updateLastSyncTime()
-                    Result.success("Успешный вход")
+                    Result.success(AppLocale.pick("Успешный вход", "Login successful"))
                 } else {
                     val doc = Jsoup.parse(html)
                     val errorEl = doc.selectFirst(".errortext") ?: doc.selectFirst(".error")
@@ -504,17 +523,19 @@ class EiosRepository(private val context: Context) {
 
                     val errorMsg = when {
                         !detailedError.isNullOrEmpty() -> detailedError
-                        html.contains("Неверный логин или пароль", ignoreCase = true) -> "Неверный логин или пароль"
-                        html.contains("Пользователь заблокирован", ignoreCase = true) -> "Пользователь заблокирован"
-                        else -> "Неверный логин или пароль портала ЭИОС"
+                html.contains("Неверный логин или пароль", ignoreCase = true) ->
+                    AppLocale.pick("Неверный логин или пароль", "Invalid login or password")
+                html.contains("Пользователь заблокирован", ignoreCase = true) ->
+                    AppLocale.pick("Пользователь заблокирован", "User is blocked")
+                        else -> AppLocale.pick("Неверный логин или пароль портала ЭИОС", "Invalid login or password for the EIOS portal")
                     }
 
-                    NetworkLogger.logError("AUTH", "Сервер отклонил вход: $errorMsg")
+                    NetworkLogger.logError("AUTH", AppLocale.pick("Сервер отклонил вход: $errorMsg", "Server rejected the login: $errorMsg"))
                     Result.failure(Exception(errorMsg))
                 }
             } catch (e: Exception) {
-                NetworkLogger.logError("AUTH", "Сетевая ошибка при авторизации: ${e.localizedMessage ?: e.message}", e)
-                Result.failure(Exception("Сетевая ошибка при авторизации: ${e.localizedMessage ?: e.message}"))
+                NetworkLogger.logError("AUTH", AppLocale.pick("Сетевая ошибка при авторизации: ${e.localizedMessage ?: e.message}", "Network error during authorization: ${e.localizedMessage ?: e.message}"), e)
+                Result.failure(Exception(AppLocale.pick("Сетевая ошибка при авторизации: ${e.localizedMessage ?: e.message}", "Network error during authorization: ${e.localizedMessage ?: e.message}")))
             }
         }
     }
@@ -566,7 +587,7 @@ class EiosRepository(private val context: Context) {
                 val json = cacheFile.readText()
                 val cached = gson.fromJson(json, WeekSchedule::class.java)
                 if (cached != null) {
-                    NetworkLogger.logInfo("SCHEDULE", "Идёт синхронизация ленты: расписание отдано из кэша")
+                    NetworkLogger.logInfo("SCHEDULE", AppLocale.pick("Идёт синхронизация ленты: расписание отдано из кэша", "Feed sync in progress: schedule served from cache"))
                     return@withContext Result.success(sanitizeCachedSchedule(cached))
                 }
             } catch (e: Exception) {
@@ -590,7 +611,7 @@ class EiosRepository(private val context: Context) {
                         val cached = gson.fromJson(currentCacheFile.readText(), WeekSchedule::class.java)
                         if (cached != null) return@withLock Result.success(sanitizeCachedSchedule(cached))
                     }
-                    val msg = if (response.code in 500..599) ERROR_SERVER_EMPTY_OR_DOWN else "Ошибка сервера: HTTP ${response.code}"
+                    val msg = if (response.code in 500..599) ERROR_SERVER_EMPTY_OR_DOWN else AppLocale.pick("Ошибка сервера: HTTP ${response.code}", "Server error: HTTP ${response.code}")
                     return@withLock Result.failure(Exception(msg))
                 }
 
@@ -602,7 +623,7 @@ class EiosRepository(private val context: Context) {
                         val cached = gson.fromJson(currentCacheFile.readText(), WeekSchedule::class.java)
                         if (cached != null) return@withLock Result.success(sanitizeCachedSchedule(cached))
                     }
-                    return@withLock Result.failure(Exception("Сессия завершена. Требуется авторизация в ЭИОС."))
+                    return@withLock Result.failure(Exception(AppLocale.pick("Сессия завершена. Требуется авторизация в ЭИОС.", "Session expired. Authorization in EIOS is required.")))
                 }
 
                 val schedule = ScheduleParser.parse(html, offsetWeeks, startDCurrent, endDCurrent)
@@ -632,7 +653,7 @@ class EiosRepository(private val context: Context) {
                     if (currentCacheFile.exists()) {
                         val cached = gson.fromJson(currentCacheFile.readText(), WeekSchedule::class.java)
                         if (cached != null) {
-                            NetworkLogger.logInfo("SCHEDULE", "Сетевая ошибка расписания, данные взяты из локального кэша")
+                            NetworkLogger.logInfo("SCHEDULE", AppLocale.pick("Сетевая ошибка расписания, данные взяты из локального кэша", "Schedule network error, data taken from the local cache"))
                             return@withLock Result.success(sanitizeCachedSchedule(cached))
                         }
                     }
@@ -682,7 +703,7 @@ class EiosRepository(private val context: Context) {
         _feedSyncProgress.value = FeedSyncProgress(
             isSyncing = false,
             stage = FeedSyncStage.IDLE,
-            statusText = "Синхронизация отменена пользователем"
+            statusText = AppLocale.pick("Синхронизация отменена пользователем", "Sync cancelled by the user")
         )
     }
 
@@ -698,8 +719,8 @@ class EiosRepository(private val context: Context) {
                 isSyncing = true,
                 stage = FeedSyncStage.CONNECTING,
                 elapsedSeconds = 0,
-                statusText = "Подключение к eios.gukolomna.ru...",
-                subStatusText = "Установка TLSv1.3 соединения"
+                statusText = AppLocale.pick("Подключение к eios.gukolomna.ru...", "Connecting to eios.gukolomna.ru..."),
+                subStatusText = AppLocale.pick("Установка TLSv1.3 соединения", "Establishing TLSv1.3 connection")
             )
 
             // Background ticker updating elapsed seconds and dynamic server phase every 1000ms
@@ -712,15 +733,15 @@ class EiosRepository(private val context: Context) {
 
                     if (cur.stage == FeedSyncStage.SERVER_PROCESSING) {
                         val serverPhaseText = when {
-                            elapsed < 10 -> "Запрос передан на сервер 1С-Битрикс..."
-                            elapsed < 25 -> "Сервер опрашивает БД (посты групп, задания и вложения)..."
-                            elapsed < 60 -> "PHP 7.2 генерирует тяжелую HTML-разметку (~7.5 МБ)..."
-                            elapsed < 120 -> "Сервер ГСГУ под высокой нагрузкой. Соединение активно..."
-                            elapsed < 240 -> "Сервер продолжает рендеринг страницы. Пожалуйста, подождите..."
-                            elapsed < 480 -> "Большая очередь запросов на сервере. Канал связи удерживается..."
-                            else -> "Сервер отвечает с большой задержкой, связь активна (таймаут 25 мин)..."
+                            elapsed < 10 -> AppLocale.pick("Запрос передан на сервер 1С-Битрикс...", "Request handed over to the 1C-Bitrix server...")
+                            elapsed < 25 -> AppLocale.pick("Сервер опрашивает БД (посты групп, задания и вложения)...", "The server is querying the database (group posts, assignments and attachments)...")
+                            elapsed < 60 -> AppLocale.pick("PHP 7.2 генерирует тяжелую HTML-разметку (~7.5 МБ)...", "PHP 7.2 is generating heavy HTML markup (~7.5 MB)...")
+                            elapsed < 120 -> AppLocale.pick("Сервер ГСГУ под высокой нагрузкой. Соединение активно...", "The GSGU server is under heavy load. Connection is alive...")
+                            elapsed < 240 -> AppLocale.pick("Сервер продолжает рендеринг страницы. Пожалуйста, подождите...", "The server is still rendering the page. Please wait...")
+                            elapsed < 480 -> AppLocale.pick("Большая очередь запросов на сервере. Канал связи удерживается...", "Long request queue on the server. The connection is being held...")
+                            else -> AppLocale.pick("Сервер отвечает с большой задержкой, связь активна (таймаут 25 мин)...", "The server responds slowly, the connection is alive (25 min timeout)...")
                         }
-                        val subText = "Соединение активно • Прошло ${formatDuration(elapsed)}"
+                        val subText = AppLocale.pick("Соединение активно • Прошло ${formatDuration(elapsed)}", "Connection alive • Elapsed ${formatDuration(elapsed)}")
                         _feedSyncProgress.value = cur.copy(
                             elapsedSeconds = elapsed,
                             statusText = serverPhaseText,
@@ -732,7 +753,7 @@ class EiosRepository(private val context: Context) {
                             lastLogTime = elapsed
                             NetworkLogger.logInfo(
                                 "FEED",
-                                "Ожидание ответа сервера: $elapsed сек (соединение удерживается, GET /eios/)"
+                                AppLocale.pick("Ожидание ответа сервера: $elapsed сек (соединение удерживается, GET /eios/)", "Waiting for the server response: $elapsed s (connection held, GET /eios/)")
                             )
                         }
                     } else {
@@ -742,7 +763,7 @@ class EiosRepository(private val context: Context) {
             }
 
             try {
-                NetworkLogger.logInfo("FEED", "Запуск синхронизации Живой ленты (GET https://eios.gukolomna.ru/eios/)")
+                NetworkLogger.logInfo("FEED", AppLocale.pick("Запуск синхронизации Живой ленты (GET https://eios.gukolomna.ru/eios/)", "Starting Live Feed sync (GET https://eios.gukolomna.ru/eios/)"))
 
                 // Dedicated client with 25-minute read timeout and detailed event listening
                 val feedSyncClient = okHttpClient.newBuilder()
@@ -751,11 +772,11 @@ class EiosRepository(private val context: Context) {
                     .writeTimeout(2, TimeUnit.MINUTES)
                     .eventListener(object : EventListener() {
                         override fun responseHeadersStart(call: Call) {
-                            NetworkLogger.logInfo("FEED", "Сервер передал первые байты ответа (заголовки)")
+                            NetworkLogger.logInfo("FEED", AppLocale.pick("Сервер передал первые байты ответа (заголовки)", "The server sent the first response bytes (headers)"))
                             _feedSyncProgress.value = _feedSyncProgress.value.copy(
                                 stage = FeedSyncStage.DOWNLOADING,
-                                statusText = "Сервер ответил, начинается передача данных...",
-                                subStatusText = "Получены HTTP заголовки"
+                                statusText = AppLocale.pick("Сервер ответил, начинается передача данных...", "The server responded, data transfer is starting..."),
+                                subStatusText = AppLocale.pick("Получены HTTP заголовки", "HTTP headers received")
                             )
                         }
                     })
@@ -772,13 +793,14 @@ class EiosRepository(private val context: Context) {
 
                 _feedSyncProgress.value = _feedSyncProgress.value.copy(
                     stage = FeedSyncStage.SERVER_PROCESSING,
-                    statusText = "Запрос передан на сервер 1С-Битрикс...",
-                    subStatusText = "Соединение установлено, ожидание ответа PHP"
+                    statusText = AppLocale.pick("Запрос передан на сервер 1С-Битрикс...", "Request handed over to the 1C-Bitrix server..."),
+                    subStatusText = AppLocale.pick("Соединение установлено, ожидание ответа PHP", "Connection established, waiting for the PHP response")
                 )
 
                 val response = call.execute()
                 if (!response.isSuccessful) {
-                    val msg = if (response.code in 500..599) ERROR_SERVER_EMPTY_OR_DOWN else "Сервер вернул HTTP ${response.code}"
+                    val msg = if (response.code in 500..599) ERROR_SERVER_EMPTY_OR_DOWN
+            else AppLocale.pick("Сервер вернул HTTP ${response.code}", "The server returned HTTP ${response.code}")
                     throw Exception(msg)
                 }
 
@@ -794,8 +816,8 @@ class EiosRepository(private val context: Context) {
 
                 _feedSyncProgress.value = _feedSyncProgress.value.copy(
                     stage = FeedSyncStage.DOWNLOADING,
-                    statusText = "Сервер ответил, начало скачивания данных...",
-                    subStatusText = "Поток данных открыт"
+                    statusText = AppLocale.pick("Сервер ответил, начало скачивания данных...", "The server responded, download is starting..."),
+                    subStatusText = AppLocale.pick("Поток данных открыт", "Data stream opened")
                 )
 
                 while (true) {
@@ -818,15 +840,15 @@ class EiosRepository(private val context: Context) {
                         val percent = ((downloaded.toDouble() / estimatedTotal) * 100).toInt().coerceIn(1, 99)
                         val remainingBytes = (estimatedTotal - downloaded).coerceAtLeast(0)
                         val etaSec = if (currentSpeed > 0) (remainingBytes / currentSpeed).toInt() else null
-                        val etaStr = if (etaSec != null && etaSec in 1..600) " • ост. ~${etaSec}с" else ""
+                        val etaStr = if (etaSec != null && etaSec in 1..600) AppLocale.pick(" • ост. ~${etaSec}с", " • ~${etaSec}s left") else ""
 
                         val mainStatus = if (totalLength > 0) {
-                            "Получено $sizeStr из ${formatBytes(totalLength)} ($percent%)$etaStr"
+                            AppLocale.pick("Получено $sizeStr из ${formatBytes(totalLength)} ($percent%)$etaStr", "Received $sizeStr of ${formatBytes(totalLength)} ($percent%)$etaStr")
                         } else {
-                            "Получено $sizeStr (~$percent%)$etaStr"
+                            AppLocale.pick("Получено $sizeStr (~$percent%)$etaStr", "Received $sizeStr (~$percent%)$etaStr")
                         }
 
-                        val subStatus = "Скорость: $speedStr • Поток данных активен ●"
+                        val subStatus = AppLocale.pick("Скорость: $speedStr • Поток данных активен ●", "Speed: $speedStr • Data stream active ●")
 
                         _feedSyncProgress.value = _feedSyncProgress.value.copy(
                             stage = FeedSyncStage.DOWNLOADING,
@@ -844,15 +866,15 @@ class EiosRepository(private val context: Context) {
                 _feedSyncProgress.value = _feedSyncProgress.value.copy(
                     stage = FeedSyncStage.PARSING,
                     bytesDownloaded = downloaded,
-                    statusText = "Обработка объявлений и файлов (${formatBytes(downloaded)})...",
-                    subStatusText = "Парсинг постов и документов"
+                    statusText = AppLocale.pick("Обработка объявлений и файлов (${formatBytes(downloaded)})...", "Processing posts and files (${formatBytes(downloaded)})..."),
+                    subStatusText = AppLocale.pick("Парсинг постов и документов", "Parsing posts and documents")
                 )
 
                 val html = out.toString("UTF-8")
                 updateProfileIfFound(html)
 
                 if (ScheduleParser.isAuthRequired(html)) {
-                    throw Exception("Сессия завершена. Требуется авторизация в ЭИОС.")
+                    throw Exception(AppLocale.pick("Сессия завершена. Требуется авторизация в ЭИОС.", "Session expired. Authorization in EIOS is required."))
                 }
 
                 val posts = FeedParser.parse(html, maxPosts = maxPosts)
@@ -879,14 +901,14 @@ class EiosRepository(private val context: Context) {
                     elapsedSeconds = totalElapsed,
                     bytesDownloaded = downloaded,
                     totalBytes = downloaded,
-                    statusText = "Синхронизация завершена: загружено ${posts.size} постов (${formatBytes(downloaded)} за $durationStr)",
-                    subStatusText = "Лента сохранена в локальный кэш"
+                    statusText = AppLocale.pick("Синхронизация завершена: загружено ${posts.size} постов (${formatBytes(downloaded)} за $durationStr)", "Sync complete: ${posts.size} posts downloaded (${formatBytes(downloaded)} in $durationStr)"),
+                    subStatusText = AppLocale.pick("Лента сохранена в локальный кэш", "Feed saved to the local cache")
                 )
 
                 NetworkLogger.logSuccess(
                     tag = "FEED",
-                    message = "Синхронизация Живой ленты успешно завершена",
-                    details = "Постов: ${posts.size}, Размер: ${formatBytes(downloaded)}, Время: $durationStr"
+                    message = AppLocale.pick("Синхронизация Живой ленты успешно завершена", "Live Feed sync completed successfully"),
+                    details = AppLocale.pick("Постов: ${posts.size}, Размер: ${formatBytes(downloaded)}, Время: $durationStr", "Posts: ${posts.size}, Size: ${formatBytes(downloaded)}, Time: $durationStr")
                 )
 
                 Result.success(posts)
@@ -900,9 +922,9 @@ class EiosRepository(private val context: Context) {
                         !isCancelled && e.message != ERROR_SERVER_EMPTY_OR_DOWN
 
                 val errText = when {
-                    isCancelled -> "Синхронизация отменена пользователем"
+                    isCancelled -> AppLocale.pick("Синхронизация отменена пользователем", "Sync cancelled by the user")
                     e.message == ERROR_SERVER_EMPTY_OR_DOWN -> ERROR_SERVER_EMPTY_OR_DOWN
-                    e.message == "Сессия завершена. Требуется авторизация в ЭИОС." -> e.message!!
+                    e.message == AppLocale.pick("Сессия завершена. Требуется авторизация в ЭИОС.", "Session expired. Authorization in EIOS is required.") -> e.message!!
                     isNetworkDown -> ERROR_NO_CONNECTION
                     else -> e.localizedMessage ?: ERROR_NO_CONNECTION
                 }
@@ -916,7 +938,7 @@ class EiosRepository(private val context: Context) {
                 )
 
                 if (!isCancelled) {
-                    NetworkLogger.logError("FEED", "Сбой синхронизации ленты: ${e.localizedMessage ?: e.message}", e)
+                    NetworkLogger.logError("FEED", AppLocale.pick("Сбой синхронизации ленты: ${e.localizedMessage ?: e.message}", "Feed sync failure: ${e.localizedMessage ?: e.message}"), e)
                 }
 
                 if (cacheFile.exists()) {
@@ -964,26 +986,26 @@ class EiosRepository(private val context: Context) {
 
     fun formatBytes(bytes: Long): String {
         return when {
-            bytes >= 1024 * 1024 -> String.format(Locale.US, "%.1f МБ", bytes / (1024.0 * 1024.0))
-            bytes >= 1024 -> String.format(Locale.US, "%d КБ", bytes / 1024)
-            bytes > 0 -> "$bytes Б"
-            else -> "0 Б"
+            bytes >= 1024 * 1024 -> String.format(Locale.US, AppLocale.pick("%.1f МБ", "%.1f MB"), bytes / (1024.0 * 1024.0))
+            bytes >= 1024 -> String.format(Locale.US, AppLocale.pick("%d КБ", "%d KB"), bytes / 1024)
+            bytes > 0 -> AppLocale.pick("$bytes Б", "$bytes B")
+            else -> AppLocale.pick("0 Б", "0 B")
         }
     }
 
     fun formatSpeed(bytesPerSec: Long): String {
         return when {
-            bytesPerSec >= 1024 * 1024 -> String.format(Locale.US, "%.1f МБ/с", bytesPerSec / (1024.0 * 1024.0))
-            bytesPerSec >= 1024 -> String.format(Locale.US, "%d КБ/с", bytesPerSec / 1024)
-            bytesPerSec > 0 -> "$bytesPerSec Б/с"
-            else -> "0 Б/с"
+            bytesPerSec >= 1024 * 1024 -> String.format(Locale.US, AppLocale.pick("%.1f МБ/с", "%.1f MB/s"), bytesPerSec / (1024.0 * 1024.0))
+            bytesPerSec >= 1024 -> String.format(Locale.US, AppLocale.pick("%d КБ/с", "%d KB/s"), bytesPerSec / 1024)
+            bytesPerSec > 0 -> AppLocale.pick("$bytesPerSec Б/с", "$bytesPerSec B/s")
+            else -> AppLocale.pick("0 Б/с", "0 B/s")
         }
     }
 
     fun formatDuration(seconds: Int): String {
         val m = seconds / 60
         val s = seconds % 60
-        return if (m > 0) "$m мин $s с" else "$s с"
+        return if (m > 0) AppLocale.pick("$m мин $s с", "$m min $s s") else AppLocale.pick("$s с", "$s s")
     }
 
     fun getCachedCurriculum(): List<CurriculumTerm>? {
@@ -1022,7 +1044,7 @@ class EiosRepository(private val context: Context) {
                 val json = cacheFile.readText()
                 val cached: List<CurriculumTerm>? = gson.fromJson(json, listType)
                 if (!cached.isNullOrEmpty()) {
-                    NetworkLogger.logInfo("CURRICULUM", "Идёт синхронизация ленты: успеваемость отдана из кэша")
+                    NetworkLogger.logInfo("CURRICULUM", AppLocale.pick("Идёт синхронизация ленты: успеваемость отдана из кэша", "Feed sync in progress: curriculum served from cache"))
                     return@withContext Result.success(cached)
                 }
             } catch (e: Exception) {
@@ -1054,7 +1076,7 @@ class EiosRepository(private val context: Context) {
                         val cached: List<CurriculumTerm>? = gson.fromJson(cacheFile.readText(), listType)
                         if (!cached.isNullOrEmpty()) return@withLock Result.success(cached)
                     }
-                    val msg = if (response.code in 500..599) ERROR_SERVER_EMPTY_OR_DOWN else "Ошибка сервера БРС: HTTP ${response.code}"
+                    val msg = if (response.code in 500..599) ERROR_SERVER_EMPTY_OR_DOWN else AppLocale.pick("Ошибка сервера БРС: HTTP ${response.code}", "Curriculum (BRS) server error: HTTP ${response.code}")
                     return@withLock Result.failure(Exception(msg))
                 }
 
@@ -1066,7 +1088,7 @@ class EiosRepository(private val context: Context) {
                         val cached: List<CurriculumTerm>? = gson.fromJson(cacheFile.readText(), listType)
                         if (!cached.isNullOrEmpty()) return@withLock Result.success(cached)
                     }
-                    return@withLock Result.failure(Exception("Сессия завершена. Требуется авторизация в ЭИОС."))
+                    return@withLock Result.failure(Exception(AppLocale.pick("Сессия завершена. Требуется авторизация в ЭИОС.", "Session expired. Authorization in EIOS is required.")))
                 }
 
                 val terms = CurriculumParser.parse(html)
@@ -1112,15 +1134,15 @@ class EiosRepository(private val context: Context) {
         try {
             val response = okHttpClient.newCall(reqBuilder.build()).execute()
             if (!response.isSuccessful) {
-                return@withContext Result.failure(Exception("Ошибка загрузки файла: HTTP ${response.code}"))
+                return@withContext Result.failure(Exception(AppLocale.pick("Ошибка загрузки файла: HTTP ${response.code}", "File download error: HTTP ${response.code}")))
             }
 
             val finalUrl = response.request.url.toString()
             if (finalUrl.contains("login=yes") || response.header("X-Bitrix-Ajax-Status") == "Authorize") {
-                return@withContext Result.failure(Exception("Для скачивания требуется авторизация в ЭИОС"))
+                return@withContext Result.failure(Exception(AppLocale.pick("Для скачивания требуется авторизация в ЭИОС", "EIOS authorization is required to download this file")))
             }
 
-            val body = response.body ?: return@withContext Result.failure(Exception("Пустой ответ сервера"))
+            val body = response.body ?: return@withContext Result.failure(Exception(AppLocale.pick("Пустой ответ сервера", "Empty server response")))
             val totalBytes = body.contentLength()
 
             val tempFile = File(targetFile.parentFile, "${targetFile.name}.tmp")
@@ -1148,7 +1170,7 @@ class EiosRepository(private val context: Context) {
 
             Result.success(targetFile)
         } catch (e: Exception) {
-            Result.failure(Exception("Не удалось скачать файл: ${e.localizedMessage ?: e.message}"))
+            Result.failure(Exception(AppLocale.pick("Не удалось скачать файл: ${e.localizedMessage ?: e.message}", "Failed to download the file: ${e.localizedMessage ?: e.message}")))
         }
     }
 
@@ -1186,7 +1208,7 @@ class EiosRepository(private val context: Context) {
                 name = id.uppercase(Locale.getDefault()),
                 path = "/eios/",
                 status = EndpointStatus.ERROR,
-                message = "Неизвестный эндпоинт: $id"
+                message = AppLocale.pick("Неизвестный эндпоинт: $id", "Unknown endpoint: $id")
             )
         }
     }
@@ -1216,38 +1238,38 @@ class EiosRepository(private val context: Context) {
                 !resp.isSuccessful -> {
                     Triple(
                         EndpointStatus.ERROR,
-                        "Ошибка сервера: HTTP $responseCode",
-                        "Сервер вернул код ошибки HTTP $responseCode (${resp.message})"
+                        AppLocale.pick("Ошибка сервера: HTTP $responseCode", "Server error: HTTP $responseCode"),
+                        AppLocale.pick("Сервер вернул код ошибки HTTP $responseCode (${resp.message})", "The server returned HTTP error code $responseCode (${resp.message})")
                     )
                 }
                 errText != null -> {
                     Triple(
                         EndpointStatus.DEGRADED,
-                        "200 ОК, но сбой 1С: $errText",
-                        "Сервер отдал HTTP 200, но в теле страницы обнаружен текст ошибки 1С: «$errText»"
+                        AppLocale.pick("200 ОК, но сбой 1С: $errText", "200 OK, but a 1C failure: $errText"),
+                        AppLocale.pick("Сервер отдал HTTP 200, но в теле страницы обнаружен текст ошибки 1С: «$errText»", "The server returned HTTP 200, but the page body contains a 1C error text: «$errText»")
                     )
                 }
                 hasTimetable -> {
                     Triple(
                         EndpointStatus.OK,
-                        if (bodyStr.contains("schedule-table")) "200 ОК · Таблица расписания получена (${latency} мс)"
-                        else "200 ОК · Расписание получено (нет пар на неделе) (${latency} мс)",
-                        if (bodyStr.contains("schedule-table")) "Сервер ответил штатно. В HTML обнаружен контейнер <table class=\"schedule-table\">"
-                        else "Сервер ответил штатно. В HTML обнаружен контейнер расписания (пар на выбранной неделе нет)"
+                        if (bodyStr.contains("schedule-table")) AppLocale.pick("200 ОК · Таблица расписания получена (${latency} мс)", "200 OK · Timetable fetched (${latency} ms)")
+                        else AppLocale.pick("200 ОК · Расписание получено (нет пар на неделе) (${latency} мс)", "200 OK · Schedule fetched (no lessons this week) (${latency} ms)"),
+                        if (bodyStr.contains("schedule-table")) AppLocale.pick("Сервер ответил штатно. В HTML обнаружен контейнер <table class=\"schedule-table\">", "The server responded normally. The HTML contains the <table class=\"schedule-table\"> container")
+                        else AppLocale.pick("Сервер ответил штатно. В HTML обнаружен контейнер расписания (пар на выбранной неделе нет)", "The server responded normally. The schedule container was found (no lessons on the selected week)")
                     )
                 }
                 isAuthReq -> {
                     Triple(
                         EndpointStatus.AUTH_REQUIRED,
-                        "200 ОК · Требуется вход, отдана форма авторизации (${latency} мс)",
-                        "Сервер отдал форму входа (сессия не авторизована). Эндпоинт доступен, но требует входа"
+                        AppLocale.pick("200 ОК · Требуется вход, отдана форма авторизации (${latency} мс)", "200 OK · Sign-in required, the authorization form was served (${latency} ms)"),
+                        AppLocale.pick("Сервер отдал форму входа (сессия не авторизована). Эндпоинт доступен, но требует входа", "The server served the login form (session not authorized). The endpoint is reachable but requires sign-in")
                     )
                 }
                 else -> {
                     Triple(
                         EndpointStatus.DEGRADED,
-                        "200 ОК, но пустая страница (нет таблицы)",
-                        "Сервер вернул 200 ОК, но маркер расписания не найден"
+                        AppLocale.pick("200 ОК, но пустая страница (нет таблицы)", "200 OK, but the page is empty (no table)"),
+                        AppLocale.pick("Сервер вернул 200 ОК, но маркер расписания не найден", "The server returned 200 OK, but the schedule marker was not found")
                     )
                 }
             }
@@ -1268,7 +1290,7 @@ class EiosRepository(private val context: Context) {
 
             return EndpointHealthItem(
                 id = "timetable",
-                name = "РАСПИСАНИЕ",
+                name = AppLocale.pick("РАСПИСАНИЕ", "SCHEDULE"),
                 path = path,
                 status = status,
                 httpCode = responseCode,
@@ -1280,14 +1302,17 @@ class EiosRepository(private val context: Context) {
             val latency = System.currentTimeMillis() - start
             val isTimeout = e is java.net.SocketTimeoutException || e is java.io.InterruptedIOException
             val message = if (isTimeout) {
-                "Таймаут соединения: сервер не ответил за 15 секунд"
+                AppLocale.pick("Таймаут соединения: сервер не ответил за 15 секунд", "Connection timeout: the server did not respond within 15 seconds")
             } else {
-                "Нет связи с сервером (${e.localizedMessage ?: e.message ?: "сбой сети"})"
+                AppLocale.pick(
+                    "Нет связи с сервером (${e.localizedMessage ?: e.message ?: "сбой сети"})",
+                    "No connection to the server (${e.localizedMessage ?: e.message ?: "network failure"})"
+                )
             }
             val verdict = if (isTimeout) {
-                "Сервер не успел ответить за отведенные 15 секунд (таймаут истек). Возможно, сервис 1С перегружен или завис."
+                AppLocale.pick("Сервер не успел ответить за отведенные 15 секунд (таймаут истек). Возможно, сервис 1С перегружен или завис.", "The server failed to respond within the allotted 15 seconds (timeout expired). The 1C service may be overloaded or hung.")
             } else {
-                "Сетевой сбой при попытке соединения с сервером: ${e.javaClass.simpleName}"
+                AppLocale.pick("Сетевой сбой при попытке соединения с сервером: ${e.javaClass.simpleName}", "Network failure while connecting to the server: ${e.javaClass.simpleName}")
             }
 
             val rawLog = buildDiagnosticRawLog(
@@ -1306,7 +1331,7 @@ class EiosRepository(private val context: Context) {
 
             return EndpointHealthItem(
                 id = "timetable",
-                name = "РАСПИСАНИЕ",
+                name = AppLocale.pick("РАСПИСАНИЕ", "SCHEDULE"),
                 path = path,
                 status = EndpointStatus.ERROR,
                 latencyMs = latency,
@@ -1338,37 +1363,37 @@ class EiosRepository(private val context: Context) {
                 !resp.isSuccessful -> {
                     Triple(
                         EndpointStatus.ERROR,
-                        "Ошибка сервера: HTTP $responseCode",
-                        "Сервер вернул ошибку HTTP $responseCode (${resp.message})"
+                        AppLocale.pick("Ошибка сервера: HTTP $responseCode", "Server error: HTTP $responseCode"),
+                        AppLocale.pick("Сервер вернул ошибку HTTP $responseCode (${resp.message})", "The server returned HTTP error $responseCode (${resp.message})")
                     )
                 }
                 bodyStr.contains("errortext") -> {
-                    val errText = ScheduleParser.extractErrorMessage(bodyStr) ?: "Ошибка Битрикс"
+                    val errText = ScheduleParser.extractErrorMessage(bodyStr) ?: AppLocale.pick("Ошибка Битрикс", "Bitrix error")
                     Triple(
                         EndpointStatus.DEGRADED,
-                        "200 ОК, но ошибка: $errText",
-                        "Сервер отдал HTTP 200, но обнаружена ошибка Битрикса: $errText"
+                        AppLocale.pick("200 ОК, но ошибка: $errText", "200 OK, but an error occurred: $errText"),
+                        AppLocale.pick("Сервер отдал HTTP 200, но обнаружена ошибка Битрикса: $errText", "The server returned HTTP 200, but a Bitrix error was detected: $errText")
                     )
                 }
                 bodyStr.contains("feed-post-block") || bodyStr.contains("feed-wrap") || bodyStr.contains("workarea") -> {
                     Triple(
                         EndpointStatus.OK,
-                        "200 ОК · Живая лента доступна (${latency} мс)",
-                        "Сервер ответил штатно. Обнаружены блоки живой ленты"
+                        AppLocale.pick("200 ОК · Живая лента доступна (${latency} мс)", "200 OK · Live Feed is available (${latency} ms)"),
+                        AppLocale.pick("Сервер ответил штатно. Обнаружены блоки живой ленты", "The server responded normally. Live Feed blocks were detected")
                     )
                 }
                 bodyStr.contains("bx_auth_serv") || ScheduleParser.isAuthRequired(bodyStr) -> {
                     Triple(
                         EndpointStatus.AUTH_REQUIRED,
-                        "200 ОК · Требуется вход, отдана форма авторизации (${latency} мс)",
-                        "Сервер отдал форму входа (сессия не авторизована). Эндпоинт доступен, но требует кук"
+                        AppLocale.pick("200 ОК · Требуется вход, отдана форма авторизации (${latency} мс)", "200 OK · Sign-in required, the authorization form was served (${latency} ms)"),
+                        AppLocale.pick("Сервер отдал форму входа (сессия не авторизована). Эндпоинт доступен, но требует кук", "The server served the login form (session not authorized). The endpoint is reachable but requires cookies")
                     )
                 }
                 else -> {
                     Triple(
                         EndpointStatus.OK,
-                        "200 ОК · Страница получена (${latency} мс)",
-                        "Сервер вернул 200 ОК, тело страницы получено (${bodyStr.length} симв.)"
+                        AppLocale.pick("200 ОК · Страница получена (${latency} мс)", "200 OK · Page fetched (${latency} ms)"),
+                        AppLocale.pick("Сервер вернул 200 ОК, тело страницы получено (${bodyStr.length} симв.)", "The server returned 200 OK, the page body was fetched (${bodyStr.length} chars)")
                     )
                 }
             }
@@ -1389,7 +1414,7 @@ class EiosRepository(private val context: Context) {
 
             return EndpointHealthItem(
                 id = "feed",
-                name = "ЖИВАЯ ЛЕНТА",
+                name = AppLocale.pick("ЖИВАЯ ЛЕНТА", "LIVE FEED"),
                 path = path,
                 status = status,
                 httpCode = responseCode,
@@ -1401,14 +1426,17 @@ class EiosRepository(private val context: Context) {
             val latency = System.currentTimeMillis() - start
             val isTimeout = e is java.net.SocketTimeoutException || e is java.io.InterruptedIOException
             val message = if (isTimeout) {
-                "Таймаут соединения: сервер не ответил за 15 секунд"
+                AppLocale.pick("Таймаут соединения: сервер не ответил за 15 секунд", "Connection timeout: the server did not respond within 15 seconds")
             } else {
-                "Нет связи с сервером (${e.localizedMessage ?: e.message ?: "сбой сети"})"
+                AppLocale.pick(
+                    "Нет связи с сервером (${e.localizedMessage ?: e.message ?: "сбой сети"})",
+                    "No connection to the server (${e.localizedMessage ?: e.message ?: "network failure"})"
+                )
             }
             val verdict = if (isTimeout) {
-                "Сервер не успел ответить за отведенные 15 секунд (таймаут истек). Возможно, портал перегружен."
+                AppLocale.pick("Сервер не успел ответить за отведенные 15 секунд (таймаут истек). Возможно, портал перегружен.", "The server failed to respond within the allotted 15 seconds (timeout expired). The portal may be overloaded.")
             } else {
-                "Сетевой сбой при попытке соединения с сервером: ${e.javaClass.simpleName}"
+                AppLocale.pick("Сетевой сбой при попытке соединения с сервером: ${e.javaClass.simpleName}", "Network failure while connecting to the server: ${e.javaClass.simpleName}")
             }
 
             val rawLog = buildDiagnosticRawLog(
@@ -1427,7 +1455,7 @@ class EiosRepository(private val context: Context) {
 
             return EndpointHealthItem(
                 id = "feed",
-                name = "ЖИВАЯ ЛЕНТА",
+                name = AppLocale.pick("ЖИВАЯ ЛЕНТА", "LIVE FEED"),
                 path = path,
                 status = EndpointStatus.ERROR,
                 latencyMs = latency,
@@ -1466,37 +1494,37 @@ class EiosRepository(private val context: Context) {
                 !resp.isSuccessful -> {
                     Triple(
                         EndpointStatus.ERROR,
-                        "Ошибка сервера: HTTP $responseCode",
-                        "Сервер вернул ошибку HTTP $responseCode (${resp.message})"
+                        AppLocale.pick("Ошибка сервера: HTTP $responseCode", "Server error: HTTP $responseCode"),
+                        AppLocale.pick("Сервер вернул ошибку HTTP $responseCode (${resp.message})", "The server returned HTTP error $responseCode (${resp.message})")
                     )
                 }
                 bodyStr.contains("errortext") -> {
-                    val errText = ScheduleParser.extractErrorMessage(bodyStr) ?: "Ошибка Битрикс"
+                    val errText = ScheduleParser.extractErrorMessage(bodyStr) ?: AppLocale.pick("Ошибка Битрикс", "Bitrix error")
                     Triple(
                         EndpointStatus.DEGRADED,
-                        "200 ОК, но ошибка: $errText",
-                        "Сервер отдал HTTP 200, но обнаружена ошибка Битрикса: $errText"
+                        AppLocale.pick("200 ОК, но ошибка: $errText", "200 OK, but an error occurred: $errText"),
+                        AppLocale.pick("Сервер отдал HTTP 200, но обнаружена ошибка Битрикса: $errText", "The server returned HTTP 200, but a Bitrix error was detected: $errText")
                     )
                 }
                 bodyStr.contains("bx_auth_serv") || ScheduleParser.isAuthRequired(bodyStr) -> {
                     Triple(
                         EndpointStatus.AUTH_REQUIRED,
-                        "200 ОК · Требуется вход, отдана форма авторизации (${latency} мс)",
-                        "Сервер отдал форму входа (сессия не авторизована). Эндпоинт доступен, но требует кук"
+                        AppLocale.pick("200 ОК · Требуется вход, отдана форма авторизации (${latency} мс)", "200 OK · Sign-in required, the authorization form was served (${latency} ms)"),
+                        AppLocale.pick("Сервер отдал форму входа (сессия не авторизована). Эндпоинт доступен, но требует кук", "The server served the login form (session not authorized). The endpoint is reachable but requires cookies")
                     )
                 }
                 bodyStr.contains("curriculum") || bodyStr.contains("Семестр") || bodyStr.contains("таблица") || bodyStr.contains("table") -> {
                     Triple(
                         EndpointStatus.OK,
-                        "200 ОК · Учебный план и БРС доступны (${latency} мс)",
-                        "Сервер ответил штатно. Обнаружены структуры учебного плана / БРС"
+                        AppLocale.pick("200 ОК · Учебный план и БРС доступны (${latency} мс)", "200 OK · Curriculum and BRS are available (${latency} ms)"),
+                        AppLocale.pick("Сервер ответил штатно. Обнаружены структуры учебного плана / БРС", "The server responded normally. Curriculum / BRS structures were detected")
                     )
                 }
                 else -> {
                     Triple(
                         EndpointStatus.OK,
-                        "200 ОК · Страница получена (${latency} мс)",
-                        "Сервер вернул 200 ОК, тело страницы получено (${bodyStr.length} симв.)"
+                        AppLocale.pick("200 ОК · Страница получена (${latency} мс)", "200 OK · Page fetched (${latency} ms)"),
+                        AppLocale.pick("Сервер вернул 200 ОК, тело страницы получено (${bodyStr.length} симв.)", "The server returned 200 OK, the page body was fetched (${bodyStr.length} chars)")
                     )
                 }
             }
@@ -1517,7 +1545,7 @@ class EiosRepository(private val context: Context) {
 
             return EndpointHealthItem(
                 id = "curriculum",
-                name = "УСПЕВАЕМОСТЬ (БРС)",
+                name = AppLocale.pick("УСПЕВАЕМОСТЬ (БРС)", "CURRICULUM (BRS)"),
                 path = path,
                 status = status,
                 httpCode = responseCode,
@@ -1529,14 +1557,17 @@ class EiosRepository(private val context: Context) {
             val latency = System.currentTimeMillis() - start
             val isTimeout = e is java.net.SocketTimeoutException || e is java.io.InterruptedIOException
             val message = if (isTimeout) {
-                "Таймаут соединения: сервер не ответил за 15 секунд"
+                AppLocale.pick("Таймаут соединения: сервер не ответил за 15 секунд", "Connection timeout: the server did not respond within 15 seconds")
             } else {
-                "Нет связи с сервером (${e.localizedMessage ?: e.message ?: "сбой сети"})"
+                AppLocale.pick(
+                    "Нет связи с сервером (${e.localizedMessage ?: e.message ?: "сбой сети"})",
+                    "No connection to the server (${e.localizedMessage ?: e.message ?: "network failure"})"
+                )
             }
             val verdict = if (isTimeout) {
-                "Сервер не успел ответить за отведенные 15 секунд (таймаут истек). Возможно, портал перегружен."
+                AppLocale.pick("Сервер не успел ответить за отведенные 15 секунд (таймаут истек). Возможно, портал перегружен.", "The server failed to respond within the allotted 15 seconds (timeout expired). The portal may be overloaded.")
             } else {
-                "Сетевой сбой при попытке соединения с сервером: ${e.javaClass.simpleName}"
+                AppLocale.pick("Сетевой сбой при попытке соединения с сервером: ${e.javaClass.simpleName}", "Network failure while connecting to the server: ${e.javaClass.simpleName}")
             }
 
             val rawLog = buildDiagnosticRawLog(
@@ -1555,7 +1586,7 @@ class EiosRepository(private val context: Context) {
 
             return EndpointHealthItem(
                 id = "curriculum",
-                name = "УСПЕВАЕМОСТЬ (БРС)",
+                name = AppLocale.pick("УСПЕВАЕМОСТЬ (БРС)", "CURRICULUM (BRS)"),
                 path = path,
                 status = EndpointStatus.ERROR,
                 latencyMs = latency,
@@ -1582,7 +1613,7 @@ class EiosRepository(private val context: Context) {
         val host = httpUrl.host
         return buildString {
             appendLine("═══════════════════════════════════════════════════════════")
-            appendLine(">>> HTTP-ЗАПРОС (REQUEST)")
+            appendLine(AppLocale.pick(">>> HTTP-ЗАПРОС (REQUEST)", ">>> HTTP REQUEST"))
             appendLine("═══════════════════════════════════════════════════════════")
             appendLine("$method $url HTTP/1.1")
             appendLine("Host: $host")
@@ -1596,29 +1627,29 @@ class EiosRepository(private val context: Context) {
             if (!cookiesSent.isNullOrEmpty()) {
                 appendLine("Cookie: $cookiesSent")
             } else {
-                appendLine("Cookie: [Сессия не авторизована]")
+                appendLine(AppLocale.pick("Cookie: [Сессия не авторизована]", "Cookie: [session not authorized]"))
             }
             appendLine()
 
             if (error != null) {
                 appendLine("═══════════════════════════════════════════════════════════")
-                appendLine("<<< СБОЙ СЕТЕВОГО ЗАПРОСА (${latencyMs} мс)")
+                appendLine(AppLocale.pick("<<< СБОЙ СЕТЕВОГО ЗАПРОСА (${latencyMs} мс)", "<<< NETWORK REQUEST FAILURE (${latencyMs} ms)"))
                 appendLine("═══════════════════════════════════════════════════════════")
-                appendLine("Исключение: ${error.javaClass.name}")
-                appendLine("Сообщение: ${error.localizedMessage ?: error.message}")
+                appendLine(AppLocale.pick("Исключение: ${error.javaClass.name}", "Exception: ${error.javaClass.name}"))
+                appendLine(AppLocale.pick("Сообщение: ${error.localizedMessage ?: error.message}", "Message: ${error.localizedMessage ?: error.message}"))
                 if (error is java.net.SocketTimeoutException || error is java.io.InterruptedIOException) {
-                    appendLine("Таймаут: Превышен лимит ожидания ответа (15.000 сек).")
+                    appendLine(AppLocale.pick("Таймаут: Превышен лимит ожидания ответа (15.000 сек).", "Timeout: the response wait limit was exceeded (15.000 s)."))
                 }
-                appendLine("Стек ошибки:")
+                appendLine(AppLocale.pick("Стек ошибки:", "Error stack:"))
                 error.stackTrace.take(6).forEach { st ->
                     appendLine("  at $st")
                 }
                 appendLine()
-                appendLine("ВЕРДИКТ:")
+                appendLine(AppLocale.pick("ВЕРДИКТ:", "VERDICT:"))
                 appendLine(verdict)
             } else if (responseCode != null) {
                 appendLine("═══════════════════════════════════════════════════════════")
-                appendLine("<<< HTTP-ОТВЕТ (RESPONSE · HTTP $responseCode · ${latencyMs} мс)")
+                appendLine(AppLocale.pick("<<< HTTP-ОТВЕТ (RESPONSE · HTTP $responseCode · ${latencyMs} мс)", "<<< HTTP RESPONSE (HTTP $responseCode · ${latencyMs} ms)"))
                 appendLine("═══════════════════════════════════════════════════════════")
                 appendLine("HTTP/1.1 $responseCode ${responseMessage ?: ""}")
                 responseHeaders?.forEach { (name, value) ->
@@ -1626,12 +1657,12 @@ class EiosRepository(private val context: Context) {
                 }
                 appendLine()
                 appendLine("═══════════════════════════════════════════════════════════")
-                appendLine("ДИАГНОСТИЧЕСКИЙ АНАЛИЗ ТЕЛА ($bodySize байт)")
+                appendLine(AppLocale.pick("ДИАГНОСТИЧЕСКИЙ АНАЛИЗ ТЕЛА ($bodySize байт)", "BODY DIAGNOSTIC ANALYSIS ($bodySize bytes)"))
                 appendLine("═══════════════════════════════════════════════════════════")
-                appendLine("ВЕРДИКТ: $verdict")
+                appendLine(AppLocale.pick("ВЕРДИКТ: $verdict", "VERDICT: $verdict"))
                 if (!bodySnippet.isNullOrEmpty()) {
                     appendLine()
-                    appendLine("Фрагмент содержимого HTML (первые 400 симв.):")
+                    appendLine(AppLocale.pick("Фрагмент содержимого HTML (первые 400 симв.):", "HTML content fragment (first 400 chars):"))
                     val snippetClean = bodySnippet.take(400).replace("\r", "")
                     appendLine(snippetClean)
                 }

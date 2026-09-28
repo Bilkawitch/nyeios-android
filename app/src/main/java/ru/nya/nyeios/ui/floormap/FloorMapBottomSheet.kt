@@ -52,6 +52,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -86,6 +87,9 @@ import ru.nya.nyeios.data.floormap.FloorMapRepository
 import ru.nya.nyeios.data.floormap.FloorRoom
 import ru.nya.nyeios.data.floormap.FloorRoute
 import ru.nya.nyeios.data.floormap.RoomType
+import ru.nya.nyeios.ui.common.localizedRoomType
+import ru.nya.nyeios.ui.common.localizedRoomWing
+import ru.nya.nyeios.ui.common.localizedStairsName
 import ru.nya.nyeios.ui.theme.LectureBlue
 import ru.nya.nyeios.ui.theme.LiveBadgeColor
 import ru.nya.nyeios.ui.theme.NierAmber
@@ -218,11 +222,11 @@ fun FloorMapBottomSheet(
                     Column {
                         Text(
                             text = if (route != null && route.isCrossFloor) {
-                                "Межэтажный маршрут"
+                                stringResource(R.string.map_route_cross_floor_title)
                             } else if (route != null && route.points.isNotEmpty()) {
-                                "Маршрут между парами"
+                                stringResource(R.string.map_route_between_lessons_title)
                             } else {
-                                "Навигация по корпусу"
+                                stringResource(R.string.map_navigation_title)
                             },
                             fontSize = 17.sp,
                             fontFamily = RajdhaniFamily,
@@ -230,7 +234,7 @@ fun FloorMapBottomSheet(
                             color = NierDark
                         )
                         Text(
-                            text = "ГОУ ВО МО «ГСГУ»",
+                            text = stringResource(R.string.map_university_name),
                             fontSize = 10.sp,
                             fontFamily = ShareTechMonoFamily,
                             color = NierBorder
@@ -244,7 +248,7 @@ fun FloorMapBottomSheet(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Закрыть",
+                        contentDescription = stringResource(R.string.action_close),
                         tint = NierDark,
                         modifier = Modifier.size(18.dp)
                     )
@@ -283,7 +287,7 @@ fun FloorMapBottomSheet(
                             lineHeight = 18.sp
                         )
                         Text(
-                            text = "ЭТАЖ",
+                            text = stringResource(R.string.map_floor_label),
                             fontSize = 8.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = RajdhaniFamily,
@@ -325,7 +329,7 @@ fun FloorMapBottomSheet(
                             lineHeight = 18.sp
                         )
                         Text(
-                            text = "ЭТАЖ",
+                            text = stringResource(R.string.map_floor_label),
                             fontSize = 8.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = RajdhaniFamily,
@@ -362,7 +366,7 @@ fun FloorMapBottomSheet(
                             lineHeight = 18.sp
                         )
                         Text(
-                            text = "СВЯЗКА",
+                            text = stringResource(R.string.map_connector_label),
                             fontSize = 8.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = RajdhaniFamily,
@@ -404,7 +408,7 @@ fun FloorMapBottomSheet(
                         ) {
                             Column {
                                 Text(
-                                    text = if (isEditingStart) "ОТ ▼" else "ОТ",
+                                    text = if (isEditingStart) stringResource(R.string.map_from_selecting) else stringResource(R.string.map_from_label),
                                     fontSize = 8.sp,
                                     fontFamily = RajdhaniFamily,
                                     fontWeight = FontWeight.Bold,
@@ -444,7 +448,7 @@ fun FloorMapBottomSheet(
                         ) {
                             Column {
                                 Text(
-                                    text = if (isEditingDest) "ДО ▼" else "ДО",
+                                    text = if (isEditingDest) stringResource(R.string.map_to_selecting) else stringResource(R.string.map_to_label),
                                     fontSize = 8.sp,
                                     fontFamily = RajdhaniFamily,
                                     fontWeight = FontWeight.Bold,
@@ -467,7 +471,7 @@ fun FloorMapBottomSheet(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
-                                    contentDescription = "Сбросить маршрут",
+                                    contentDescription = stringResource(R.string.map_reset_route),
                                     tint = NierBorder,
                                     modifier = Modifier.size(16.dp)
                                 )
@@ -481,9 +485,9 @@ fun FloorMapBottomSheet(
                         val meters = (distPx * 0.11f).toInt()
                         val minutes = maxOf(1, (meters / 70.0).roundToInt())
                         val distText = if (route.isCrossFloor) {
-                            "Межэтажный · ${route.transitionStairsName} · ≈ $meters м"
+                            stringResource(R.string.map_cross_floor_fmt, localizedStairsName(route.transitionStairsName), meters)
                         } else {
-                            "≈ $meters м · ~$minutes мин · $selectedFloor этаж"
+                            stringResource(R.string.map_single_floor_fmt, meters, minutes, selectedFloor)
                         }
                         Text(
                             text = distText,
@@ -704,6 +708,7 @@ internal fun SingleFloorInteractiveView(
                 textAlign = Paint.Align.CENTER
             }
         }
+        val floorLabel = stringResource(R.string.map_floor_label)
 
         Canvas(
             modifier = Modifier
@@ -741,7 +746,7 @@ internal fun SingleFloorInteractiveView(
                 )
                 textPaint.color = android.graphics.Color.parseColor("#CAC6A8")
                 textPaint.textSize = 14f
-                drawContext.canvas.nativeCanvas.drawText("$floor ЭТАЖ", 54f, 32f, textPaint)
+                drawContext.canvas.nativeCanvas.drawText("$floor $floorLabel", 54f, 32f, textPaint)
 
                 // 3. Draw Room Outlines
                 drawRoomsList(
@@ -981,6 +986,9 @@ private fun MultiFloorInteractiveView(
             }
         }
 
+        val floorLabel = stringResource(R.string.map_floor_label)
+        val stairsLabel = localizedStairsName(route?.transitionStairsName ?: "")
+
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
@@ -1019,7 +1027,7 @@ private fun MultiFloorInteractiveView(
                 )
                 textPaint.color = android.graphics.Color.parseColor("#CAC6A8")
                 textPaint.textSize = 14f
-                drawContext.canvas.nativeCanvas.drawText("4 ЭТАЖ", 54f, 32f, textPaint)
+                drawContext.canvas.nativeCanvas.drawText("4 $floorLabel", 54f, 32f, textPaint)
                 drawRoomsList(rooms4, startRoom, destRoom, pulseAlpha, pulseStrokeWidth, textPaint, yOffset = 0f)
 
                 // 2. Draw Floor 3 (Bottom Plan)
@@ -1031,7 +1039,7 @@ private fun MultiFloorInteractiveView(
                 )
                 textPaint.color = android.graphics.Color.parseColor("#CAC6A8")
                 textPaint.textSize = 14f
-                drawContext.canvas.nativeCanvas.drawText("3 ЭТАЖ", 54f, floor3Y + 32f, textPaint)
+                drawContext.canvas.nativeCanvas.drawText("3 $floorLabel", 54f, floor3Y + 32f, textPaint)
                 drawRoomsList(rooms3, startRoom, destRoom, pulseAlpha, pulseStrokeWidth, textPaint, yOffset = floor3Y)
 
                 // 3. Draw Route
@@ -1097,7 +1105,7 @@ private fun MultiFloorInteractiveView(
                         )
 
                         badgePaint.color = android.graphics.Color.WHITE
-                        drawContext.canvas.nativeCanvas.drawText("↕ ${route.transitionStairsName}", midX, midY + 5f, badgePaint)
+                        drawContext.canvas.nativeCanvas.drawText("↕ $stairsLabel", midX, midY + 5f, badgePaint)
                     }
 
                     // Start marker
@@ -1362,7 +1370,7 @@ private fun RoomInfoCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "Кабинет ${room.room}",
+                        text = stringResource(R.string.map_room_title_fmt, room.room),
                         fontSize = 17.sp,
                         fontFamily = RajdhaniFamily,
                         fontWeight = FontWeight.Bold,
@@ -1377,7 +1385,7 @@ private fun RoomInfoCard(
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(
-                                text = "Деканат",
+                                text = stringResource(R.string.map_room_deans_office),
                                 fontSize = 9.sp,
                                 fontFamily = RajdhaniFamily,
                                 fontWeight = FontWeight.Bold,
@@ -1394,7 +1402,7 @@ private fun RoomInfoCard(
                         .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        text = room.wing.title,
+                        text = localizedRoomWing(room.wing),
                         fontSize = 9.sp,
                         fontFamily = RajdhaniFamily,
                         fontWeight = FontWeight.Bold,
@@ -1413,13 +1421,13 @@ private fun RoomInfoCard(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = "ТИП:",
+                        text = stringResource(R.string.map_type_label),
                         fontSize = 10.sp,
                         fontFamily = ShareTechMonoFamily,
                         color = NierBorder
                     )
                     Text(
-                        text = room.type.title,
+                        text = localizedRoomType(room.type),
                         fontSize = 11.sp,
                         fontFamily = RajdhaniFamily,
                         fontWeight = FontWeight.SemiBold,
@@ -1432,13 +1440,13 @@ private fun RoomInfoCard(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = "ЛЕСТНИЦА:",
+                        text = stringResource(R.string.map_stairs_label),
                         fontSize = 10.sp,
                         fontFamily = ShareTechMonoFamily,
                         color = NierBorder
                     )
                     Text(
-                        text = room.nearestStairs,
+                        text = localizedStairsName(room.nearestStairs),
                         fontSize = 11.sp,
                         fontFamily = RajdhaniFamily,
                         fontWeight = FontWeight.SemiBold,
@@ -1485,7 +1493,7 @@ private fun FloorStubView(
             }
 
             Text(
-                text = "Схема $floor этажа в разработке",
+                text = stringResource(R.string.map_floor_in_dev_title, floor),
                 fontSize = 16.sp,
                 fontFamily = RajdhaniFamily,
                 fontWeight = FontWeight.Bold,
@@ -1494,7 +1502,7 @@ private fun FloorStubView(
             )
 
             Text(
-                text = "План аудиторий $floor этажа будет добавлен в одном из следующих обновлений. Сейчас доступна интерактивная карта 4 этажа.",
+                text = stringResource(R.string.map_floor_in_dev_desc, floor),
                 fontSize = 11.sp,
                 fontFamily = ShareTechMonoFamily,
                 color = NierBorder,
@@ -1512,7 +1520,7 @@ private fun FloorStubView(
                 modifier = Modifier.padding(top = 4.dp)
             ) {
                 Text(
-                    text = "▶ Открыть 4 этаж",
+                    text = stringResource(R.string.map_open_floor4_btn),
                     fontWeight = FontWeight.Bold,
                     fontFamily = RajdhaniFamily,
                     fontSize = 12.sp,

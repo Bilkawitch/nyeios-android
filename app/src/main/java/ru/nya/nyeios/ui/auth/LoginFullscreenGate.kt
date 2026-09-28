@@ -38,6 +38,9 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import ru.nya.nyeios.R
+import ru.nya.nyeios.ui.common.localizeErrorMessage
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -144,7 +147,7 @@ fun LoginFullscreenGate(
                     )
                     Column {
                         Text(
-                            text = "ДОСТУП ЗАБЛОКИРОВАН",
+                            text = stringResource(R.string.login_access_restricted),
                             fontFamily = ShareTechMonoFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 11.sp,
@@ -152,7 +155,7 @@ fun LoginFullscreenGate(
                             color = NierRed
                         )
                         Text(
-                            text = "СЕТЕВЫЕ ЗАПРОСЫ ПРИОСТАНОВЛЕНЫ ДО АВТОРИЗАЦИИ. КЭШ ПУСТ.",
+                            text = stringResource(R.string.login_access_restricted_desc),
                             fontFamily = ShareTechMonoFamily,
                             fontSize = 9.sp,
                             lineHeight = 13.sp,
@@ -181,7 +184,7 @@ fun LoginFullscreenGate(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "[ 01 ]  АВТОРИЗАЦИЯ ПОРТАЛА",
+                            text = stringResource(R.string.login_portal_auth_section),
                             fontFamily = RajdhaniFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
@@ -205,7 +208,7 @@ fun LoginFullscreenGate(
                         // Username Field
                         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text(
-                                text = "ЛОГИН ЭИОС",
+                                text = stringResource(R.string.login_username_label),
                                 fontSize = 9.sp,
                                 letterSpacing = 1.sp,
                                 fontFamily = ShareTechMonoFamily,
@@ -244,7 +247,7 @@ fun LoginFullscreenGate(
                         // Password Field
                         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text(
-                                text = "ПАРОЛЬ",
+                                text = stringResource(R.string.login_password_label),
                                 fontSize = 9.sp,
                                 letterSpacing = 1.sp,
                                 fontFamily = ShareTechMonoFamily,
@@ -259,7 +262,7 @@ fun LoginFullscreenGate(
                                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                         Icon(
                                             imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                            contentDescription = if (passwordVisible) "Скрыть пароль" else "Показать пароль",
+                                            contentDescription = if (passwordVisible) stringResource(R.string.login_hide_password) else stringResource(R.string.login_show_password),
                                             tint = NierDim,
                                             modifier = Modifier.size(16.dp)
                                         )
@@ -322,7 +325,7 @@ fun LoginFullscreenGate(
                                 }
                             }
                             Text(
-                                text = "Сохранить в Android Keystore",
+                                text = stringResource(R.string.login_save_keystore),
                                 fontFamily = ShareTechMonoFamily,
                                 fontSize = 11.5.sp,
                                 color = NierDark
@@ -349,7 +352,7 @@ fun LoginFullscreenGate(
                                 )
                             } else {
                                 Text(
-                                    text = "ВОЙТИ В ЭИОС",
+                                    text = stringResource(R.string.login_submit),
                                     fontFamily = RajdhaniFamily,
                                     fontWeight = FontWeight.Bold,
                                     letterSpacing = 1.5.sp,
@@ -362,7 +365,7 @@ fun LoginFullscreenGate(
                         // Error message if present
                         if (errorMessage != null) {
                             Text(
-                                text = errorMessage,
+                                text = localizeErrorMessage(errorMessage),
                                 color = NierRed,
                                 fontSize = 11.sp,
                                 fontFamily = ShareTechMonoFamily
@@ -376,14 +379,14 @@ fun LoginFullscreenGate(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "ПРОБЛЕМЫ СО ВХОДОМ?",
+                                text = stringResource(R.string.login_trouble_q),
                                 fontFamily = ShareTechMonoFamily,
                                 fontSize = 9.sp,
                                 letterSpacing = 1.sp,
                                 color = NierDim
                             )
                             Text(
-                                text = "ИНСТРУКЦИЯ",
+                                text = stringResource(R.string.login_instruction_btn),
                                 fontFamily = ShareTechMonoFamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 9.sp,
@@ -417,7 +420,7 @@ fun LoginFullscreenGate(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "[ 02 ]  ПРОВЕРКА СОЕДИНЕНИЯ",
+                            text = stringResource(R.string.login_conn_test_section),
                             fontFamily = RajdhaniFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
@@ -493,11 +496,12 @@ fun LoginFullscreenGate(
                         )
 
                         // Diagnostics telemetry row
+                        val msUnit = stringResource(R.string.unit_ms_caps)
                         val rttText = when (val p = pingResult) {
-                            is PingResult.Success -> "TCP RTT ${p.latencyMs} МС"
-                            is PingResult.Measuring -> "TCP RTT ... МС"
+                            is PingResult.Success -> "TCP RTT ${p.latencyMs} $msUnit"
+                            is PingResult.Measuring -> "TCP RTT ... $msUnit"
                             is PingResult.Error -> "TCP RTT ERR"
-                            is PingResult.Idle -> "TCP RTT 98 МС"
+                            is PingResult.Idle -> "TCP RTT 98 $msUnit"
                         }
 
                         Row(
@@ -545,7 +549,7 @@ fun LoginFullscreenGate(
                     modifier = Modifier.size(13.dp)
                 )
                 Text(
-                    text = "ПАРОЛЬ ШИФРУЕТСЯ АППАРАТНЫМ KEYSTORE",
+                    text = stringResource(R.string.login_keystore_secure),
                     fontFamily = ShareTechMonoFamily,
                     fontSize = 9.sp,
                     letterSpacing = 1.2.sp,
@@ -560,7 +564,7 @@ fun LoginFullscreenGate(
             onDismissRequest = { showHelpDialog = false },
             title = {
                 Text(
-                    text = "Вход в ЭИОС ГСГУ",
+                    text = stringResource(R.string.login_help_title),
                     fontFamily = RajdhaniFamily,
                     fontWeight = FontWeight.Bold,
                     color = NierDark
@@ -569,19 +573,19 @@ fun LoginFullscreenGate(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "• В качестве логина используйте ваш студенческий логин (номер зачётки или корпоративную почту @gsgu.ru).",
+                        text = stringResource(R.string.login_help_b1),
                         fontFamily = ShareTechMonoFamily,
                         fontSize = 11.sp,
                         color = NierDark
                     )
                     Text(
-                        text = "• Пароль совпадает с паролем от портала eios.gukolomna.ru.",
+                        text = stringResource(R.string.login_help_b2),
                         fontFamily = ShareTechMonoFamily,
                         fontSize = 11.sp,
                         color = NierDark
                     )
                     Text(
-                        text = "• Если вы забыли пароль или учетная запись заблокирована, обратитесь в ИВЦ или деканат вашего факультета.",
+                        text = stringResource(R.string.login_help_b3),
                         fontFamily = ShareTechMonoFamily,
                         fontSize = 11.sp,
                         color = NierDark
@@ -590,7 +594,7 @@ fun LoginFullscreenGate(
             },
             confirmButton = {
                 TextButton(onClick = { showHelpDialog = false }) {
-                    Text("ПОНЯТНО", fontFamily = RajdhaniFamily, fontWeight = FontWeight.Bold, color = NierBlue)
+                    Text(stringResource(R.string.login_help_got_it), fontFamily = RajdhaniFamily, fontWeight = FontWeight.Bold, color = NierBlue)
                 }
             },
             containerColor = NierPanelAlt

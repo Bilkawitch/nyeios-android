@@ -46,6 +46,8 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Warning
 import ru.nya.nyeios.ui.common.SegmentedMeter
+import ru.nya.nyeios.ui.common.isAuthRelatedMessage
+import ru.nya.nyeios.ui.common.localizeErrorMessage
 import ru.nya.nyeios.ui.theme.UiPreferencesManager
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -69,6 +71,8 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import ru.nya.nyeios.R
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -140,18 +144,18 @@ fun FeedScreen(
                 )
             },
             title = {
-                Text("Синхронизация Живой ленты", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text(stringResource(R.string.feed_sync_dialog_title), fontWeight = FontWeight.Bold, fontSize = 18.sp)
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
-                        text = "Сервер университета формирует Живую ленту монолитным документом (~7.5 МБ). В зависимости от нагрузки генерация может занять от 20 секунд до нескольких минут.",
+                        text = stringResource(R.string.feed_sync_dialog_desc),
                         fontSize = 14.sp,
                         lineHeight = 20.sp,
                         color = TextPrimary
                     )
                     Text(
-                        text = "• Во время загрузки разделы «Расписание» и «БРС» будут работать из сохранённого кэша.\n• В приложении отображается живой таймер и объём скачанных данных.\n• Вы сможете отменить загрузку в любой момент.",
+                        text = stringResource(R.string.feed_sync_dialog_bullets),
                         fontSize = 12.sp,
                         lineHeight = 17.sp,
                         color = TextMuted
@@ -167,7 +171,7 @@ fun FeedScreen(
                     ),
                     shape = appRectShape()
                 ) {
-                    Text("Начать загрузку", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.feed_sync_start), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -177,7 +181,7 @@ fun FeedScreen(
                     border = BorderStroke(1.dp, ObsidianBorder),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary)
                 ) {
-                    Text("Отмена")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )
@@ -219,7 +223,7 @@ fun FeedScreen(
         val file = downloadManager.getFileForAttachment(att.url, att.name)
         if (file != null) {
             downloadManager.openDownloadedFile(context, file).onFailure {
-                Toast.makeText(context, it.localizedMessage ?: "Ошибка открытия", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, it.localizedMessage ?: context.getString(R.string.error_open_file), Toast.LENGTH_SHORT).show()
             }
         } else {
             handleDownload(att)
@@ -230,7 +234,7 @@ fun FeedScreen(
         val file = downloadManager.getFileForAttachment(att.url, att.name)
         if (file != null) {
             downloadManager.shareDownloadedFile(context, file).onFailure {
-                Toast.makeText(context, it.localizedMessage ?: "Ошибка отправки", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, it.localizedMessage ?: context.getString(R.string.error_send_file), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -241,7 +245,7 @@ fun FeedScreen(
             downloadManager.saveToPublicDownloads(context, file).onSuccess {
                 Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             }.onFailure {
-                Toast.makeText(context, it.localizedMessage ?: "Ошибка сохранения", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, it.localizedMessage ?: context.getString(R.string.error_save_file), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -265,7 +269,7 @@ fun FeedScreen(
                         ) {
                             CircularProgressIndicator(color = LectureBlue)
                             Text(
-                                text = "Загрузка сохранённой ленты...",
+                                text = stringResource(R.string.feed_loading_cached),
                                 color = TextMuted,
                                 fontSize = 14.sp
                             )
@@ -311,7 +315,7 @@ fun FeedScreen(
                                         .background(ru.nya.nyeios.ui.theme.NierRed)
                                 )
                                 Text(
-                                    text = "СИСТЕМНОЕ ОПОВЕЩЕНИЕ",
+                                    text = stringResource(R.string.system_alert_caps),
                                     fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 11.sp,
@@ -338,7 +342,7 @@ fun FeedScreen(
                             Spacer(Modifier.height(14.dp))
 
                             Text(
-                                text = uiState.message,
+                                text = localizeErrorMessage(uiState.message),
                                 color = ru.nya.nyeios.ui.theme.NierDark,
                                 fontSize = 13.sp,
                                 fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
@@ -366,7 +370,7 @@ fun FeedScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
-                                        text = "ПОВТОРИТЬ",
+                                        text = stringResource(R.string.action_retry_caps),
                                         fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 12.sp,
@@ -375,9 +379,7 @@ fun FeedScreen(
                                     )
                                 }
 
-                                val isAuthIssue = uiState.message.contains("авториз", ignoreCase = true) ||
-                                        uiState.message.contains("сесси", ignoreCase = true) ||
-                                        uiState.message.contains("аккаунт", ignoreCase = true)
+                                val isAuthIssue = isAuthRelatedMessage(uiState.message)
 
                                 if (isAuthIssue || !isUserLoggedIn) {
                                     Box(
@@ -390,7 +392,7 @@ fun FeedScreen(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
-                                            text = "ВОЙТИ В АККАУНТ",
+                                            text = stringResource(R.string.action_login_account),
                                             fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 12.sp,
@@ -438,7 +440,7 @@ fun FeedScreen(
                                             .background(ru.nya.nyeios.ui.theme.NierDim)
                                     )
                                     Text(
-                                        text = "ЖИВАЯ ЛЕНТА",
+                                        text = stringResource(R.string.feed_title),
                                         fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 11.sp,
@@ -465,7 +467,7 @@ fun FeedScreen(
                                 Spacer(Modifier.height(14.dp))
 
                                 Text(
-                                    text = "Нет сохранённых объявлений",
+                                    text = stringResource(R.string.feed_empty_title),
                                     color = ru.nya.nyeios.ui.theme.NierDark,
                                     fontSize = 13.sp,
                                     fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
@@ -480,7 +482,7 @@ fun FeedScreen(
                                 Spacer(Modifier.height(6.dp))
 
                                 Text(
-                                    text = "Живая лента сохраняется локально после разовой синхронизации с eios.gukolomna.ru.",
+                                    text = stringResource(R.string.feed_empty_desc),
                                     color = ru.nya.nyeios.ui.theme.NierDim,
                                     fontSize = 11.sp,
                                     fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
@@ -504,7 +506,7 @@ fun FeedScreen(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
-                                            text = "ВОЙТИ В АККАУНТ",
+                                            text = stringResource(R.string.action_login_account),
                                             fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 12.sp,
@@ -523,7 +525,7 @@ fun FeedScreen(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
-                                            text = "ЗАГРУЗИТЬ С СЕРВЕРА",
+                                            text = stringResource(R.string.feed_fetch_from_server),
                                             fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 12.sp,
@@ -561,9 +563,10 @@ fun FeedScreen(
                                         } else {
                                             java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
                                         }
-                                        "СИНХР. ${sdf.format(java.util.Date(lastSyncTime))}"
+                                        val timeStr = sdf.format(java.util.Date(lastSyncTime))
+                                        context.getString(R.string.feed_sync_time_fmt, timeStr)
                                     } else {
-                                        "СИНХР. 11:02"
+                                        context.getString(R.string.feed_sync_time_fmt, "11:02")
                                     }
                                 }
 
@@ -593,7 +596,7 @@ fun FeedScreen(
 
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
-                                            text = "КЭШ ЛЕНТЫ · $postsCount",
+                                            text = stringResource(R.string.feed_cache_count_fmt, postsCount),
                                             fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 10.sp,
@@ -646,7 +649,7 @@ fun FeedScreen(
                                                 modifier = Modifier.size(13.dp)
                                             )
                                             Text(
-                                                text = "ОБНОВИТЬ",
+                                                text = stringResource(R.string.action_update_caps),
                                                 color = ru.nya.nyeios.ui.theme.NierBlue,
                                                 fontSize = 10.5.sp,
                                                 fontWeight = FontWeight.Bold,
@@ -697,7 +700,7 @@ fun FeedScreen(
 
                                     Column {
                                         Text(
-                                            text = "МЕНЕДЖЕР ЗАГРУЗОК",
+                                            text = stringResource(R.string.downloads_manager_caps),
                                             color = ru.nya.nyeios.ui.theme.NierDark,
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.Bold,
@@ -706,11 +709,11 @@ fun FeedScreen(
                                         )
                                         Text(
                                             text = if (activeCount > 0) {
-                                                "Скачивается файлов: $activeCount"
+                                                stringResource(R.string.downloads_downloading_fmt, activeCount)
                                             } else if (downloadedFiles.isNotEmpty()) {
-                                                "Сохранено: ${downloadedFiles.size} // ${downloadManager.formatFileSize(totalBytes)}"
+                                                stringResource(R.string.downloads_saved_fmt, downloadedFiles.size, downloadManager.formatFileSize(totalBytes))
                                             } else {
-                                                "Локальное хранилище файлов ЭИОС"
+                                                stringResource(R.string.downloads_title)
                                             },
                                             color = if (activeCount > 0) ru.nya.nyeios.ui.theme.NierBlue else ru.nya.nyeios.ui.theme.NierDim,
                                             fontSize = 11.sp,
@@ -732,7 +735,7 @@ fun FeedScreen(
                                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
                                         Text(
-                                            text = "ОТКРЫТЬ",
+                                            text = stringResource(R.string.downloads_open_caps),
                                             color = ru.nya.nyeios.ui.theme.NierBlue,
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
@@ -779,19 +782,19 @@ fun FeedScreen(
                 downloadStates = downloadStates,
                 onOpenFile = { file ->
                     downloadManager.openDownloadedFile(context, file).onFailure {
-                        Toast.makeText(context, it.localizedMessage ?: "Ошибка открытия", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, it.localizedMessage ?: context.getString(R.string.error_open_file), Toast.LENGTH_SHORT).show()
                     }
                 },
                 onShareFile = { file ->
                     downloadManager.shareDownloadedFile(context, file).onFailure {
-                        Toast.makeText(context, it.localizedMessage ?: "Ошибка отправки", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, it.localizedMessage ?: context.getString(R.string.error_send_file), Toast.LENGTH_SHORT).show()
                     }
                 },
                 onSaveToDownloads = { file ->
                     downloadManager.saveToPublicDownloads(context, file).onSuccess {
                         Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
                     }.onFailure {
-                        Toast.makeText(context, it.localizedMessage ?: "Ошибка сохранения", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, it.localizedMessage ?: context.getString(R.string.error_save_file), Toast.LENGTH_SHORT).show()
                     }
                 },
                 onDeleteFile = { file ->
@@ -821,12 +824,13 @@ fun FeedPostCard(
     onShare: (FeedAttachment) -> Unit,
     onSaveToPublic: (FeedAttachment) -> Unit
 ) {
-    val initials = remember(post.authorName) {
+    val defaultInitials = stringResource(R.string.feed_post_default_initials)
+    val initials = remember(post.authorName, defaultInitials) {
         val words = post.authorName.split(" ").filter { it.isNotBlank() }
         when {
             words.size >= 2 -> "${words[0].first()}${words[1].first()}".uppercase()
             words.size == 1 -> words[0].take(2).uppercase()
-            else -> "ЭИ"
+            else -> defaultInitials
         }
     }
 
@@ -997,7 +1001,7 @@ fun FeedAttachmentItem(
                 if (isDownloaded) {
                     Icon(
                         imageVector = Icons.Default.CheckCircle,
-                        contentDescription = "Скачано",
+                        contentDescription = stringResource(R.string.downloads_file_default),
                         tint = ru.nya.nyeios.ui.theme.NierGreen,
                         modifier = Modifier.size(13.dp)
                     )
@@ -1061,26 +1065,26 @@ fun FeedAttachmentItem(
                 is DownloadState.Completed -> {
                     NierActionButton(
                         icon = Icons.AutoMirrored.Filled.OpenInNew,
-                        text = "Открыть",
+                        text = stringResource(R.string.feed_action_open),
                         isPrimary = true,
                         onClick = onOpen
                     )
                     NierActionButton(
                         icon = Icons.Default.Share,
-                        text = "Поделиться",
+                        text = stringResource(R.string.feed_action_share),
                         isPrimary = false,
                         onClick = onShare
                     )
                     NierActionButton(
                         icon = Icons.Default.SaveAlt,
-                        text = "Сохранить",
+                        text = stringResource(R.string.feed_action_save),
                         isPrimary = false,
                         onClick = onSaveToPublic
                     )
                 }
                 is DownloadState.Downloading -> {
                     Text(
-                        text = "Загрузка ${(state.progress * 100).toInt()}%...",
+                        text = stringResource(R.string.downloads_progress_fmt, (state.progress * 100).toInt()),
                         fontSize = 9.sp,
                         fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
                         color = ru.nya.nyeios.ui.theme.NierBlue
@@ -1088,7 +1092,7 @@ fun FeedAttachmentItem(
                     Spacer(modifier = Modifier.weight(1f))
                     NierActionButton(
                         icon = Icons.Default.Close,
-                        text = "Отмена",
+                        text = stringResource(R.string.action_cancel),
                         isDanger = true,
                         onClick = onCancel
                     )
@@ -1096,7 +1100,7 @@ fun FeedAttachmentItem(
                 else -> {
                     NierActionButton(
                         icon = Icons.Default.Download,
-                        text = "Скачать",
+                        text = stringResource(R.string.feed_action_download),
                         isPrimary = true,
                         onClick = onDownload
                     )
@@ -1196,14 +1200,14 @@ fun FeedSyncProgressCard(
                 Text(text = "☁", fontSize = 14.sp, color = ru.nya.nyeios.ui.theme.NierGreen)
                 Column {
                     Text(
-                        text = "Синхронизация Живой ленты",
+                        text = stringResource(R.string.feed_sync_dialog_title),
                         color = ru.nya.nyeios.ui.theme.NierDark,
                         fontWeight = FontWeight.Bold,
                         fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
                         fontSize = 13.sp
                     )
                     Text(
-                        text = "Загрузка данных с eios.gukolomna.ru",
+                        text = stringResource(R.string.feed_downloading_data),
                         color = ru.nya.nyeios.ui.theme.NierDim,
                         fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
                         fontSize = 9.sp
@@ -1239,19 +1243,21 @@ fun FeedSyncProgressCard(
         }
 
         // Stats Row
+        val isEn = java.util.Locale.getDefault().language.equals("en", ignoreCase = true)
+        val mbTotalLabel = if (isEn) "MB" else "МБ"
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "${formatBytesLocal(progress.bytesDownloaded)} / ~7.5 МБ",
+                text = "${formatBytesLocal(progress.bytesDownloaded, isEn)} / ~7.5 $mbTotalLabel",
                 color = ru.nya.nyeios.ui.theme.NierDim,
                 fontSize = 9.sp,
                 fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily
             )
             Text(
-                text = progress.statusText.ifEmpty { "Загрузка..." },
+                text = progress.statusText.ifEmpty { stringResource(R.string.downloads_loading_default) },
                 color = ru.nya.nyeios.ui.theme.NierDim,
                 fontSize = 9.sp,
                 fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily
@@ -1260,18 +1266,21 @@ fun FeedSyncProgressCard(
 
         // Cancel button
         NierActionButton(
-            text = "✕ Отменить загрузку",
+            text = stringResource(R.string.feed_cancel_sync),
             isDanger = true,
             onClick = onCancel
         )
     }
 }
 
-private fun formatBytesLocal(bytes: Long): String {
+private fun formatBytesLocal(bytes: Long, isEnglish: Boolean = java.util.Locale.getDefault().language == "en"): String {
+    val bUnit = if (isEnglish) "B" else "Б"
+    val kbUnit = if (isEnglish) "KB" else "КБ"
+    val mbUnit = if (isEnglish) "MB" else "МБ"
     return when {
-        bytes >= 1024 * 1024 -> String.format(java.util.Locale.US, "%.1f МБ", bytes / (1024.0 * 1024.0))
-        bytes >= 1024 -> String.format(java.util.Locale.US, "%d КБ", bytes / 1024)
-        bytes > 0 -> "$bytes Б"
-        else -> "0 Б"
+        bytes >= 1024 * 1024 -> String.format(java.util.Locale.US, "%.1f $mbUnit", bytes / (1024.0 * 1024.0))
+        bytes >= 1024 -> String.format(java.util.Locale.US, "%d $kbUnit", bytes / 1024)
+        bytes > 0 -> "$bytes $bUnit"
+        else -> "0 $bUnit"
     }
 }

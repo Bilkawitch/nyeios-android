@@ -32,6 +32,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
+import ru.nya.nyeios.R
+import ru.nya.nyeios.ui.common.localizeErrorMessage
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -187,7 +190,7 @@ fun NycLoginGate(
                 modifier = Modifier.padding(top = 18.dp)
             )
             Text(
-                text = "КЛИЕНТ ПОРТАЛА ЭИОС · НАВИГАТОР КОРПУСА",
+                text = stringResource(R.string.login_subtitle),
                 fontFamily = NycMonoFamily,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 8.5.sp,
@@ -205,11 +208,11 @@ fun NycLoginGate(
                     .padding(horizontal = 14.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
-                NycFieldLabel("ЛОГИН")
+                NycFieldLabel(stringResource(R.string.login_username_label))
                 NycLoginField(
                     value = username,
                     onValueChange = { username = it },
-                    placeholder = "учётная запись портала",
+                    placeholder = stringResource(R.string.login_placeholder_user),
                     leadingIcon = Icons.Default.Person,
                     isPassword = false,
                     passwordVisible = false,
@@ -221,7 +224,7 @@ fun NycLoginGate(
                     }
                 )
 
-                NycFieldLabel("ПАРОЛЬ", modifier = Modifier.padding(top = 14.dp))
+                NycFieldLabel(stringResource(R.string.login_password_label), modifier = Modifier.padding(top = 14.dp))
                 NycLoginField(
                     value = password,
                     onValueChange = { password = it },
@@ -269,7 +272,7 @@ fun NycLoginGate(
                         ) {
                             Text(text = "›", fontSize = 16.sp, color = Color(0xFF04211F))
                             Text(
-                                text = "ВОЙТИ",
+                                text = stringResource(R.string.login_button_short),
                                 fontFamily = NycSansFamily,
                                 fontWeight = FontWeight.ExtraBold,
                                 fontSize = 12.5.sp,
@@ -282,7 +285,7 @@ fun NycLoginGate(
 
                 if (errorMessage != null) {
                     Text(
-                        text = errorMessage,
+                        text = localizeErrorMessage(errorMessage),
                         fontFamily = NycMonoFamily,
                         fontSize = 11.sp,
                         color = NierRed,
@@ -307,7 +310,7 @@ fun NycLoginGate(
                     )
                     Spacer(modifier = Modifier.size(7.dp))
                     Text(
-                        text = "ПАРОЛЬ ХРАНИТСЯ В ANDROID KEYSTORE",
+                        text = stringResource(R.string.login_keystore_stored),
                         fontFamily = NycMonoFamily,
                         fontWeight = FontWeight.Medium,
                         fontSize = 8.5.sp,
@@ -323,8 +326,8 @@ fun NycLoginGate(
                 modifier = Modifier.padding(bottom = 22.dp),
                 horizontalArrangement = Arrangement.spacedBy(7.dp)
             ) {
-                NycStaticChip("OFFLINE-FIRST", active = false)
-                NycStaticChip("SWR-КЭШ", active = false)
+                NycStaticChip(stringResource(R.string.chip_offline_first), active = false)
+                NycStaticChip(stringResource(R.string.chip_swr_cache), active = false)
                 NycStaticChip("v$appVersion", active = true)
             }
         }
@@ -381,7 +384,7 @@ private fun NycLoginField(
                 IconButton(onClick = onTogglePassword) {
                     Icon(
                         imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                        contentDescription = if (passwordVisible) "Скрыть пароль" else "Показать пароль",
+                        contentDescription = if (passwordVisible) stringResource(R.string.login_hide_password) else stringResource(R.string.login_show_password),
                         tint = nycMuted,
                         modifier = Modifier.size(15.dp)
                     )

@@ -14,28 +14,29 @@ import ru.nya.nyeios.ui.debug.passesLogFilter
 
 class NycLogsSheetTest {
 
-    private fun entry(
+    private fun row(
         tag: String,
         message: String,
         details: String? = null,
         level: NetworkLogLevel = NetworkLogLevel.RESPONSE
-    ) = NetworkLogEntry(
-        timestamp = "13:19:08.123",
-        level = level,
-        tag = tag,
-        message = message,
-        details = details
+    ) = deriveRow(
+        NetworkLogEntry(
+            timestamp = "13:19:08.123",
+            level = level,
+            tag = tag,
+            message = message,
+            details = details
+        ),
+        degradedBadge = "200 ПУСТО"
     )
 
     @Test
     fun `request row derives GET method and stripped path without code`() {
-        val row = deriveRow(
-            entry(
-                tag = "HTTP GET",
-                message = "Отправлен запрос GET https://eios.gukolomna.ru/eios/",
-                details = "Метод: GET\nURL: https://eios.gukolomna.ru/eios/",
-                level = NetworkLogLevel.REQUEST
-            )
+        val row = row(
+            tag = "HTTP GET",
+            message = "Отправлен запрос GET https://eios.gukolomna.ru/eios/",
+            details = "Метод: GET\nURL: https://eios.gukolomna.ru/eios/",
+            level = NetworkLogLevel.REQUEST
         )
         assertEquals("GET", row.method)
         assertEquals("/eios/", row.path)
@@ -47,12 +48,10 @@ class NycLogsSheetTest {
 
     @Test
     fun `response row derives code ms and path`() {
-        val row = deriveRow(
-            entry(
-                tag = "HTTP",
-                message = "GET /eios/ 200",
-                details = "Код: 200 OK\nВремя ответа: 412 мс\nURL: https://eios.gukolomna.ru/eios/"
-            )
+        val row = row(
+            tag = "HTTP",
+            message = "GET /eios/ 200",
+            details = "Код: 200 OK\nВремя ответа: 412 мс\nURL: https://eios.gukolomna.ru/eios/"
         )
         assertEquals("/eios/", row.path)
         assertEquals(200, row.code)
@@ -62,13 +61,11 @@ class NycLogsSheetTest {
 
     @Test
     fun `gateway timeout row is bad and red`() {
-        val row = deriveRow(
-            entry(
-                tag = "HTTP",
-                message = "GET /eios/map/floor/4 504",
-                details = "Код: 504 Gateway Timeout\nВремя ответа: 5000 мс\nURL: https://eios.gukolomna.ru/eios/map/floor/4",
-                level = NetworkLogLevel.ERROR
-            )
+        val row = row(
+            tag = "HTTP",
+            message = "GET /eios/map/floor/4 504",
+            details = "Код: 504 Gateway Timeout\nВремя ответа: 5000 мс\nURL: https://eios.gukolomna.ru/eios/map/floor/4",
+            level = NetworkLogLevel.ERROR
         )
         assertEquals(504, row.code)
         assertEquals(5000L, row.ms)

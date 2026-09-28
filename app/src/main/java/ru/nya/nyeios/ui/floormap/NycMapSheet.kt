@@ -23,6 +23,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.ui.res.stringResource
+import ru.nya.nyeios.R
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -39,6 +41,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ru.nya.nyeios.data.floormap.FloorMapRepository
+import ru.nya.nyeios.ui.common.localizedRoomType
+import ru.nya.nyeios.ui.common.localizedRoomWing
+import ru.nya.nyeios.ui.common.localizedStairsName
 import ru.nya.nyeios.ui.theme.NycCyan
 import ru.nya.nyeios.ui.theme.NycLed
 import ru.nya.nyeios.ui.theme.NycMonoFamily
@@ -137,7 +142,7 @@ fun NycMapSheet(
                 ) {
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowDown,
-                        contentDescription = "Свернуть",
+                        contentDescription = stringResource(R.string.map_collapse),
                         tint = nycMuted,
                         modifier = Modifier.size(20.dp)
                     )
@@ -145,14 +150,14 @@ fun NycMapSheet(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Навигатор",
+                        text = stringResource(R.string.map_navigator_title),
                         fontFamily = NycSansFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.5.sp,
                         color = nycText
                     )
                     Text(
-                        text = "КОРПУС 1 · ЭТАЖ $selectedFloor",
+                        text = stringResource(R.string.map_campus_floor_fmt, selectedFloor),
                         fontFamily = NycMonoFamily,
                         fontWeight = FontWeight.Medium,
                         fontSize = 8.5.sp,
@@ -174,7 +179,7 @@ fun NycMapSheet(
                 ) {
                     Icon(
                         imageVector = Icons.Default.MyLocation,
-                        contentDescription = "К цели",
+                        contentDescription = stringResource(R.string.map_to_target),
                         tint = nycMuted,
                         modifier = Modifier.size(20.dp)
                     )
@@ -221,12 +226,12 @@ fun NycMapSheet(
                 Spacer(modifier = Modifier.weight(1f))
 
                 NycLegendChip(
-                    text = "МАРШРУТ",
+                    text = stringResource(R.string.map_route_label),
                     dot = true,
                     active = route != null && (route.points.isNotEmpty() || route.isCrossFloor)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
-                NycLegendChip(text = "ОТ ДВЕРИ К ДВЕРИ", dot = false, active = false)
+                NycLegendChip(text = stringResource(R.string.map_door_to_door), dot = false, active = false)
             }
 
             // Map engine (shared with the legacy sheet).
@@ -247,9 +252,9 @@ fun NycMapSheet(
                 val minutes = maxOf(1, (meters / 70.0).roundToInt())
                 val floorsLine = if (route?.isCrossFloor == true) {
                     val from = startRoom?.floor ?: selectedFloor
-                    "$from → ${destRoom!!.floor} ЭТАЖ"
+                    stringResource(R.string.schedule_floor_transfer_fmt, from, destRoom!!.floor)
                 } else {
-                    "${destRoom!!.floor} ЭТАЖ"
+                    stringResource(R.string.schedule_floor_fmt, destRoom!!.floor)
                 }
 
                 Box(
@@ -297,7 +302,7 @@ fun NycMapSheet(
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "ЦЕЛЬ",
+                                text = stringResource(R.string.map_target_label),
                                 fontFamily = NycMonoFamily,
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 8.sp,
@@ -305,7 +310,7 @@ fun NycMapSheet(
                                 color = nycFaint
                             )
                             Text(
-                                text = "ауд. ${destRoom!!.room}",
+                                text = stringResource(R.string.lesson_room_prefix, destRoom!!.room),
                                 fontFamily = NycMonoFamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 18.sp,
@@ -313,7 +318,7 @@ fun NycMapSheet(
                                 modifier = Modifier.padding(top = 2.dp)
                             )
                             Text(
-                                text = "${destRoom!!.type.title} · ${destRoom!!.wing.title}"
+                                text = "${localizedRoomType(destRoom!!.type)} · ${localizedRoomWing(destRoom!!.wing)}"
                                     .uppercase(),
                                 fontFamily = NycMonoFamily,
                                 fontWeight = FontWeight.Medium,
@@ -333,14 +338,14 @@ fun NycMapSheet(
 
                         Column(horizontalAlignment = Alignment.End) {
                             Text(
-                                text = if (route != null) "≈ $minutes МИН" else "—",
+                                text = if (route != null) stringResource(R.string.map_time_min_fmt, minutes) else "—",
                                 fontFamily = NycMonoFamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 15.sp,
                                 color = nycText
                             )
                             Text(
-                                text = if (route != null) "$meters М" else "",
+                                text = if (route != null) stringResource(R.string.schedule_dist_fmt, meters) else "",
                                 fontFamily = NycMonoFamily,
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 8.sp,
@@ -373,7 +378,7 @@ fun NycMapSheet(
                 ) {
                     NycLed(color = NycCyan, diameter = 7.dp)
                     Text(
-                        text = "ПЕРЕХОД: ${route.transitionStairsName}".uppercase(),
+                        text = stringResource(R.string.map_transition_fmt, localizedStairsName(route.transitionStairsName)).uppercase(),
                         fontFamily = NycMonoFamily,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 8.5.sp,

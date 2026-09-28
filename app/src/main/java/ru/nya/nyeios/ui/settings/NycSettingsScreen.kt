@@ -53,6 +53,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import ru.nya.nyeios.R
 import ru.nya.nyeios.data.model.UpdateInfo
 import ru.nya.nyeios.data.net.EiosLastGetInfo
 import ru.nya.nyeios.data.net.EndpointHealthItem
@@ -252,7 +254,7 @@ private fun NycGeneralContent(
             .padding(horizontal = 14.dp, vertical = 4.dp),
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
-        NycSecHdr("[ 01 · СВЯЗЬ С СЕРВЕРОМ EIOS.GUKOLOMNA.RU ]")
+        NycSecHdr(stringResource(R.string.settings_server_conn_title))
 
         // Server card.
         NycSetCard {
@@ -262,7 +264,7 @@ private fun NycGeneralContent(
             ) {
                 Column {
                     Text(
-                        text = "СЕРВЕР",
+                        text = stringResource(R.string.settings_server_label),
                         fontFamily = NycMonoFamily,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 8.sp,
@@ -280,7 +282,7 @@ private fun NycGeneralContent(
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = "IP-АДРЕС",
+                        text = stringResource(R.string.settings_ip_label),
                         fontFamily = NycMonoFamily,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 8.sp,
@@ -298,7 +300,7 @@ private fun NycGeneralContent(
                 }
             }
             Text(
-                text = "РОСТЕЛЕКОМ · Г. КОЛОМНА",
+                text = stringResource(R.string.settings_provider_location),
                 fontFamily = NycMonoFamily,
                 fontWeight = FontWeight.Medium,
                 fontSize = 8.5.sp,
@@ -316,7 +318,7 @@ private fun NycGeneralContent(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "ПИНГ (TCP RTT)",
+                        text = stringResource(R.string.settings_ping_label),
                         fontFamily = NycMonoFamily,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 8.sp,
@@ -336,7 +338,7 @@ private fun NycGeneralContent(
                                     color = nycAmber
                                 )
                                 Text(
-                                    text = "ЗАМЕР...",
+                                    text = stringResource(R.string.settings_action_measuring),
                                     fontFamily = NycMonoFamily,
                                     fontSize = 12.sp,
                                     color = nycAmber
@@ -350,7 +352,7 @@ private fun NycGeneralContent(
                                 else -> nycRed
                             }
                             Text(
-                                text = "${ping.latencyMs} мс",
+                                text = stringResource(R.string.settings_ms_fmt, ping.latencyMs),
                                 fontFamily = NycMonoFamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 17.sp,
@@ -360,7 +362,7 @@ private fun NycGeneralContent(
                         }
                         is PingResult.Error -> {
                             Text(
-                                text = "ОШИБКА: ${ping.message}",
+                                text = stringResource(R.string.settings_ping_error_fmt, ping.message),
                                 fontFamily = NycMonoFamily,
                                 fontSize = 12.sp,
                                 color = nycRed,
@@ -380,8 +382,9 @@ private fun NycGeneralContent(
                     val pingStamp = (uiState.pingResult as? PingResult.Success)?.timestamp
                         ?: (uiState.pingResult as? PingResult.Error)?.timestamp
                     if (pingStamp != null) {
+                        val stampStr = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(pingStamp))
                         Text(
-                            text = "ЗАМЕР ${SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(pingStamp))}",
+                            text = stringResource(R.string.settings_ping_stamp_fmt, stampStr),
                             fontFamily = NycMonoFamily,
                             fontWeight = FontWeight.Medium,
                             fontSize = 8.5.sp,
@@ -391,7 +394,10 @@ private fun NycGeneralContent(
                         )
                     }
                     NycMiniButton(
-                        text = if (uiState.isMeasuringPing) "ЗАМЕР..." else "ЗАМЕРИТЬ",
+                        text = if (uiState.isMeasuringPing)
+                            stringResource(R.string.settings_action_measuring)
+                        else
+                            stringResource(R.string.settings_action_measure),
                         icon = Icons.Default.Sync,
                         enabled = !uiState.isMeasuringPing,
                         onClick = onMeasurePing,
@@ -417,7 +423,7 @@ private fun NycGeneralContent(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "ДИАГНОСТИКА ЭНДПОИНТОВ",
+                        text = stringResource(R.string.settings_endpoints_diag_title),
                         fontFamily = NycMonoFamily,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 8.sp,
@@ -425,7 +431,7 @@ private fun NycGeneralContent(
                         color = nycFaint
                     )
                     Text(
-                        text = "Состояние разделов портала",
+                        text = stringResource(R.string.settings_endpoints_diag_desc),
                         fontFamily = NycSansFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp,
@@ -434,7 +440,10 @@ private fun NycGeneralContent(
                     )
                 }
                 NycMiniButton(
-                    text = if (uiState.isCheckingEndpoints) "ПРОВЕРКА..." else "ПРОВЕРИТЬ",
+                    text = if (uiState.isCheckingEndpoints)
+                        stringResource(R.string.settings_action_checking)
+                    else
+                        stringResource(R.string.settings_action_check),
                     icon = Icons.Default.Sync,
                     enabled = !uiState.isCheckingEndpoints,
                     onClick = onCheckEndpoints
@@ -450,7 +459,7 @@ private fun NycGeneralContent(
             }
         }
 
-        NycSecHdr("[ 02 · ЛИМИТ ЗАПРОСОВ GITHUB API ]")
+        NycSecHdr(stringResource(R.string.settings_github_limit_title))
 
         NycSetCard {
             Row(
@@ -460,7 +469,7 @@ private fun NycGeneralContent(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "ОСТАТОК КВОТЫ",
+                        text = stringResource(R.string.settings_quota_remaining_label),
                         fontFamily = NycMonoFamily,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 8.sp,
@@ -469,7 +478,7 @@ private fun NycGeneralContent(
                     )
                     val remaining = uiState.githubRateLimit.remaining
                     Text(
-                        text = if (remaining != null) "$remaining / 60 ЗАПРОСОВ" else "60 / 60 ЗАПРОСОВ",
+                        text = stringResource(R.string.settings_quota_requests_fmt, remaining ?: 60),
                         fontFamily = NycMonoFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp,
@@ -483,7 +492,7 @@ private fun NycGeneralContent(
                     )
                 }
                 NycMiniButton(
-                    text = "ОБНОВИТЬ",
+                    text = stringResource(R.string.action_refresh).uppercase(),
                     icon = Icons.Default.Refresh,
                     enabled = true,
                     onClick = onRefreshAll
@@ -530,9 +539,9 @@ private fun NycGeneralContent(
             Text(
                 text = if (resetMs != null && resetMs > System.currentTimeMillis()) {
                     val minsLeft = maxOf(1, ((resetMs - System.currentTimeMillis()) / 60000).toInt())
-                    "СБРОС ОКНА КВОТЫ ЧЕРЕЗ ~$minsLeft МИН"
+                    stringResource(R.string.settings_quota_reset_fmt, minsLeft)
                 } else {
-                    "СОХРАНЕНО С ПОСЛЕДНЕГО ЗАПРОСА К API ОБНОВЛЕНИЙ"
+                    stringResource(R.string.settings_quota_sub_default)
                 },
                 fontFamily = NycMonoFamily,
                 fontWeight = FontWeight.Medium,
@@ -544,9 +553,9 @@ private fun NycGeneralContent(
 
             if (uiState.githubRateLimit.isLow) {
                 val warningText = if (uiState.isVpnActive) {
-                    "Осталось мало запросов на проверку обновлений. У вас включен VPN, что скорее всего и является причиной."
+                    stringResource(R.string.settings_vpn_warning_vpn)
                 } else {
-                    "Осталось мало запросов на проверку обновлений. Может быть, вы сидите за роутером с VPN?"
+                    stringResource(R.string.settings_vpn_warning_no_vpn)
                 }
                 Row(
                     modifier = Modifier
@@ -576,7 +585,7 @@ private fun NycGeneralContent(
             }
         }
 
-        NycSecHdr("[ 03 · IP УСТРОЙСТВА И СЕТЕВОЙ ИНТЕРФЕЙС ]")
+        NycSecHdr(stringResource(R.string.settings_ip_section_title))
 
         NycSetCard {
             Row(
@@ -591,15 +600,17 @@ private fun NycGeneralContent(
                 ) {
                     Column {
                         Text(
-                            text = "WAN · ИСХОДЯЩИЙ",
+                            text = stringResource(R.string.settings_wan_short),
                             fontFamily = NycMonoFamily,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 8.sp,
                             letterSpacing = 1.5.sp,
                             color = nycFaint
                         )
+                        val detectingStr = stringResource(R.string.settings_detecting)
+                        val notDetectedStr = stringResource(R.string.settings_not_detected)
                         Text(
-                            text = uiState.externalIp ?: if (uiState.isFetchingIp) "ОПРЕДЕЛЕНИЕ..." else "НЕ ОПРЕДЕЛЕН",
+                            text = uiState.externalIp ?: if (uiState.isFetchingIp) detectingStr else notDetectedStr,
                             fontFamily = NycMonoFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
@@ -617,15 +628,16 @@ private fun NycGeneralContent(
                 ) {
                     Column {
                         Text(
-                            text = "LAN · ЛОКАЛЬНЫЙ",
+                            text = stringResource(R.string.settings_lan_short),
                             fontFamily = NycMonoFamily,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 8.sp,
                             letterSpacing = 1.5.sp,
                             color = nycFaint
                         )
+                        val notDetectedStr = stringResource(R.string.settings_not_detected)
                         Text(
-                            text = uiState.localIp ?: "НЕ ОПРЕДЕЛЕН",
+                            text = uiState.localIp ?: notDetectedStr,
                             fontFamily = NycMonoFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
@@ -652,7 +664,10 @@ private fun NycGeneralContent(
                     val vpnColor = if (uiState.isVpnActive) nycAmber else nycFaint
                     NycLed(color = if (uiState.isVpnActive) nycAmber else Color(0xFF3A4656), diameter = 7.dp)
                     Text(
-                        text = if (uiState.isVpnActive) "VPN АКТИВЕН" else "VPN ОТКЛЮЧЕН",
+                        text = if (uiState.isVpnActive)
+                            stringResource(R.string.settings_vpn_active_badge)
+                        else
+                            stringResource(R.string.settings_vpn_disabled_badge),
                         fontFamily = NycMonoFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 9.5.sp,
@@ -661,7 +676,7 @@ private fun NycGeneralContent(
                     )
                 }
                 NycMiniButton(
-                    text = if (uiState.isFetchingIp) "..." else "ОБНОВИТЬ",
+                    text = if (uiState.isFetchingIp) "..." else stringResource(R.string.action_refresh).uppercase(),
                     icon = Icons.Default.Sync,
                     enabled = !uiState.isFetchingIp,
                     onClick = onRefreshIp
@@ -679,7 +694,7 @@ private fun NycGeneralContent(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "ПОВТОРИТЬ ДИАГНОСТИКУ СЕТИ",
+                text = stringResource(R.string.settings_action_repeat_diag),
                 fontFamily = NycSansFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 11.sp,
@@ -795,7 +810,7 @@ private fun NycPingGauge(pingResult: PingResult) {
                 color = if (latency == null) nycFaint else color
             )
             Text(
-                text = "МС",
+                text = stringResource(R.string.unit_ms_caps),
                 fontFamily = NycMonoFamily,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 7.sp,
@@ -838,7 +853,7 @@ private fun NycGetRow(getInfo: EiosLastGetInfo) {
         ) {
             Column {
                 Text(
-                    text = "ВРЕМЯ ПОСЛЕДНЕГО GET С САЙТА",
+                    text = stringResource(R.string.settings_last_get_title),
                     fontFamily = NycMonoFamily,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 8.sp,
@@ -846,7 +861,7 @@ private fun NycGetRow(getInfo: EiosLastGetInfo) {
                     color = nycFaint
                 )
                 Text(
-                    text = if (getInfo.durationMs != null) "${getInfo.durationMs} мс" else "—",
+                    text = if (getInfo.durationMs != null) stringResource(R.string.settings_ms_fmt, getInfo.durationMs) else "—",
                     fontFamily = NycMonoFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp,
@@ -874,7 +889,7 @@ private fun NycGetRow(getInfo: EiosLastGetInfo) {
         }
         if (!getInfo.path.isNullOrEmpty()) {
             Text(
-                text = "ЗАПРОС: ${getInfo.path}",
+                text = "${stringResource(R.string.settings_request_label).uppercase()} ${getInfo.path}",
                 fontFamily = NycMonoFamily,
                 fontWeight = FontWeight.Medium,
                 fontSize = 8.5.sp,
@@ -894,13 +909,13 @@ private fun NycEndpointHealthRow(item: EndpointHealthItem) {
     val context = LocalContext.current
 
     val (statusColor, statusBadge) = when (item.status) {
-        EndpointStatus.IDLE -> Pair(nycFaint, "НЕ ПРОВЕРЯЛСЯ")
-        EndpointStatus.PENDING -> Pair(nycFaint, "В ОЧЕРЕДИ")
-        EndpointStatus.CHECKING -> Pair(NycCyan, "ПРОВЕРКА...")
-        EndpointStatus.OK -> Pair(nycGreen, "ДОСТУПЕН")
-        EndpointStatus.DEGRADED -> Pair(nycAmber, "200 СБОЙ / ПУСТО")
-        EndpointStatus.AUTH_REQUIRED -> Pair(nycAmber, "ТРЕБУЕТСЯ ВХОД")
-        EndpointStatus.ERROR -> Pair(nycRed, "ОШИБКА")
+        EndpointStatus.IDLE -> Pair(nycFaint, stringResource(R.string.settings_endpoint_not_checked))
+        EndpointStatus.PENDING -> Pair(nycFaint, stringResource(R.string.settings_endpoint_pending))
+        EndpointStatus.CHECKING -> Pair(NycCyan, stringResource(R.string.settings_endpoint_checking))
+        EndpointStatus.OK -> Pair(nycGreen, stringResource(R.string.settings_endpoint_available))
+        EndpointStatus.DEGRADED -> Pair(nycAmber, stringResource(R.string.settings_endpoint_degraded))
+        EndpointStatus.AUTH_REQUIRED -> Pair(nycAmber, stringResource(R.string.settings_endpoint_auth_required))
+        EndpointStatus.ERROR -> Pair(nycRed, stringResource(R.string.settings_endpoint_error))
     }
 
     Box(
@@ -919,8 +934,14 @@ private fun NycEndpointHealthRow(item: EndpointHealthItem) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                    val displayName = when (item.id) {
+                        "timetable" -> stringResource(R.string.tab_schedule).uppercase()
+                        "feed" -> stringResource(R.string.tab_feed).uppercase()
+                        "curriculum" -> stringResource(R.string.settings_endpoint_curriculum)
+                        else -> item.name
+                    }
                     Text(
-                        text = item.name,
+                        text = displayName,
                         fontFamily = NycSansFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 11.5.sp,
@@ -958,7 +979,7 @@ private fun NycEndpointHealthRow(item: EndpointHealthItem) {
 
                     Icon(
                         imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = if (isExpanded) "Свернуть лог" else "Развернуть лог",
+                        contentDescription = if (isExpanded) stringResource(R.string.settings_collapse_log) else stringResource(R.string.settings_expand_log),
                         tint = nycFaint,
                         modifier = Modifier.size(15.dp)
                     )
@@ -985,7 +1006,7 @@ private fun NycEndpointHealthRow(item: EndpointHealthItem) {
                     )
                     if (item.latencyMs != null) {
                         Text(
-                            text = "${item.latencyMs} мс",
+                            text = stringResource(R.string.settings_ms_fmt, item.latencyMs),
                             fontFamily = NycMonoFamily,
                             fontSize = 8.5.sp,
                             fontWeight = FontWeight.SemiBold,
@@ -1013,7 +1034,7 @@ private fun NycEndpointHealthRow(item: EndpointHealthItem) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "[ ТЕХНИЧЕСКИЙ ЖУРНАЛ ЗАПРОСА ]",
+                            text = stringResource(R.string.settings_raw_log_header),
                             fontFamily = NycMonoFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 9.sp,
@@ -1022,6 +1043,7 @@ private fun NycEndpointHealthRow(item: EndpointHealthItem) {
                         )
 
                         if (!item.rawLog.isNullOrEmpty()) {
+                            val logCopiedToastMsg = stringResource(R.string.settings_log_copied_toast)
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(4.dp))
@@ -1029,12 +1051,12 @@ private fun NycEndpointHealthRow(item: EndpointHealthItem) {
                                     .border(1.dp, NycCyan.copy(alpha = 0.35f), RoundedCornerShape(4.dp))
                                     .clickable {
                                         clipboardManager.setText(AnnotatedString(item.rawLog))
-                                        Toast.makeText(context, "Лог скопирован в буфер", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, logCopiedToastMsg, Toast.LENGTH_SHORT).show()
                                     }
                                     .padding(horizontal = 6.dp, vertical = 2.dp)
                             ) {
                                 Text(
-                                    text = "СКОПИРОВАТЬ",
+                                    text = stringResource(R.string.settings_copy_log_btn),
                                     fontFamily = NycMonoFamily,
                                     fontSize = 8.5.sp,
                                     fontWeight = FontWeight.Bold,
@@ -1045,9 +1067,9 @@ private fun NycEndpointHealthRow(item: EndpointHealthItem) {
                     }
 
                     val logText = item.rawLog ?: when (item.status) {
-                        EndpointStatus.CHECKING -> "Запрос выполняется в данный момент...\nОжидайте ответа сервера (таймаут 15 сек)."
-                        EndpointStatus.PENDING -> "Запрос находится в очереди.\nБудет запущен сразу после завершения текущего теста."
-                        else -> "Диагностика этого эндпоинта ещё не запускалась.\nНажмите кнопку «ПРОВЕРИТЬ» выше для отправки тестового запроса."
+                        EndpointStatus.CHECKING -> stringResource(R.string.settings_endpoint_diag_checking_msg)
+                        EndpointStatus.PENDING -> stringResource(R.string.settings_endpoint_diag_pending_msg)
+                        else -> stringResource(R.string.settings_endpoint_diag_idle_msg)
                     }
 
                     Box(

@@ -37,6 +37,11 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
+import ru.nya.nyeios.R
+import ru.nya.nyeios.ui.common.isAuthRelatedMessage
+import ru.nya.nyeios.ui.common.localizeErrorMessage
+import ru.nya.nyeios.ui.common.localizedLessonType
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -148,7 +153,7 @@ fun NycScheduleScreen(
                                 modifier = Modifier.size(36.dp)
                             )
                             Text(
-                                text = "ЗАГРУЗКА РАСПИСАНИЯ...",
+                                text = stringResource(R.string.schedule_loading),
                                 fontFamily = NycMonoFamily,
                                 fontWeight = FontWeight.Bold,
                                 color = nycMuted,
@@ -193,8 +198,8 @@ fun NycScheduleScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = if (allDaysEmpty) "— НА ЭТОЙ НЕДЕЛЕ ЗАНЯТИЙ НЕТ —"
-                                    else "— ЗАНЯТИЙ НЕТ · СВОБОДНЫЙ ДЕНЬ —",
+                                    text = if (allDaysEmpty) stringResource(R.string.schedule_empty_week_banner)
+                                    else stringResource(R.string.schedule_empty_day_banner),
                                     fontFamily = NycMonoFamily,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 11.sp,
@@ -229,10 +234,11 @@ fun NycScheduleScreen(
                             // Slim day summary (app-only element, kept minimal per Operate).
                             item {
                                 val dayNameUpper =
-                                    currentDay.dayTitle.substringBefore(' ').uppercase()
+                                    localizedDayName(currentDay.dayTitle.substringBefore(' '))
+                                val cacheStr = if (uiState.schedule.isCached) stringResource(R.string.schedule_cache_badge) else stringResource(R.string.schedule_network_badge)
                                 val summary =
                                     "$dayNameUpper · ${LessonTimeUtils.formatLessonCount(lessons.size)}" +
-                                        " · ${if (uiState.schedule.isCached) "КЭШ" else "СЕТЬ"}"
+                                        " · $cacheStr"
                                 Text(
                                     text = summary,
                                     fontFamily = NycMonoFamily,
@@ -320,7 +326,7 @@ private fun NycScheduleError(
                 .padding(20.dp)
         ) {
             Text(
-                text = "СИСТЕМНОЕ ОПОВЕЩЕНИЕ",
+                text = stringResource(R.string.system_alert_caps),
                 fontFamily = NycSansFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 11.sp,
@@ -329,7 +335,7 @@ private fun NycScheduleError(
             )
             Spacer(Modifier.height(14.dp))
             Text(
-                text = message,
+                text = localizeErrorMessage(message),
                 color = nycText,
                 fontSize = 13.sp,
                 fontFamily = NycSansFamily,
@@ -352,7 +358,7 @@ private fun NycScheduleError(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "ПОВТОРИТЬ",
+                        text = stringResource(R.string.action_retry_caps),
                         fontFamily = NycSansFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp,
@@ -361,9 +367,7 @@ private fun NycScheduleError(
                     )
                 }
 
-                val isAuthIssue = message.contains("авториз", ignoreCase = true) ||
-                    message.contains("сесси", ignoreCase = true) ||
-                    message.contains("аккаунт", ignoreCase = true)
+                val isAuthIssue = isAuthRelatedMessage(message)
                 if (isAuthIssue) {
                     Box(
                         modifier = Modifier
@@ -376,7 +380,7 @@ private fun NycScheduleError(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "ВОЙТИ В АККАУНТ",
+                            text = stringResource(R.string.action_login_account),
                             fontFamily = NycSansFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
@@ -451,7 +455,7 @@ private fun NycWeekRow(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = if (weekOffset == 0) "ТЕКУЩАЯ НЕДЕЛЯ" else "НЕДЕЛЯ $weekOffset",
+                    text = if (weekOffset == 0) stringResource(R.string.schedule_current_week).uppercase() else stringResource(R.string.schedule_week_fmt, weekOffset).uppercase(),
                     fontFamily = NycMonoFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 8.5.sp,
@@ -481,7 +485,7 @@ private fun NycWeekRow(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "СЕГОДНЯ",
+                text = stringResource(R.string.schedule_today),
                 fontFamily = NycMonoFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 8.5.sp,
@@ -551,7 +555,7 @@ private fun NycDayRow(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = day.dayName.uppercase(),
+                        text = localizedDayName(day.dayName),
                         fontFamily = NycMonoFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 8.sp,
@@ -620,7 +624,7 @@ private fun NycLessonCard(
 
     val remainingLabel = progressInfo?.let {
         val s = it.remainingSeconds.coerceAtLeast(0)
-        if (s >= 60) "ОСТАЛОСЬ ${s / 60} МИН" else "ОСТАЛОСЬ $s С"
+        if (s >= 60) stringResource(R.string.lesson_left_min_fmt, s / 60) else stringResource(R.string.lesson_left_sec_fmt, s)
     } ?: ""
 
     val blink = rememberInfiniteTransition(label = "nyc_led")
@@ -683,7 +687,7 @@ private fun NycLessonCard(
                 }
                 if (lesson.lessonNumber.isNotEmpty()) {
                     Text(
-                        text = "ПАРА ${lesson.lessonNumber}",
+                        text = stringResource(R.string.lesson_pair_fmt, lesson.lessonNumber),
                         fontFamily = NycMonoFamily,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 7.5.sp,
@@ -713,7 +717,7 @@ private fun NycLessonCard(
                         ) {
                             NycLed(color = NycCyan.copy(alpha = ledAlpha), diameter = 6.dp)
                             Text(
-                                text = "СЕЙЧАС ИДЁТ",
+                                text = stringResource(R.string.lesson_ongoing_badge),
                                 fontFamily = NycMonoFamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 8.sp,
@@ -736,7 +740,7 @@ private fun NycLessonCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    NycTypeBadge(text = lesson.type.title.uppercase(), color = typeColor)
+                    NycTypeBadge(text = localizedLessonType(lesson.type).uppercase(), color = typeColor)
                     if (lesson.subgroup.isNotEmpty()) {
                         NycTypeBadge(text = lesson.subgroup.uppercase(), color = NierAmber)
                     }
@@ -760,7 +764,7 @@ private fun NycLessonCard(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = lesson.teacher.ifEmpty { "Преподаватель не указан" },
+                        text = lesson.teacher.ifEmpty { stringResource(R.string.lesson_no_teacher) },
                         fontFamily = NycSansFamily,
                         fontWeight = FontWeight.Medium,
                         fontSize = 10.sp,
@@ -776,7 +780,7 @@ private fun NycLessonCard(
                         val roomObj = remember(lesson.room) { FloorMapRepository.findRoom(lesson.room) }
                         // Mockup chip format: "ауд. 438". Legacy keeps "438 / 4Э".
                         val roomBadgeText = if (roomObj != null && !isDotRoom) {
-                            "ауд. ${lesson.room}"
+                            stringResource(R.string.lesson_room_prefix, lesson.room)
                         } else {
                             lesson.room
                         }

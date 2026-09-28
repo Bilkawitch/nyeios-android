@@ -23,9 +23,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okhttp3.Call
 import okhttp3.Request
+import ru.nya.nyeios.data.AppLocale
 import ru.nya.nyeios.data.repository.EiosRepository
 import java.io.File
 import java.io.FileOutputStream
+import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
 class InternalDownloadManager private constructor(private val context: Context) {
@@ -87,16 +89,7 @@ class InternalDownloadManager private constructor(private val context: Context) 
         }
     }
 
-    fun formatFileSize(bytes: Long): String {
-        if (bytes <= 0) return "0 Б"
-        val kb = bytes / 1024.0
-        val mb = kb / 1024.0
-        return when {
-            mb >= 1.0 -> String.format(java.util.Locale.US, "%.1f МБ", mb)
-            kb >= 1.0 -> String.format(java.util.Locale.US, "%.1f КБ", kb)
-            else -> "$bytes Б"
-        }
-    }
+    fun formatFileSize(bytes: Long, locale: Locale = Locale.getDefault()): String = formatBytes(bytes, locale)
 
     fun getDownloadState(url: String, fileName: String? = null): DownloadState {
         val state = _downloadStates.value[url]
@@ -164,15 +157,27 @@ class InternalDownloadManager private constructor(private val context: Context) 
 
                 val response = call.execute()
                 if (!response.isSuccessful) {
-                    throw Exception("Ошибка сервера при скачивании: HTTP ${response.code}")
+                    throw Exception(
+                        AppLocale.pick(
+                            "Ошибка сервера при скачивании: HTTP ${response.code}",
+                            "Server error while downloading: HTTP ${response.code}"
+                        )
+                    )
                 }
 
                 val finalUrl = response.request.url.toString()
                 if (finalUrl.contains("login=yes") || response.header("X-Bitrix-Ajax-Status") == "Authorize") {
-                    throw Exception("Для скачивания требуется авторизация в ЭИОС")
+                    throw Exception(
+                        AppLocale.pick(
+                            "Для скачивания требуется авторизация в ЭИОС",
+                            "EIOS authorization is required to download this file"
+                        )
+                    )
                 }
 
-                val body = response.body ?: throw Exception("Пустой ответ от сервера")
+                val body = response.body ?: throw Exception(
+                    AppLocale.pick("Пустой ответ от сервера", "Empty response from the server")
+                )
                 val totalBytes = body.contentLength()
 
                 var bytesRead = 0L
@@ -229,7 +234,8 @@ class InternalDownloadManager private constructor(private val context: Context) 
                 _downloadStates.update { it - url }
             } catch (e: Exception) {
                 if (tempFile.exists()) tempFile.delete()
-                val errorMsg = e.localizedMessage ?: e.message ?: "Ошибка скачивания файла"
+                val errorMsg = e.localizedMessage ?: e.message
+                    ?: AppLocale.pick("Ошибка скачивания файла", "File download failed")
                 _downloadStates.update { it + (url to DownloadState.Failed(errorMsg)) }
             } finally {
                 activeCalls.remove(url)
@@ -251,7 +257,14 @@ class InternalDownloadManager private constructor(private val context: Context) 
 
     fun openDownloadedFile(context: Context, file: File): Result<Unit> {
         if (!file.exists() || file.length() == 0L) {
-            return Result.failure(Exception("Файл не найден на диске. Попробуйте скачать его заново."))
+            return Result.failure(
+                Exception(
+                    AppLocale.pick(
+                        "Файл не найден на диске. Попробуйте скачать его заново.",
+                        "File is missing on disk. Try downloading it again."
+                    )
+                )
+            )
         }
 
         return try {
@@ -266,21 +279,37 @@ class InternalDownloadManager private constructor(private val context: Context) 
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            val chooser = Intent.createChooser(intent, "Открыть: ${file.name}").apply {
+            val chooser = Intent.createChooser(intent, AppLocale.pick("Открыть: ${file.name}", "Open: ${file.name}")).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(chooser)
             Result.success(Unit)
         } catch (e: ActivityNotFoundException) {
-            Result.failure(Exception("Не найдено приложение для открытия файла .${file.extension}"))
+            Result.failure(
+                Exception(
+                    AppLocale.pick(
+                        "Не найдено приложение для открытия файла .${file.extension}",
+                        "No application found to open .${file.extension} files"
+                    )
+                )
+            )
         } catch (e: Exception) {
-            Result.failure(Exception("Ошибка при открытии файла: ${e.localizedMessage ?: e.message}"))
+            Result.failure(
+                Exception(
+                    AppLocale.pick(
+                        "Ошибка при открытии файла: ${e.localizedMessage ?: e.message}",
+                        "Failed to open the file: ${e.localizedMessage ?: e.message}"
+                    )
+                )
+            )
         }
     }
 
     fun shareDownloadedFile(context: Context, file: File): Result<Unit> {
         if (!file.exists() || file.length() == 0L) {
-            return Result.failure(Exception("Файл не найден для отправки"))
+            return Result.failure(
+                Exception(AppLocale.pick("Файл не найден для отправки", "File to share was not found"))
+            )
         }
 
         return try {
@@ -296,19 +325,26 @@ class InternalDownloadManager private constructor(private val context: Context) 
                 putExtra(Intent.EXTRA_SUBJECT, file.name)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            val chooser = Intent.createChooser(intent, "Поделиться: ${file.name}").apply {
+            val chooser = Intent.createChooser(intent, AppLocale.pick("Поделиться: ${file.name}", "Share: ${file.name}")).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(chooser)
             Result.success(Unit)
         } catch (e: Exception) {
-            Result.failure(Exception("Не удалось отправить файл: ${e.localizedMessage ?: e.message}"))
+            Result.failure(
+                Exception(
+                    AppLocale.pick(
+                        "Не удалось отправить файл: ${e.localizedMessage ?: e.message}",
+                        "Failed to share the file: ${e.localizedMessage ?: e.message}"
+                    )
+                )
+            )
         }
     }
 
     fun saveToPublicDownloads(context: Context, file: File): Result<String> {
         if (!file.exists() || file.length() == 0L) {
-            return Result.failure(Exception("Исходный файл не найден"))
+            return Result.failure(Exception(AppLocale.pick("Исходный файл не найден", "Source file was not found")))
         }
 
         return try {
@@ -322,7 +358,14 @@ class InternalDownloadManager private constructor(private val context: Context) 
                 val resolver = context.contentResolver
                 val collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
                 val uri = resolver.insert(collection, values)
-                    ?: return Result.failure(Exception("Не удалось создать запись в системных Загрузках"))
+                    ?: return Result.failure(
+                        Exception(
+                            AppLocale.pick(
+                                "Не удалось создать запись в системных Загрузках",
+                                "Failed to create an entry in the system Downloads"
+                            )
+                        )
+                    )
 
                 resolver.openOutputStream(uri)?.use { output ->
                     file.inputStream().use { input ->
@@ -332,17 +375,34 @@ class InternalDownloadManager private constructor(private val context: Context) 
                 values.clear()
                 values.put(MediaStore.Downloads.IS_PENDING, 0)
                 resolver.update(uri, values, null, null)
-                Result.success("Файл сохранен в системную папку 'Загрузки'")
+                Result.success(
+                    AppLocale.pick(
+                        "Файл сохранен в системную папку 'Загрузки'",
+                        "File saved to the system Downloads folder"
+                    )
+                )
             } else {
                 @Suppress("DEPRECATION")
                 val pubDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
                 if (!pubDir.exists()) pubDir.mkdirs()
                 val target = File(pubDir, file.name)
                 file.copyTo(target, overwrite = true)
-                Result.success("Файл сохранен в Загрузки: ${target.name}")
+                Result.success(
+                    AppLocale.pick(
+                        "Файл сохранен в Загрузки: ${target.name}",
+                        "File saved to Downloads: ${target.name}"
+                    )
+                )
             }
         } catch (e: Exception) {
-            Result.failure(Exception("Не удалось сохранить в Загрузки: ${e.localizedMessage ?: e.message}"))
+            Result.failure(
+                Exception(
+                    AppLocale.pick(
+                        "Не удалось сохранить в Загрузки: ${e.localizedMessage ?: e.message}",
+                        "Failed to save to Downloads: ${e.localizedMessage ?: e.message}"
+                    )
+                )
+            )
         }
     }
 
@@ -572,14 +632,20 @@ class InternalDownloadManager private constructor(private val context: Context) 
             return sanitized.ifEmpty { "file_${System.currentTimeMillis()}" }
         }
 
-        fun formatFileSize(bytes: Long): String {
-            if (bytes <= 0) return "0 Б"
+        fun formatFileSize(bytes: Long, locale: Locale = Locale.getDefault()): String = formatBytes(bytes, locale)
+
+        private fun formatBytes(bytes: Long, locale: Locale): String {
+            val isEnglish = locale.language.equals("en", ignoreCase = true)
+            val bUnit = if (isEnglish) "B" else "Б"
+            val kbUnit = if (isEnglish) "KB" else "КБ"
+            val mbUnit = if (isEnglish) "MB" else "МБ"
+            if (bytes <= 0) return "0 $bUnit"
             val kb = bytes / 1024.0
             val mb = kb / 1024.0
             return when {
-                mb >= 1.0 -> String.format(java.util.Locale.US, "%.1f МБ", mb)
-                kb >= 1.0 -> String.format(java.util.Locale.US, "%.1f КБ", kb)
-                else -> "$bytes Б"
+                mb >= 1.0 -> String.format(Locale.US, "%.1f $mbUnit", mb)
+                kb >= 1.0 -> String.format(Locale.US, "%.1f $kbUnit", kb)
+                else -> "$bytes $bUnit"
             }
         }
     }

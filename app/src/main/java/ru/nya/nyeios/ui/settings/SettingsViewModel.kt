@@ -24,11 +24,11 @@ import ru.nya.nyeios.data.update.UpdateRepository
 
 import ru.nya.nyeios.R
 
-enum class SettingsSubtab(val titleResId: Int, val title: String) {
-    GENERAL(R.string.settings_tab_general, "ОБЩЕЕ"),
-    THEME(R.string.settings_tab_theme, "ТЕМА"),
-    VERSION(R.string.settings_tab_version, "ВЕРСИЯ"),
-    LANGUAGE(R.string.settings_tab_language, "ЯЗЫК")
+enum class SettingsSubtab(val titleResId: Int) {
+    GENERAL(R.string.settings_tab_general),
+    THEME(R.string.settings_tab_theme),
+    VERSION(R.string.settings_tab_version),
+    LANGUAGE(R.string.settings_tab_language)
 }
 
 data class SettingsUiState(
@@ -38,16 +38,12 @@ data class SettingsUiState(
     val githubRateLimit: GithubRateLimitState = GithubRateLimitState(null, null, false),
     val externalIp: String? = null,
     val localIp: String? = null,
-    val networkType: String = "НЕИЗВЕСТНО",
+    val networkType: String = "",
     val isVpnActive: Boolean = false,
     val isMeasuringPing: Boolean = false,
     val isFetchingIp: Boolean = false,
     val isCheckingEndpoints: Boolean = false,
-    val endpointsHealth: List<EndpointHealthItem> = listOf(
-        EndpointHealthItem("timetable", "РАСПИСАНИЕ", "/eios/contacts/timetable/"),
-        EndpointHealthItem("feed", "ЖИВАЯ ЛЕНТА", "/eios/"),
-        EndpointHealthItem("curriculum", "УСПЕВАЕМОСТЬ (БРС)", "/eios/contacts/curriculum/")
-    ),
+    val endpointsHealth: List<EndpointHealthItem> = emptyList(),
     val currentVersion: String = "",
     val isCheckingUpdate: Boolean = false,
     val updateCheckStatus: String? = null,
@@ -68,7 +64,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             localIp = metricsTracker.getLocalIpAddress(),
             networkType = metricsTracker.getNetworkTypeName(),
             isVpnActive = metricsTracker.isVpnActive(),
-            currentVersion = AppVersionProvider.getVersionName(application)
+            currentVersion = AppVersionProvider.getVersionName(application),
+            endpointsHealth = listOf(
+                EndpointHealthItem("timetable", getApplication<Application>().getString(R.string.tab_schedule), "/eios/contacts/timetable/"),
+                EndpointHealthItem("feed", getApplication<Application>().getString(R.string.tab_feed), "/eios/"),
+                EndpointHealthItem("curriculum", getApplication<Application>().getString(R.string.settings_endpoint_curriculum), "/eios/contacts/curriculum/")
+            )
         )
     )
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
@@ -125,10 +126,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun checkForUpdates() {
         viewModelScope.launch(Dispatchers.IO) {
+            val app = getApplication<Application>()
             _uiState.update {
                 it.copy(
                     isCheckingUpdate = true,
-                    updateCheckStatus = "ПРОВЕРКА ОБНОВЛЕНИЙ НА GITHUB..."
+                    updateCheckStatus = app.getString(R.string.version_status_checking)
                 )
             }
             try {
@@ -139,7 +141,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                         it.copy(
                             isCheckingUpdate = false,
                             availableUpdate = update,
-                            updateCheckStatus = "ДОСТУПНО ОБНОВЛЕНИЕ: v${update.version}",
+                            updateCheckStatus = app.getString(R.string.version_status_available_fmt, update.version),
                             githubRateLimit = rateLimit
                         )
                     }
@@ -148,7 +150,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                         it.copy(
                             isCheckingUpdate = false,
                             availableUpdate = null,
-                            updateCheckStatus = "УСТАНОВЛЕНА ПОСЛЕДНЯЯ ВЕРСИЯ (ОБНОВЛЕНИЙ НЕТ)",
+                            updateCheckStatus = app.getString(R.string.version_status_latest),
                             githubRateLimit = rateLimit
                         )
                     }
@@ -157,7 +159,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 _uiState.update {
                     it.copy(
                         isCheckingUpdate = false,
-                        updateCheckStatus = "ОШИБКА ПРОВЕРКИ: ${e.message}"
+                        updateCheckStatus = app.getString(R.string.version_status_error_fmt, e.message)
                     )
                 }
             }
@@ -204,13 +206,13 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                             item.copy(
                                 status = EndpointStatus.CHECKING,
                                 latencyMs = null,
-                                message = "Кидаю GET на ${item.path} с таймаутом в 15с (1\\15с)"
+                                message = getApplication<Application>().getString(R.string.settings_endpoint_init_checking_fmt, item.path)
                             )
                         } else {
                             item.copy(
                                 status = EndpointStatus.PENDING,
                                 latencyMs = null,
-                                message = "В очереди на проверку..."
+                                message = getApplication<Application>().getString(R.string.settings_endpoint_queue_msg)
                             )
                         }
                     }
@@ -229,7 +231,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                                 item.copy(
                                     status = EndpointStatus.CHECKING,
                                     latencyMs = null,
-                                    message = "Кидаю GET на $path с таймаутом в 15с (1\\15с)"
+                                    message = getApplication<Application>().getString(R.string.settings_endpoint_init_checking_fmt, path)
                                 )
                             } else item
                         }
@@ -245,7 +247,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                                 endpointsHealth = state.endpointsHealth.map { item ->
                                     if (item.id == id && item.status == EndpointStatus.CHECKING) {
                                         item.copy(
-                                            message = "Кидаю GET на $path с таймаутом в 15с (${second}\\15с)"
+                                            message = getApplication<Application>().getString(R.string.settings_endpoint_tick_fmt, path, second)
                                         )
                                     } else item
                                 }

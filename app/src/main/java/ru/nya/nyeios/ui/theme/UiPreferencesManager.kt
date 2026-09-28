@@ -8,11 +8,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ru.nya.nyeios.R
 
-enum class ListDensityMode(val title: String) {
-    COMPACT("КОМПАКТНО"),
-    STANDARD("СТАНДАРТ"),
-    SPACIOUS("ПРОСТОРНО")
+enum class ListDensityMode(val titleResId: Int) {
+    COMPACT(R.string.density_compact),
+    STANDARD(R.string.density_standard),
+    SPACIOUS(R.string.density_spacious)
 }
 
 object UiPreferencesManager {

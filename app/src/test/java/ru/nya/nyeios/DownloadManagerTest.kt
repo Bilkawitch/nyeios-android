@@ -32,11 +32,21 @@ class DownloadManagerTest {
 
     @Test
     fun testFormatFileSize() {
-        assertEquals("0 Б", InternalDownloadManager.formatFileSize(0))
-        assertEquals("512 Б", InternalDownloadManager.formatFileSize(512))
-        assertEquals("2.0 КБ", InternalDownloadManager.formatFileSize(2048))
-        assertEquals("1.5 МБ", InternalDownloadManager.formatFileSize((1.5 * 1024 * 1024).toLong()))
-        assertEquals("12.8 МБ", InternalDownloadManager.formatFileSize((12.8 * 1024 * 1024).toLong()))
+        val ru = java.util.Locale("ru")
+        assertEquals("0 Б", InternalDownloadManager.formatFileSize(0, ru))
+        assertEquals("512 Б", InternalDownloadManager.formatFileSize(512, ru))
+        assertEquals("2.0 КБ", InternalDownloadManager.formatFileSize(2048, ru))
+        assertEquals("1.5 МБ", InternalDownloadManager.formatFileSize((1.5 * 1024 * 1024).toLong(), ru))
+        assertEquals("12.8 МБ", InternalDownloadManager.formatFileSize((12.8 * 1024 * 1024).toLong(), ru))
+    }
+
+    @Test
+    fun testFormatFileSizeEnglish() {
+        val en = java.util.Locale("en")
+        assertEquals("0 B", InternalDownloadManager.formatFileSize(0, en))
+        assertEquals("512 B", InternalDownloadManager.formatFileSize(512, en))
+        assertEquals("2.0 KB", InternalDownloadManager.formatFileSize(2048, en))
+        assertEquals("1.5 MB", InternalDownloadManager.formatFileSize((1.5 * 1024 * 1024).toLong(), en))
     }
 
     @Test

@@ -25,7 +25,7 @@ class LanguageManagerTest {
         assertEquals(SettingsSubtab.THEME, SettingsSubtab.entries[1])
         assertEquals(SettingsSubtab.VERSION, SettingsSubtab.entries[2])
         assertEquals(SettingsSubtab.LANGUAGE, SettingsSubtab.entries[3])
-        assertEquals("ЯЗЫК", SettingsSubtab.LANGUAGE.title)
+        assertEquals(R.string.settings_tab_language, SettingsSubtab.LANGUAGE.titleResId)
     }
 
     @Test

@@ -1,5 +1,7 @@
 package ru.nya.nyeios.data.net
 
+import ru.nya.nyeios.data.AppLocale
+
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -66,7 +68,7 @@ object NetworkLogger {
 
     fun logRequest(method: String, url: String, userAgent: String?, summary: String? = null) {
         val details = buildString {
-            append("Метод: ").append(method).append("\n")
+            append(AppLocale.pick("Метод: ", "Method: ")).append(method).append("\n")
             append("URL: ").append(url).append("\n")
             if (!userAgent.isNullOrEmpty()) {
                 append("User-Agent: ").append(userAgent).append("\n")
@@ -78,7 +80,7 @@ object NetworkLogger {
         log(
             level = NetworkLogLevel.REQUEST,
             tag = "HTTP $method",
-            message = "Отправлен запрос $method $url",
+            message = AppLocale.pick("Отправлен запрос $method $url", "Request sent: $method $url"),
             details = details.trim()
         )
     }
@@ -99,27 +101,27 @@ object NetworkLogger {
             else -> NetworkLogLevel.ERROR
         }
         val tag = when {
-            isDegraded -> "200 ПУСТО"
+            isDegraded -> AppLocale.pick("200 ПУСТО", "200 EMPTY")
             else -> "HTTP $code"
         }
         val msg = when {
             isDegraded && !degradedReason.isNullOrBlank() ->
-                "Сервер ответил $code $message (${durationMs} мс) — [СБОЙ: $degradedReason]"
+                AppLocale.pick("Сервер ответил $code $message (${durationMs} мс) — [СБОЙ: $degradedReason]", "Server responded $code $message (${durationMs} ms) — [FAILURE: $degradedReason]")
             isDegraded ->
-                "Сервер ответил $code $message (${durationMs} мс) — [ПУСТАЯ СТРАНИЦА / СБОЙ 1С]"
+                AppLocale.pick("Сервер ответил $code $message (${durationMs} мс) — [ПУСТАЯ СТРАНИЦА / СБОЙ 1С]", "Server responded $code $message (${durationMs} ms) — [EMPTY PAGE / 1C FAILURE]")
             else ->
-                "Сервер ответил $code $message (${durationMs} мс)"
+                AppLocale.pick("Сервер ответил $code $message (${durationMs} мс)", "Server responded $code $message (${durationMs} ms)")
         }
         val detailsStr = buildString {
-            append("Код: ").append(code).append(" ").append(message)
+            append(AppLocale.pick("Код: ", "Code: ")).append(code).append(" ").append(message)
             if (isDegraded) {
-                append(" (ПУСТАЯ СТРАНИЦА / СБОЙ СЕРВЕРА)")
+                append(AppLocale.pick(" (ПУСТАЯ СТРАНИЦА / СБОЙ СЕРВЕРА)", " (EMPTY PAGE / SERVER FAILURE)"))
             }
             append("\n")
             if (isDegraded && !degradedReason.isNullOrBlank()) {
-                append("Диагностика: ").append(degradedReason).append("\n")
+                append(AppLocale.pick("Диагностика: ", "Diagnostics: ")).append(degradedReason).append("\n")
             }
-            append("Время ответа: ").append(durationMs).append(" мс\n")
+            append(AppLocale.pick("Время ответа: ", "Response time: ")).append(durationMs).append(AppLocale.pick(" мс\n", " ms\n"))
             append("URL: ").append(url).append("\n")
             if (!details.isNullOrEmpty()) {
                 append(details)
@@ -139,11 +141,11 @@ object NetworkLogger {
     fun logError(tag: String, message: String, error: Throwable? = null, durationMs: Long? = null, details: String? = null) {
         val detailsStr = buildString {
             if (durationMs != null) {
-                append("Время до ошибки: ").append(durationMs).append(" мс\n")
+                append(AppLocale.pick("Время до ошибки: ", "Time to error: ")).append(durationMs).append(AppLocale.pick(" мс\n", " ms\n"))
             }
             if (error != null) {
-                append("Исключение: ").append(error::class.java.simpleName).append(": ").append(error.message).append("\n")
-                append("Стек:\n").append(error.stackTraceToString().take(600))
+                append(AppLocale.pick("Исключение: ", "Exception: ")).append(error::class.java.simpleName).append(": ").append(error.message).append("\n")
+                append(AppLocale.pick("Стек:\n", "Stack:\n")).append(error.stackTraceToString().take(600))
             }
             if (!details.isNullOrEmpty()) {
                 if (isNotEmpty()) append("\n")

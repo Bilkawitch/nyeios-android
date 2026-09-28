@@ -20,6 +20,7 @@ import ru.nya.nyeios.data.download.InternalDownloadManager
 import ru.nya.nyeios.data.model.UpdateInfo
 import ru.nya.nyeios.data.model.UpdateUiState
 import ru.nya.nyeios.data.update.UpdateRepository
+import ru.nya.nyeios.R
 
 class UpdateViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -105,7 +106,7 @@ class UpdateViewModel(application: Application) : AndroidViewModel(application) 
         val file = current.file
 
         if (!file.exists()) {
-            _uiState.value = UpdateUiState.Error("Файл APK не найден. Попробуйте скачать снова.")
+            _uiState.value = UpdateUiState.Error(getApplication<Application>().getString(R.string.update_apk_not_found))
             return
         }
 
@@ -144,7 +145,7 @@ class UpdateViewModel(application: Application) : AndroidViewModel(application) 
             }
             context.startActivity(intent)
         } catch (e: Exception) {
-            _uiState.value = UpdateUiState.Error("Не удалось запустить установщик: ${e.localizedMessage}")
+            _uiState.value = UpdateUiState.Error(getApplication<Application>().getString(R.string.update_installer_failed_fmt, e.localizedMessage))
         }
     }
 

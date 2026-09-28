@@ -4,32 +4,33 @@ import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import ru.nya.nyeios.R
 
-enum class NierThemeMode(val id: String, val title: String, val description: String) {
+enum class NierThemeMode(val id: String, val title: String, val descResId: Int) {
     REGULAR(
         id = "regular",
         title = "YoRHa Regular",
-        description = "Классическая индустриальная палитра: светлый песочно-оливковый фон и контрастные темные элементы"
+        descResId = R.string.theme_desc_regular
     ),
     NIGHT(
         id = "night",
         title = "YoRHa Night",
-        description = "Инвертированная темная палитра: глубокий темный фон и теплые бежевые акценты"
+        descResId = R.string.theme_desc_night
     ),
     BLACK(
         id = "black",
         title = "YoRHa Black",
-        description = "AMOLED-палитра: 100% черный фон с контрастными элементами темного цвета палитры YoRHa"
+        descResId = R.string.theme_desc_black
     ),
     RETRO(
         id = "retro",
         title = "YoRHa Retro",
-        description = "Аутентичная винтажная палитра терминалов YoRHa: теплый песочный фон, глубокие чернила и насыщенный синий"
+        descResId = R.string.theme_desc_retro
     ),
     NYC_MODERN(
         id = "nyc_modern",
         title = "NyC-modern",
-        description = "Мягкая скругленная тема по мокапу Night Skeuomorph: циановый акцент, объемные панели"
+        descResId = R.string.theme_desc_nyc_modern
     )
 }
 

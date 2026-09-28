@@ -2,6 +2,7 @@ package ru.nya.nyeios.data.parser
 
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
+import ru.nya.nyeios.data.AppLocale
 import ru.nya.nyeios.data.model.FeedAttachment
 import ru.nya.nyeios.data.model.FeedPost
 
@@ -23,7 +24,7 @@ object FeedParser {
 
             // Author name
             val authorEl = postEl.selectFirst(".feed-post-user-name, .user-name, .author")
-            val authorName = authorEl?.text()?.trim() ?: "Преподаватель"
+            val authorName = authorEl?.text()?.trim() ?: AppLocale.pick("Преподаватель", "Instructor")
 
             // Author avatar URL
             val avatarEl = postEl.selectFirst(".feed-user-avatar")
@@ -89,7 +90,7 @@ object FeedParser {
                         fileName = href.substringAfterLast("/")
                     }
                     if (fileName.isEmpty()) {
-                        fileName = "Вложение"
+                        fileName = AppLocale.pick("Вложение", "Attachment")
                     }
 
                     // Avoid duplicate URLs

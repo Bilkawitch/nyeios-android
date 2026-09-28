@@ -1,5 +1,7 @@
 package ru.nya.nyeios.data.update
 
+import ru.nya.nyeios.data.AppLocale
+
 import android.content.Context
 import android.content.SharedPreferences
 import com.google.gson.Gson
@@ -104,8 +106,8 @@ class UpdateRepository private constructor(private val context: Context) {
                 val minsLeft = maxOf(1, ((resetMs - now) / 60000).toInt())
                 NetworkLogger.logInfo(
                     tag = "UPDATE",
-                    message = "Лимит GitHub API (60/час) исчерпан",
-                    details = "Автопроверка отложена. Сброс лимита через ~$minsLeft мин."
+                    message = AppLocale.pick("Лимит GitHub API (60/час) исчерпан", "GitHub API rate limit (60/hour) exhausted"),
+                    details = AppLocale.pick("Автопроверка отложена. Сброс лимита через ~$minsLeft мин.", "Automatic check postponed. Rate limit resets in ~$minsLeft min.")
                 )
                 return null
             }
@@ -139,7 +141,7 @@ class UpdateRepository private constructor(private val context: Context) {
                 // 1. Условный ответ 304 Not Modified — квота rate limit НЕ расходуется
                 if (response.code == 304) {
                     prefs.edit().putLong(KEY_LAST_CHECKED, now).apply()
-                    val remText = if (remHeader != null) " (осталось $remHeader/60 зап/ч)" else ""
+                    val remText = if (remHeader != null) AppLocale.pick(" (осталось $remHeader/60 зап/ч)", " ($remHeader/60 requests left per hour)") else ""
 
                     // Проверяем, было ли ранее обнаружено более новое обновление, которое ещё не установили
                     val cachedJson = prefs.getString(KEY_CACHED_UPDATE_JSON, null)
@@ -161,15 +163,15 @@ class UpdateRepository private constructor(private val context: Context) {
                     if (pendingUpdate != null) {
                         NetworkLogger.logInfo(
                             tag = "UPDATE",
-                            message = "Релизы не изменились (HTTP 304 Not Modified$remText)",
-                            details = "ETag совпал. Доступна новая версия: ${pendingUpdate.version} (установлена: $localVersion)"
+                            message = AppLocale.pick("Релизы не изменились (HTTP 304 Not Modified$remText)", "Releases unchanged (HTTP 304 Not Modified$remText)"),
+                            details = AppLocale.pick("ETag совпал. Доступна новая версия: ${pendingUpdate.version} (установлена: $localVersion)", "ETag matched. A new version is available: ${pendingUpdate.version} (installed: $localVersion)")
                         )
                         return pendingUpdate
                     } else {
                         NetworkLogger.logInfo(
                             tag = "UPDATE",
-                            message = "Релизы не изменились (HTTP 304 Not Modified$remText)",
-                            details = "ETag совпал. Установлена актуальная версия: $localVersion"
+                            message = AppLocale.pick("Релизы не изменились (HTTP 304 Not Modified$remText)", "Releases unchanged (HTTP 304 Not Modified$remText)"),
+                            details = AppLocale.pick("ETag совпал. Установлена актуальная версия: $localVersion", "ETag matched. The installed version is up to date: $localVersion")
                         )
                         return null
                     }
@@ -180,8 +182,8 @@ class UpdateRepository private constructor(private val context: Context) {
                     val minsLeft = if (resetHeader != null) maxOf(1, ((resetHeader * 1000L - now) / 60000).toInt()) else 60
                     NetworkLogger.logError(
                         tag = "UPDATE",
-                        message = "Лимит GitHub API (60/час) исчерпан (HTTP 403)",
-                        details = "Сброс лимита через ~$minsLeft мин."
+                        message = AppLocale.pick("Лимит GitHub API (60/час) исчерпан (HTTP 403)", "GitHub API rate limit (60/hour) exhausted (HTTP 403)"),
+                        details = AppLocale.pick("Сброс лимита через ~$minsLeft мин.", "Rate limit resets in ~$minsLeft min.")
                     )
                     return null
                 }
@@ -189,7 +191,7 @@ class UpdateRepository private constructor(private val context: Context) {
                 if (!response.isSuccessful) {
                     NetworkLogger.logError(
                         tag = "UPDATE",
-                        message = "GitHub API вернул HTTP ${response.code}",
+                        message = AppLocale.pick("GitHub API вернул HTTP ${response.code}", "GitHub API returned HTTP ${response.code}"),
                         details = "URL: $RELEASES_URL"
                     )
                     return null
@@ -222,11 +224,11 @@ class UpdateRepository private constructor(private val context: Context) {
 
                 if (!isNewer(release.tagName, localVersion)) {
                     prefs.edit().remove(KEY_CACHED_UPDATE_JSON).apply()
-                    val remainingText = if (remHeader != null) " (осталось $remHeader/60 зап/ч)" else ""
+                    val remainingText = if (remHeader != null) AppLocale.pick(" (осталось $remHeader/60 зап/ч)", " ($remHeader/60 requests left per hour)") else ""
                     NetworkLogger.logInfo(
                         tag = "UPDATE",
-                        message = "Обновлений нет$remainingText",
-                        details = "Текущая: $localVersion, последняя: ${release.tagName}"
+                        message = AppLocale.pick("Обновлений нет$remainingText", "No updates available$remainingText"),
+                        details = AppLocale.pick("Текущая: $localVersion, последняя: ${release.tagName}", "Current: $localVersion, latest: ${release.tagName}")
                     )
                     return null
                 }
@@ -245,11 +247,11 @@ class UpdateRepository private constructor(private val context: Context) {
                 // Сохраняем в кэш найденное обновление для обслуживания последующих 304 ответов
                 prefs.edit().putString(KEY_CACHED_UPDATE_JSON, gson.toJson(updateInfo)).apply()
 
-                val remText = if (remHeader != null) " (осталось $remHeader/60 зап/ч)" else ""
+                val remText = if (remHeader != null) AppLocale.pick(" (осталось $remHeader/60 зап/ч)", " ($remHeader/60 requests left per hour)") else ""
                 NetworkLogger.logInfo(
                     tag = "UPDATE",
-                    message = "Доступно обновление ${updateInfo.version}$remText",
-                    details = "Текущая: $localVersion, последняя: ${release.tagName}"
+                    message = AppLocale.pick("Доступно обновление ${updateInfo.version}$remText", "Update available: ${updateInfo.version}$remText"),
+                    details = AppLocale.pick("Текущая: $localVersion, последняя: ${release.tagName}", "Current: $localVersion, latest: ${release.tagName}")
                 )
 
                 updateInfo
@@ -257,7 +259,7 @@ class UpdateRepository private constructor(private val context: Context) {
         } catch (e: Exception) {
             NetworkLogger.logError(
                 tag = "UPDATE",
-                message = "Ошибка при проверке обновлений",
+                message = AppLocale.pick("Ошибка при проверке обновлений", "Failed to check for updates"),
                 error = e
             )
             null

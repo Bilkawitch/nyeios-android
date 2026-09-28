@@ -52,6 +52,9 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import ru.nya.nyeios.R
+import ru.nya.nyeios.ui.common.localizeErrorMessage
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -149,7 +152,7 @@ fun NycFeedScreen(
         val file = downloadManager.getFileForAttachment(att.url, att.name)
         if (file != null) {
             downloadManager.openDownloadedFile(context, file).onFailure {
-                Toast.makeText(context, it.localizedMessage ?: "Ошибка открытия", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, it.localizedMessage ?: context.getString(R.string.error_open_file), Toast.LENGTH_SHORT).show()
             }
         } else {
             handleDownload(att)
@@ -175,7 +178,7 @@ fun NycFeedScreen(
                         ) {
                             CircularProgressIndicator(color = NycCyan)
                             Text(
-                                text = "Загрузка сохранённой ленты...",
+                                text = stringResource(R.string.feed_loading_cached),
                                 color = nycMuted,
                                 fontSize = 14.sp
                             )
@@ -209,7 +212,7 @@ fun NycFeedScreen(
                                 .padding(20.dp)
                         ) {
                             Text(
-                                text = "СИСТЕМНОЕ ОПОВЕЩЕНИЕ",
+                                text = stringResource(R.string.system_alert_caps),
                                 fontFamily = NycSansFamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp,
@@ -217,7 +220,7 @@ fun NycFeedScreen(
                                 color = nycRed
                             )
                             Text(
-                                text = uiState.message,
+                                text = localizeErrorMessage(uiState.message),
                                 fontFamily = NycMonoFamily,
                                 fontSize = 11.sp,
                                 color = nycMuted,
@@ -233,7 +236,7 @@ fun NycFeedScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "ПОВТОРИТЬ",
+                                    text = stringResource(R.string.action_retry_caps),
                                     fontFamily = NycSansFamily,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp,
@@ -265,9 +268,9 @@ fun NycFeedScreen(
                     item {
                         NycStatusCard(
                             icon = Icons.Default.Sync,
-                            title = "Живая лента ЭИОС",
-                            subtitle = "СОХРАНЕНО ОБЪЯВЛЕНИЙ: ${uiState.posts.size}",
-                            actionText = "ОБНОВИТЬ",
+                            title = stringResource(R.string.feed_nyc_title),
+                            subtitle = stringResource(R.string.feed_saved_count_fmt, uiState.posts.size),
+                            actionText = stringResource(R.string.action_update_caps),
                             actionIcon = Icons.Default.Refresh,
                             dimAction = false,
                             onAction = {
@@ -287,16 +290,16 @@ fun NycFeedScreen(
                             downloadStates.count { it.value is DownloadState.Downloading }
                         }
                         val sub = if (activeCount > 0) {
-                            "СКАЧИВАЕТСЯ ФАЙЛОВ: $activeCount"
+                            stringResource(R.string.downloads_nyc_downloading_fmt, activeCount)
                         } else {
-                            "ЛОКАЛЬНОЕ ХРАНИЛИЩЕ · ${downloadedFiles.size} ФАЙЛОВ" +
-                                if (totalBytes > 0) " · ${downloadManager.formatFileSize(totalBytes)}" else ""
+                            val sizeStr = if (totalBytes > 0) " · ${downloadManager.formatFileSize(totalBytes)}" else ""
+                            stringResource(R.string.downloads_saved_count_fmt, downloadedFiles.size) + sizeStr
                         }
                         NycStatusCard(
                             icon = Icons.Default.FolderOpen,
-                            title = "Менеджер загрузок",
+                            title = stringResource(R.string.downloads_title),
                             subtitle = sub,
-                            actionText = "ОТКРЫТЬ",
+                            actionText = stringResource(R.string.downloads_open_caps),
                             actionIcon = null,
                             dimAction = true,
                             onAction = { openSheet() }
@@ -313,7 +316,7 @@ fun NycFeedScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "— ОБЪЯВЛЕНИЙ ПОКА НЕТ —",
+                                    text = stringResource(R.string.feed_empty_banner),
                                     fontFamily = NycMonoFamily,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 11.sp,
@@ -347,19 +350,19 @@ fun NycFeedScreen(
                 downloadStates = downloadStates,
                 onOpenFile = { file ->
                     downloadManager.openDownloadedFile(context, file).onFailure {
-                        Toast.makeText(context, it.localizedMessage ?: "Ошибка открытия", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, it.localizedMessage ?: context.getString(R.string.error_open_file), Toast.LENGTH_SHORT).show()
                     }
                 },
                 onShareFile = { file ->
                     downloadManager.shareDownloadedFile(context, file).onFailure {
-                        Toast.makeText(context, it.localizedMessage ?: "Ошибка отправки", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, it.localizedMessage ?: context.getString(R.string.error_send_file), Toast.LENGTH_SHORT).show()
                     }
                 },
                 onSaveToDownloads = { file ->
                     downloadManager.saveToPublicDownloads(context, file).onSuccess {
                         Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
                     }.onFailure {
-                        Toast.makeText(context, it.localizedMessage ?: "Ошибка сохранения", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, it.localizedMessage ?: context.getString(R.string.error_save_file), Toast.LENGTH_SHORT).show()
                     }
                 },
                 onDeleteFile = { file ->
@@ -680,7 +683,7 @@ private fun NycAttachment(
                         modifier = Modifier.size(11.dp)
                     )
                     Text(
-                        text = "ОТКРЫТЬ",
+                        text = stringResource(R.string.downloads_open_caps),
                         fontFamily = NycMonoFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 8.5.sp,
@@ -722,7 +725,7 @@ private fun NycAttachment(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Download,
-                            contentDescription = if (isDownloading) "Скачивается" else "Скачать",
+                            contentDescription = if (isDownloading) stringResource(R.string.action_downloading) else stringResource(R.string.action_download),
                             tint = NycCyan,
                             modifier = Modifier.size(12.dp)
                         )
@@ -787,7 +790,7 @@ private fun NycSyncDialog(
         },
         title = {
             Text(
-                "Синхронизация Живой ленты",
+                stringResource(R.string.feed_sync_dialog_title),
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp,
                 fontFamily = NycSansFamily
@@ -796,14 +799,14 @@ private fun NycSyncDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
-                    text = "Сервер университета формирует Живую ленту монолитным документом (~7.5 МБ). В зависимости от нагрузки генерация может занять от 20 секунд до нескольких минут.",
+                    text = stringResource(R.string.feed_sync_dialog_desc),
                     fontSize = 14.sp,
                     lineHeight = 20.sp,
                     color = nycText,
                     fontFamily = NycSansFamily
                 )
                 Text(
-                    text = "• Во время загрузки разделы «Расписание» и «БРС» будут работать из сохранённого кэша.\n• В приложении отображается живой таймер и объём скачанных данных.\n• Вы сможете отменить загрузку в любой момент.",
+                    text = stringResource(R.string.feed_sync_dialog_bullets),
                     fontSize = 12.sp,
                     lineHeight = 17.sp,
                     color = nycMuted,
@@ -820,7 +823,7 @@ private fun NycSyncDialog(
                 ),
                 shape = RoundedCornerShape(11.dp)
             ) {
-                Text("Начать загрузку", fontWeight = FontWeight.Bold, fontFamily = NycSansFamily)
+                Text(stringResource(R.string.feed_sync_start), fontWeight = FontWeight.Bold, fontFamily = NycSansFamily)
             }
         },
         dismissButton = {
@@ -830,7 +833,7 @@ private fun NycSyncDialog(
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(150, 185, 235, alpha = 19)),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = nycMuted)
             ) {
-                Text("Отмена", fontFamily = NycSansFamily)
+                Text(stringResource(R.string.action_cancel), fontFamily = NycSansFamily)
             }
         }
     )

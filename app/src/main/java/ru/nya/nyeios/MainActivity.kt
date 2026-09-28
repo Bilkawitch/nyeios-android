@@ -263,15 +263,14 @@ class MainActivity : ComponentActivity() {
                                 }
                                 val nycTitle = typewriterText(rawNycTitle, order = 0.05f)
                                 val nycBase = remember(lastSyncTime) { formatSyncTime(lastSyncTime) }
-                                val nycFresh = remember(nycBase, currentTab, feedUiState) {
-                                    if (nycBase.isEmpty()) "" else {
-                                        var t = nycBase
-                                        if (currentTab == 1) {
-                                            val n = (feedUiState as? ru.nya.nyeios.data.model.FeedUiState.Success)?.posts?.size ?: 0
-                                            if (n > 0) t += " | $n ЗАПИСЕЙ"
-                                        }
-                                        t
-                                    }
+                                val nycPostsCount = if (currentTab == 1) {
+                                    (feedUiState as? ru.nya.nyeios.data.model.FeedUiState.Success)?.posts?.size ?: 0
+                                } else 0
+                                val nycPostsSuffix = if (nycPostsCount > 0) {
+                                    " | " + stringResource(R.string.nyc_posts_count_fmt, nycPostsCount)
+                                } else ""
+                                val nycFresh = remember(nycBase, nycPostsSuffix) {
+                                    if (nycBase.isEmpty()) "" else nycBase + nycPostsSuffix
                                 }
                                 val nycFreshColor = when (syncState) {
                                     ru.nya.nyeios.ui.common.SyncState.FRESH -> ru.nya.nyeios.ui.theme.NierGreen
@@ -282,6 +281,7 @@ class MainActivity : ComponentActivity() {
                                     (scheduleUiState as? ScheduleUiState.Success)?.schedule?.group
                                 val nycDownloads =
                                     if (currentTab == 1) feedViewModel.downloadedFiles.collectAsState().value else emptyList()
+                                val syncBusyToast = stringResource(R.string.sync_feed_in_progress_toast)
                                 NycTopBar(
                                     title = nycTitle,
                                     freshText = nycFresh,
@@ -302,7 +302,7 @@ class MainActivity : ComponentActivity() {
                                         if (feedSyncProgress.isSyncing) {
                                             android.widget.Toast.makeText(
                                                 this@MainActivity,
-                                                "Идёт синхронизация Живой ленты. Расписание и успеваемость работают из кэша.",
+                                                syncBusyToast,
                                                 android.widget.Toast.LENGTH_SHORT
                                             ).show()
                                             return@NycTopBar
@@ -460,7 +460,7 @@ class MainActivity : ComponentActivity() {
                                                                     strokeWidth = 1.5.dp
                                                                 )
                                                                 Text(
-                                                                    text = "Синхр. ленты...",
+                                                                    text = stringResource(R.string.sync_feed_short),
                                                                     color = ru.nya.nyeios.ui.theme.NierGreen,
                                                                     fontSize = 9.sp,
                                                                     fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily
@@ -471,6 +471,13 @@ class MainActivity : ComponentActivity() {
                                                                     ru.nya.nyeios.ui.common.SyncState.AGED -> ru.nya.nyeios.ui.theme.NierAmber
                                                                     ru.nya.nyeios.ui.common.SyncState.STALE -> ru.nya.nyeios.ui.theme.NierRed
                                                                 }
+                                                                val postsCount =
+                                                                    if (currentTab == 1) {
+                                                                        (feedUiState as? ru.nya.nyeios.data.model.FeedUiState.Success)?.posts?.size ?: 0
+                                                                    } else 0
+                                                                val postsSuffix = if (postsCount > 0) {
+                                                                    " | " + stringResource(R.string.nyc_posts_count_fmt, postsCount)
+                                                                } else ""
                                                                 Text(
                                                                     text = buildAnnotatedString {
                                                                         withStyle(SpanStyle(color = triangleColor)) {
@@ -478,12 +485,7 @@ class MainActivity : ComponentActivity() {
                                                                         }
                                                                         withStyle(SpanStyle(color = ru.nya.nyeios.ui.theme.NierDim)) {
                                                                             append(syncText)
-                                                                            if (currentTab == 1) {
-                                                                                val postsCount = (feedUiState as? ru.nya.nyeios.data.model.FeedUiState.Success)?.posts?.size ?: 0
-                                                                                if (postsCount > 0) {
-                                                                                    append(" | $postsCount ЗАПИСЕЙ")
-                                                                                }
-                                                                            }
+                                                                            append(postsSuffix)
                                                                         }
                                                                     },
                                                                     fontSize = 9.sp,
@@ -508,7 +510,7 @@ class MainActivity : ComponentActivity() {
                                             ) {
                                                 Icon(
                                                     imageVector = Icons.Default.FileDownload,
-                                                    contentDescription = "Загрузки",
+                                                    contentDescription = stringResource(R.string.cd_downloads),
                                                     tint = if (downloadedFiles.isNotEmpty()) ru.nya.nyeios.ui.theme.NierBlue else ru.nya.nyeios.ui.theme.NierDarkSecondary,
                                                     modifier = Modifier.size(20.dp)
                                                 )
@@ -540,19 +542,20 @@ class MainActivity : ComponentActivity() {
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.AccountCircle,
-                                                contentDescription = "Профиль",
+                                                contentDescription = stringResource(R.string.cd_profile),
                                                 tint = if (authSession.isLoggedIn) ru.nya.nyeios.ui.theme.NierGreen else ru.nya.nyeios.ui.theme.NierDarkSecondary
                                             )
                                         }
 
                                         // Refresh button — hidden on the settings tab
                                         if (currentTab != 3) {
+                                        val syncBusyToast = stringResource(R.string.sync_feed_in_progress_toast)
                                         IconButton(
                                             onClick = {
                                                 if (feedSyncProgress.isSyncing) {
                                                     android.widget.Toast.makeText(
                                                         this@MainActivity,
-                                                        "Идёт синхронизация Живой ленты. Расписание и успеваемость работают из кэша.",
+                                                        syncBusyToast,
                                                         android.widget.Toast.LENGTH_SHORT
                                                     ).show()
                                                     return@IconButton
@@ -642,7 +645,7 @@ class MainActivity : ComponentActivity() {
                                             ) {
                                                 Icon(
                                                     imageVector = Icons.Default.Refresh,
-                                                    contentDescription = "Обновить",
+                                                    contentDescription = stringResource(R.string.action_refresh),
                                                     tint = iconTint,
                                                     modifier = Modifier
                                                         .size(20.dp)
@@ -906,7 +909,11 @@ private fun formatSyncTime(timestamp: Long): String {
 
         when {
             syncDate == today -> timeStr
-            syncDate == today.minusDays(1) -> "вчера $timeStr"
+            syncDate == today.minusDays(1) -> if (Locale.getDefault().language.equals("en", ignoreCase = true)) {
+                "yesterday $timeStr"
+            } else {
+                "вчера $timeStr"
+            }
             else -> {
                 val dateFmt = DateTimeFormatter.ofPattern("dd.MM HH:mm", Locale.getDefault())
                 Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).format(dateFmt)

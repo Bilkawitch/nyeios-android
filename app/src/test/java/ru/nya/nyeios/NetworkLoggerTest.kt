@@ -1,5 +1,6 @@
 package ru.nya.nyeios
 
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -7,12 +8,22 @@ import org.junit.Before
 import org.junit.Test
 import ru.nya.nyeios.data.net.NetworkLogLevel
 import ru.nya.nyeios.data.net.NetworkLogger
+import java.util.Locale
 
 class NetworkLoggerTest {
 
+    private val originalLocale: Locale = Locale.getDefault()
+
     @Before
     fun setUp() {
+        // Log copy follows the process locale (AppLocale), so pin it to keep assertions stable.
+        Locale.setDefault(Locale("ru"))
         NetworkLogger.clear()
+    }
+
+    @After
+    fun tearDown() {
+        Locale.setDefault(originalLocale)
     }
 
     @Test
@@ -72,6 +83,18 @@ class NetworkLoggerTest {
         val formatted = NetworkLogger.getAllFormatted()
         assertTrue(formatted.contains("[INIT] Приложение запущено"))
         assertTrue(formatted.contains("HTTP GET"))
+    }
+
+    @Test
+    fun testLogError_followsEnglishLocale() {
+        Locale.setDefault(Locale("en"))
+        val ex = java.net.SocketTimeoutException("timeout")
+        NetworkLogger.logError("TIMEOUT", "Request timeout", ex, 15000L)
+
+        val details = NetworkLogger.logs.value.first().details.orEmpty()
+        assertTrue(details.contains("Time to error: 15000 ms"))
+        assertTrue(details.contains("Exception: SocketTimeoutException"))
+        assertTrue(details.contains("Stack:"))
     }
 
     @Test

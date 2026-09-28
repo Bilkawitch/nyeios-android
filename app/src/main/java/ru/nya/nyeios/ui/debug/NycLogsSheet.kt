@@ -57,6 +57,8 @@ import ru.nya.nyeios.data.net.NetworkLogEntry
 import ru.nya.nyeios.data.net.NetworkLogLevel
 import ru.nya.nyeios.data.net.NetworkLogger
 import ru.nya.nyeios.data.update.UpdateRepository
+import androidx.compose.ui.res.stringResource
+import ru.nya.nyeios.R
 import ru.nya.nyeios.ui.theme.NycCyan
 import ru.nya.nyeios.ui.theme.NycLed
 import ru.nya.nyeios.ui.theme.NycMonoFamily
@@ -91,8 +93,8 @@ private val nycViolet = Color(0xFFA78BFA)
 
 private val codeGet = Regex("""^GET\b""")
 private val codePost = Regex("""^POST\b""")
-private val codeNum = Regex("""Код:\s*(\d{3})""")
-private val codeMs = Regex("""Время ответа:\s*(\d+)\s*мс""")
+private val codeNum = Regex("""(?:Код|Code):\s*(\d{3})""")
+private val codeMs = Regex("""(?:Время ответа|Response time):\s*(\d+)\s*(?:мс|ms)""")
 private val urlLine = Regex("""URL:\s*(\S+)""")
 private val schemeHost = Regex("""^[a-zA-Z][a-zA-Z0-9+.-]*://[^/]+""")
 
@@ -110,9 +112,10 @@ internal data class NycLogRow(
     val badgeText: String? = null
 )
 
-internal fun deriveRow(entry: NetworkLogEntry): NycLogRow {
+internal fun deriveRow(entry: NetworkLogEntry, degradedBadge: String): NycLogRow {
     val tag = entry.tag.uppercase().removePrefix("HTTP ").trim()
-    val isDegraded = entry.isDegraded || entry.level == NetworkLogLevel.WARNING || tag.contains("ПУСТО") || tag.contains("СБОЙ")
+    val isDegraded = entry.isDegraded || entry.level == NetworkLogLevel.WARNING ||
+        tag.contains("ПУСТО") || tag.contains("СБОЙ") || tag.contains("EMPTY") || tag.contains("FAIL")
     val (method, methodColor) = when {
         codeGet.containsMatchIn(tag) -> "GET" to NycCyan
         codePost.containsMatchIn(tag) -> "POST" to nycViolet
@@ -129,7 +132,7 @@ internal fun deriveRow(entry: NetworkLogEntry): NycLogRow {
     val ms = codeMs.find(entry.details ?: "")?.groupValues?.getOrNull(1)?.toLongOrNull()
     val time = entry.timestamp.take(8)
     val isBad = (code != null && code >= 500) || entry.level == NetworkLogLevel.ERROR
-    val badgeText = if (isDegraded) "200 ПУСТО" else code?.toString()
+    val badgeText = if (isDegraded) degradedBadge else code?.toString()
     return NycLogRow(method, methodColor, path, code, ms, time, isBad, isDegraded, badgeText)
 }
 
@@ -170,8 +173,9 @@ fun NycLogsSheet(
         }
     }
 
-    val rows = remember(logs, filter) {
-        logs.map { it to deriveRow(it) }.filter { (_, r) -> passesLogFilter(r.code, filter) }
+    val degradedBadge = stringResource(R.string.log_badge_degraded)
+    val rows = remember(logs, filter, degradedBadge) {
+        logs.map { it to deriveRow(it, degradedBadge) }.filter { (_, r) -> passesLogFilter(r.code, filter) }
     }
 
     ModalBottomSheet(
@@ -205,7 +209,7 @@ fun NycLogsSheet(
                 modifier = Modifier.padding(horizontal = 2.dp)
             ) {
                 Text(
-                    text = "Сетевые логи",
+                    text = stringResource(R.string.network_logs_title),
                     fontFamily = NycSansFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.5.sp,
@@ -250,7 +254,7 @@ fun NycLogsSheet(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Закрыть",
+                        contentDescription = stringResource(R.string.action_close),
                         tint = nycMuted,
                         modifier = Modifier.size(15.dp)
                     )
@@ -262,7 +266,7 @@ fun NycLogsSheet(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 modifier = Modifier.padding(top = 11.dp, bottom = 10.dp)
             ) {
-                val labels = listOf("ВСЕ", "2XX", "3XX", "4XX", "5XX")
+                val labels = listOf(stringResource(R.string.logs_filter_all), "2XX", "3XX", "4XX", "5XX")
                 labels.forEachIndexed { index, label ->
                     val on = filter == index
                     Box(
@@ -308,7 +312,7 @@ fun NycLogsSheet(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = if (logs.isEmpty()) "СЕТЕВЫХ ЗАПРОСОВ ПОКА НЕТ" else "В ЭТОМ ФИЛЬТРЕ ПУСТО",
+                        text = if (logs.isEmpty()) stringResource(R.string.network_logs_empty_title) else stringResource(R.string.logs_filter_empty),
                         fontFamily = NycMonoFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 11.sp,
@@ -335,7 +339,7 @@ fun NycLogsSheet(
                 modifier = Modifier.padding(top = 10.dp)
             ) {
                 NycLogAction(
-                    text = "КОПИРОВАТЬ",
+                    text = stringResource(R.string.action_copy).uppercase(),
                     enabled = logs.isNotEmpty(),
                     modifier = Modifier.weight(1f),
                     onClick = {
@@ -346,14 +350,14 @@ fun NycLogsSheet(
                             clipboard.setPrimaryClip(
                                 ClipData.newPlainText("NyEIOS Network Logs", formatted)
                             )
-                            Toast.makeText(context, "Логи скопированы в буфер", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.network_logs_copied_toast), Toast.LENGTH_SHORT).show()
                         } else {
-                            Toast.makeText(context, "Логи пусты", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.logs_empty_toast), Toast.LENGTH_SHORT).show()
                         }
                     }
                 )
                 NycLogAction(
-                    text = if (isCheckingUpdate) "..." else "ОБНОВЛЕНИЯ",
+                    text = if (isCheckingUpdate) "..." else stringResource(R.string.logs_action_updates),
                     enabled = !isCheckingUpdate,
                     modifier = Modifier.weight(1f),
                     onClick = {
@@ -361,8 +365,8 @@ fun NycLogsSheet(
                         scope.launch(Dispatchers.IO) {
                             NetworkLogger.logInfo(
                                 tag = "UPDATE",
-                                message = "Проверка обновлений…",
-                                details = "Запрос к GitHub Releases API"
+                                message = context.getString(R.string.logs_checking_updates),
+                                details = context.getString(R.string.logs_update_request_details)
                             )
                             try {
                                 val repo = UpdateRepository.getInstance(context)
@@ -370,8 +374,8 @@ fun NycLogsSheet(
                                 if (info != null) {
                                     NetworkLogger.logSuccess(
                                         tag = "UPDATE",
-                                        message = "Доступна версия ${info.version}",
-                                        details = "APK: ${info.apkUrl}\nРазмер: ${info.apkSize / 1_048_576.0} МБ\n\nЧто нового:\n${info.changelog}"
+                                        message = context.getString(R.string.logs_update_available_fmt, info.version),
+                                        details = "APK: ${info.apkUrl}\n${context.getString(R.string.downloads_device_used)}: ${info.apkSize / 1_048_576.0} MB\n\n${context.getString(R.string.version_changelog_title)}:\n${info.changelog}"
                                     )
                                     withContext(Dispatchers.Main) {
                                         updateViewModel?.setUpdateAvailable(info)
@@ -379,13 +383,13 @@ fun NycLogsSheet(
                                 } else {
                                     NetworkLogger.logInfo(
                                         tag = "UPDATE",
-                                        message = "Обновлений нет — установлена актуальная версия"
+                                        message = context.getString(R.string.logs_update_none)
                                     )
                                 }
                             } catch (e: Exception) {
                                 NetworkLogger.logError(
                                     tag = "UPDATE",
-                                    message = "Ошибка проверки обновлений",
+                                    message = context.getString(R.string.logs_update_error),
                                     error = e
                                 )
                             } finally {
@@ -395,13 +399,13 @@ fun NycLogsSheet(
                     }
                 )
                 NycLogAction(
-                    text = "ОЧИСТИТЬ",
+                    text = stringResource(R.string.action_clear),
                     enabled = logs.isNotEmpty(),
                     danger = true,
                     modifier = Modifier.weight(1f),
                     onClick = {
                         NetworkLogger.clear()
-                        Toast.makeText(context, "Журнал очищен", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.network_logs_cleared_toast), Toast.LENGTH_SHORT).show()
                     }
                 )
             }
@@ -517,13 +521,13 @@ private fun NycLogEntryRow(entry: NetworkLogEntry, row: NycLogRow) {
                             val text = entry.rawResponse.orEmpty()
                             val clip = ClipData.newPlainText("NyEIOS Raw Response", text)
                             clipboard.setPrimaryClip(clip)
-                            Toast.makeText(context, if (text.isEmpty()) "Ответ сервера пуст" else "Raw ответ скопирован", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, if (text.isEmpty()) context.getString(R.string.network_raw_response_empty) else context.getString(R.string.network_raw_response_copied), Toast.LENGTH_SHORT).show()
                         },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.ContentCopy,
-                        contentDescription = "Скопировать raw ответ",
+                        contentDescription = stringResource(R.string.network_copy_raw_desc),
                         tint = nycBlue,
                         modifier = Modifier.size(12.dp)
                     )
@@ -532,7 +536,7 @@ private fun NycLogEntryRow(entry: NetworkLogEntry, row: NycLogRow) {
 
             if (row.ms != null) {
                 Text(
-                    text = "${row.ms} мс",
+                    text = stringResource(R.string.settings_ms_fmt, row.ms),
                     fontFamily = NycMonoFamily,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 8.5.sp,

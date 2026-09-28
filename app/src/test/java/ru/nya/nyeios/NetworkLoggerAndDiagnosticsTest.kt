@@ -1,5 +1,6 @@
 package ru.nya.nyeios
 
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -8,12 +9,22 @@ import org.junit.Test
 import ru.nya.nyeios.data.net.NetworkLogLevel
 import ru.nya.nyeios.data.net.NetworkLogger
 import ru.nya.nyeios.data.repository.EiosRepository
+import java.util.Locale
 
 class NetworkLoggerAndDiagnosticsTest {
 
+    private val originalLocale: Locale = Locale.getDefault()
+
     @Before
     fun setUp() {
+        // Log copy follows the process locale (AppLocale), so pin it to keep assertions stable.
+        Locale.setDefault(Locale("ru"))
         NetworkLogger.clear()
+    }
+
+    @After
+    fun tearDown() {
+        Locale.setDefault(originalLocale)
     }
 
     @Test
@@ -53,6 +64,24 @@ class NetworkLoggerAndDiagnosticsTest {
         assertTrue(entry.isDegraded)
         assertTrue(entry.message.contains("СБОЙ: Отсутствует соединение со службой 1С"))
         assertTrue(entry.details?.contains("ПУСТАЯ СТРАНИЦА / СБОЙ СЕРВЕРА") == true)
+    }
+
+    @Test
+    fun testDegradedBadgeFollowsEnglishLocale() {
+        Locale.setDefault(Locale("en"))
+        NetworkLogger.logResponse(
+            code = 200,
+            message = "OK",
+            url = "https://eios.gukolomna.ru/eios/",
+            durationMs = 180,
+            isDegraded = true,
+            degradedReason = "1C service is unreachable"
+        )
+
+        val entry = NetworkLogger.logs.value.first()
+        assertEquals("200 EMPTY", entry.tag)
+        assertTrue(entry.message.contains("[FAILURE: 1C service is unreachable]"))
+        assertTrue(entry.details?.contains(" (EMPTY PAGE / SERVER FAILURE)") == true)
     }
 
     @Test

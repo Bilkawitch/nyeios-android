@@ -34,6 +34,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
+import ru.nya.nyeios.R
+import ru.nya.nyeios.ui.common.localizeErrorMessage
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ru.nya.nyeios.data.model.CurriculumControlType
@@ -90,7 +93,7 @@ fun NycCurriculumScreen(
                     ) {
                         CircularProgressIndicator(color = NycCyan)
                         Text(
-                            text = "Загрузка успеваемости (БРС)...",
+                            text = stringResource(R.string.curriculum_loading),
                             color = nycMuted,
                             fontSize = 14.sp
                         )
@@ -117,7 +120,7 @@ fun NycCurriculumScreen(
                             .padding(20.dp)
                     ) {
                         Text(
-                            text = "СИСТЕМНОЕ ОПОВЕЩЕНИЕ",
+                            text = stringResource(R.string.system_alert_caps),
                             fontFamily = NycSansFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 11.sp,
@@ -125,7 +128,7 @@ fun NycCurriculumScreen(
                             color = NierRed
                         )
                         Text(
-                            text = uiState.message,
+                            text = localizeErrorMessage(uiState.message),
                             color = nycText,
                             fontSize = 13.sp,
                             fontFamily = NycSansFamily,
@@ -149,7 +152,7 @@ fun NycCurriculumScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "ПОВТОРИТЬ",
+                                    text = stringResource(R.string.action_retry_caps),
                                     fontFamily = NycSansFamily,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp,
@@ -168,7 +171,7 @@ fun NycCurriculumScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "ВОЙТИ В АККАУНТ",
+                                    text = stringResource(R.string.action_login_account),
                                     fontFamily = NycSansFamily,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp,
@@ -194,14 +197,14 @@ fun NycCurriculumScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                text = "Данные об успеваемости отсутствуют",
+                                text = stringResource(R.string.curriculum_empty_title),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 18.sp,
                                 fontFamily = NycSansFamily,
                                 color = nycText
                             )
                             Text(
-                                text = "Не удалось найти записи в учебном плане. Попробуйте синхронизировать.",
+                                text = stringResource(R.string.curriculum_empty_desc),
                                 color = nycMuted,
                                 fontSize = 14.sp,
                                 fontFamily = NycSansFamily,
@@ -231,7 +234,7 @@ fun NycCurriculumScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "В этом семестре нет зарегистрированных дисциплин.",
+                                    text = stringResource(R.string.curriculum_empty_term),
                                     color = nycMuted,
                                     fontSize = 14.sp,
                                     fontFamily = NycSansFamily,
@@ -293,7 +296,7 @@ private fun NycTermsRow(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = term.termTitle.uppercase(),
+                        text = stringResource(R.string.semester_fmt, term.termNum).uppercase(),
                         color = if (isSelected) NycCyan else nycMuted,
                         fontWeight = FontWeight.SemiBold,
                         fontFamily = NycMonoFamily,
@@ -335,21 +338,21 @@ private fun NycSummaryPanel(term: CurriculumTerm) {
             .padding(vertical = 13.dp, horizontal = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        NycSum(value = "$totalSubjects", label = "ПРЕДМЕТОВ", color = nycText, modifier = Modifier.weight(1f))
+        NycSum(value = "$totalSubjects", label = stringResource(R.string.curriculum_stat_subjects).uppercase(), color = nycText, modifier = Modifier.weight(1f))
         Box(
             modifier = Modifier
                 .width(1.dp)
                 .height(34.dp)
                 .background(Color(150, 185, 235, alpha = 36))
         )
-        NycSum(value = "$passedCount", label = "ЗАЧЁТОВ", color = NierGreen, modifier = Modifier.weight(1f))
+        NycSum(value = "$passedCount", label = stringResource(R.string.curriculum_stat_tests).uppercase(), color = NierGreen, modifier = Modifier.weight(1f))
         Box(
             modifier = Modifier
                 .width(1.dp)
                 .height(34.dp)
                 .background(Color(150, 185, 235, alpha = 36))
         )
-        NycSum(value = "$examsCount", label = "ЭКЗАМЕНОВ", color = NierRed, modifier = Modifier.weight(1f))
+        NycSum(value = "$examsCount", label = stringResource(R.string.curriculum_stat_exams).uppercase(), color = NierRed, modifier = Modifier.weight(1f))
     }
 }
 
@@ -400,9 +403,10 @@ private fun NycSubjectCard(subject: CurriculumSubject) {
         subject.termRating.isNotBlank() && subject.termRating != "0" -> subject.termRating
         else -> null
     }
+    val scorePointsStr = stringResource(R.string.curriculum_score_points)
     val scoreLabel = when {
         subject.finalRating.isNotBlank() && subject.finalRating != "0" -> "/ 100"
-        subject.currentScore.isNotBlank() && subject.currentScore != "0" -> " б."
+        subject.currentScore.isNotBlank() && subject.currentScore != "0" -> scorePointsStr
         else -> ""
     }
     val scoreNum = scorePrimary?.toFloatOrNull()
@@ -414,10 +418,12 @@ private fun NycSubjectCard(subject: CurriculumSubject) {
     }
     val (markText, markColor) = shortMark(subject.grade)
 
+    val hoursFmt = stringResource(R.string.curriculum_hours_fmt, subject.hours)
+    val zetFmt = stringResource(R.string.curriculum_zet_fmt, subject.zet)
     val metaLine = buildString {
-        if (subject.hours.isNotBlank()) append("${subject.hours} Ч")
+        if (subject.hours.isNotBlank()) append(hoursFmt)
         if (subject.hours.isNotBlank() && subject.zet.isNotBlank()) append(" · ")
-        if (subject.zet.isNotBlank()) append("${subject.zet} ЗЕТ")
+        if (subject.zet.isNotBlank()) append(zetFmt)
     }
 
     Column(
@@ -548,36 +554,37 @@ private fun NycSubjectCard(subject: CurriculumSubject) {
                     .padding(10.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                NycDetailRow(label = "Текущий контроль (балл):", value = subject.currentScore.ifEmpty { "0" })
+                NycDetailRow(label = stringResource(R.string.curriculum_detail_current_score), value = subject.currentScore.ifEmpty { "0" })
                 if (subject.currentRating.isNotBlank()) {
-                    NycDetailRow(label = "Рейтинг текущей успеваемости:", value = subject.currentRating)
+                    NycDetailRow(label = stringResource(R.string.curriculum_detail_current_rating), value = subject.currentRating)
                 }
                 if (subject.termRating.isNotBlank()) {
-                    NycDetailRow(label = "Семестровый рейтинг:", value = subject.termRating)
+                    NycDetailRow(label = stringResource(R.string.curriculum_detail_term_rating), value = subject.termRating)
                 }
-                NycDetailRow(label = "Баллы на экзамене / зачёте:", value = subject.examScore.ifEmpty { "0" })
+                NycDetailRow(label = stringResource(R.string.curriculum_detail_exam_score), value = subject.examScore.ifEmpty { "0" })
                 NycDetailRow(
-                    label = "Итоговый рейтинг:",
+                    label = stringResource(R.string.curriculum_detail_final_rating),
                     value = if (subject.finalRating.isNotBlank() && subject.finalRating != "0") subject.finalRating else "—",
                     highlight = true
                 )
                 if (subject.grade.trim().isNotEmpty()) {
-                    NycDetailRow(label = "Итоговая оценка:", value = subject.grade.trim(), highlight = true)
+                    NycDetailRow(label = stringResource(R.string.curriculum_detail_final_grade), value = subject.grade.trim(), highlight = true)
                 }
             }
         }
     }
 }
 
+@Composable
 private fun shortMark(grade: String): Pair<String, Color> {
     val g = grade.trim().lowercase()
     return when {
         g.isEmpty() -> "—" to nycFaint
-        g.contains("отл") || g == "5" -> "ОТЛ." to NierGreen
-        g.contains("хор") || g == "4" -> "ХОР." to NierAmber
-        g.contains("удовл") || g == "3" -> "УД." to NierAmber
-        g.contains("зачт") -> "ЗАЧТ." to NierGreen
-        g.contains("незач") || g.contains("неуд") || g == "2" -> "НЕУД." to NierRed
+        g.contains("отл") || g == "5" -> stringResource(R.string.curriculum_mark_excellent) to NierGreen
+        g.contains("хор") || g == "4" -> stringResource(R.string.curriculum_mark_good) to NierAmber
+        g.contains("удовл") || g == "3" -> stringResource(R.string.curriculum_mark_satisfactory) to NierAmber
+        g.contains("зачт") -> stringResource(R.string.curriculum_mark_passed) to NierGreen
+        g.contains("незач") || g.contains("неуд") || g == "2" -> stringResource(R.string.curriculum_mark_fail) to NierRed
         else -> grade.trim().uppercase().take(5) to nycFaint
     }
 }

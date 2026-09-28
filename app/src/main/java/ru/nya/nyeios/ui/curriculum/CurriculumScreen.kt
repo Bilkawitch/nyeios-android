@@ -38,6 +38,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
+import ru.nya.nyeios.R
+import ru.nya.nyeios.ui.common.localizeErrorMessage
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ru.nya.nyeios.data.model.CurriculumControlType
@@ -80,7 +83,7 @@ fun CurriculumScreen(
                     ) {
                         CircularProgressIndicator(color = LectureBlue)
                         Text(
-                            text = "Загрузка успеваемости (БРС)...",
+                            text = stringResource(R.string.curriculum_loading),
                             color = TextMuted,
                             fontSize = 14.sp
                         )
@@ -119,7 +122,7 @@ fun CurriculumScreen(
                                     .background(ru.nya.nyeios.ui.theme.NierRed)
                             )
                             Text(
-                                text = "СИСТЕМНОЕ ОПОВЕЩЕНИЕ",
+                                text = stringResource(R.string.system_alert_caps),
                                 fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp,
@@ -146,7 +149,7 @@ fun CurriculumScreen(
                         Spacer(Modifier.height(14.dp))
 
                         Text(
-                            text = uiState.message,
+                            text = localizeErrorMessage(uiState.message),
                             color = ru.nya.nyeios.ui.theme.NierDark,
                             fontSize = 13.sp,
                             fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
@@ -174,7 +177,7 @@ fun CurriculumScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "ПОВТОРИТЬ",
+                                    text = stringResource(R.string.action_retry_caps),
                                     fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp,
@@ -193,7 +196,7 @@ fun CurriculumScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "ВОЙТИ В АККАУНТ",
+                                    text = stringResource(R.string.action_login_account),
                                     fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp,
@@ -220,13 +223,13 @@ fun CurriculumScreen(
                         ) {
                             Text(text = "🎓", fontSize = 40.sp)
                             Text(
-                                text = "Данные об успеваемости отсутствуют",
+                                text = stringResource(R.string.curriculum_empty_title),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 18.sp,
                                 color = TextPrimary
                             )
                             Text(
-                                text = "Не удалось найти записи в учебном плане. Попробуйте синхронизировать.",
+                                text = stringResource(R.string.curriculum_empty_desc),
                                 color = TextMuted,
                                 fontSize = 14.sp,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -258,7 +261,7 @@ fun CurriculumScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "В этом семестре нет зарегистрированных дисциплин.",
+                                    text = stringResource(R.string.curriculum_empty_term),
                                     color = TextMuted,
                                     fontSize = 14.sp,
                                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -316,7 +319,7 @@ fun CurriculumTermsBar(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = term.termTitle,
+                    text = stringResource(R.string.semester_fmt, term.termNum),
                     color = if (isSelected) Color.White else ru.nya.nyeios.ui.theme.NierDim,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
                     fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
@@ -342,19 +345,19 @@ fun CurriculumStatsHeader(term: CurriculumTerm) {
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         StatCard(
-            title = "Предметов",
+            title = stringResource(R.string.curriculum_stat_subjects),
             count = totalSubjects.toString(),
             color = ru.nya.nyeios.ui.theme.NierDark,
             modifier = Modifier.weight(1f)
         )
         StatCard(
-            title = "Зачётов",
+            title = stringResource(R.string.curriculum_stat_tests),
             count = passedCount.toString(),
             color = ru.nya.nyeios.ui.theme.NierGreen,
             modifier = Modifier.weight(1f)
         )
         StatCard(
-            title = "Экзаменов",
+            title = stringResource(R.string.curriculum_stat_exams),
             count = examsCount.toString(),
             color = ru.nya.nyeios.ui.theme.NierRed,
             modifier = Modifier.weight(1f)
@@ -460,9 +463,10 @@ fun CurriculumSubjectCard(subject: CurriculumSubject) {
                     else -> null
                 }
 
+                val scorePointsStr = stringResource(R.string.curriculum_score_points)
                 val scoreLabel = when {
                     subject.finalRating.isNotBlank() && subject.finalRating != "0" -> "/100"
-                    subject.currentScore.isNotBlank() && subject.currentScore != "0" -> " б."
+                    subject.currentScore.isNotBlank() && subject.currentScore != "0" -> scorePointsStr
                     else -> ""
                 }
 
@@ -534,17 +538,17 @@ fun CurriculumSubjectCard(subject: CurriculumSubject) {
                         .padding(8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    BrsDetailRow(label = "Текущий контроль (балл):", value = subject.currentScore.ifEmpty { "0" })
+                    BrsDetailRow(label = stringResource(R.string.curriculum_detail_current_score), value = subject.currentScore.ifEmpty { "0" })
                     if (subject.currentRating.isNotBlank()) {
-                        BrsDetailRow(label = "Рейтинг текущей успеваемости:", value = subject.currentRating)
+                        BrsDetailRow(label = stringResource(R.string.curriculum_detail_current_rating), value = subject.currentRating)
                     }
                     if (subject.termRating.isNotBlank()) {
-                        BrsDetailRow(label = "Семестровый рейтинг:", value = subject.termRating)
+                        BrsDetailRow(label = stringResource(R.string.curriculum_detail_term_rating), value = subject.termRating)
                     }
-                    BrsDetailRow(label = "Баллы на экзамене / зачёте:", value = subject.examScore.ifEmpty { "0" })
-                    BrsDetailRow(label = "Итоговый рейтинг:", value = if (subject.finalRating.isNotBlank() && subject.finalRating != "0") subject.finalRating else "—", isHighlight = true)
+                    BrsDetailRow(label = stringResource(R.string.curriculum_detail_exam_score), value = subject.examScore.ifEmpty { "0" })
+                    BrsDetailRow(label = stringResource(R.string.curriculum_detail_final_rating), value = if (subject.finalRating.isNotBlank() && subject.finalRating != "0") subject.finalRating else "—", isHighlight = true)
                     if (gradeText.isNotEmpty()) {
-                        BrsDetailRow(label = "Итоговая оценка:", value = gradeText, isHighlight = true)
+                        BrsDetailRow(label = stringResource(R.string.curriculum_detail_final_grade), value = gradeText, isHighlight = true)
                     }
                 }
             }

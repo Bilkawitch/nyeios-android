@@ -39,7 +39,11 @@ object LessonTimeUtils {
         return if (minutes > 0) minutes else null
     }
 
-    fun formatLessonCount(count: Int): String {
+    fun formatLessonCount(count: Int, locale: java.util.Locale = java.util.Locale.getDefault()): String {
+        if (locale.language.equals("en", ignoreCase = true)) {
+            val word = if (count == 1) "LESSON" else "LESSONS"
+            return "$count $word"
+        }
         val rem10 = count % 10
         val rem100 = count % 100
         val word = when {
@@ -76,10 +80,13 @@ object LessonTimeUtils {
     fun computeLessonProgress(
         timeRangeStr: String,
         isToday: Boolean = true,
-        now: LocalTime = getNow()
+        now: LocalTime = getNow(),
+        locale: java.util.Locale = java.util.Locale.getDefault()
     ): LessonProgressInfo? {
         val match = timeRegex.find(timeRangeStr) ?: return null
         val (startStr, endStr) = match.destructured
+        val isEn = locale.language.equals("en", ignoreCase = true)
+        val zeroSecText = if (isEn) "0 s" else "0 с"
 
         return try {
             val start = LocalTime.parse(startStr, formatter)
@@ -94,8 +101,8 @@ object LessonTimeUtils {
                     progress = 0f,
                     elapsedSeconds = 0,
                     remainingSeconds = totalSeconds,
-                    elapsedText = "0 с",
-                    remainingText = formatLessonDuration(totalSeconds)
+                    elapsedText = zeroSecText,
+                    remainingText = formatLessonDuration(totalSeconds, locale)
                 )
             }
 
@@ -116,8 +123,8 @@ object LessonTimeUtils {
                         progress = progress,
                         elapsedSeconds = elapsedSeconds,
                         remainingSeconds = remainingSeconds,
-                        elapsedText = formatLessonDuration(elapsedSeconds),
-                        remainingText = formatLessonDuration(remainingSeconds)
+                        elapsedText = formatLessonDuration(elapsedSeconds, locale),
+                        remainingText = formatLessonDuration(remainingSeconds, locale)
                     )
                 }
                 isFinished -> {
@@ -128,13 +135,13 @@ object LessonTimeUtils {
                         progress = 1f,
                         elapsedSeconds = totalSeconds,
                         remainingSeconds = 0,
-                        elapsedText = formatLessonDuration(totalSeconds),
-                        remainingText = "Завершена"
+                        elapsedText = formatLessonDuration(totalSeconds, locale),
+                        remainingText = if (isEn) "Finished" else "Завершена"
                     )
                 }
                 isUpcoming -> {
                     val untilStartSeconds = Duration.between(now, start).seconds.coerceAtLeast(0)
-                    val untilStartText = formatLessonDuration(untilStartSeconds)
+                    val untilStartText = formatLessonDuration(untilStartSeconds, locale)
                     LessonProgressInfo(
                         isOngoing = false,
                         isFinished = false,
@@ -142,8 +149,8 @@ object LessonTimeUtils {
                         progress = 0f,
                         elapsedSeconds = 0,
                         remainingSeconds = totalSeconds,
-                        elapsedText = "0 с",
-                        remainingText = "До начала: $untilStartText"
+                        elapsedText = zeroSecText,
+                        remainingText = if (isEn) "Starts in: $untilStartText" else "До начала: $untilStartText"
                     )
                 }
                 else -> null
@@ -161,15 +168,24 @@ object LessonTimeUtils {
         return computeLessonProgress(timeRangeStr, isToday, now)?.isOngoing == true
     }
 
-    fun formatLessonDuration(seconds: Long): String {
+    fun formatLessonDuration(seconds: Long, locale: java.util.Locale = java.util.Locale.getDefault()): String {
         val sec = seconds.coerceAtLeast(0)
         val h = sec / 3600
         val m = (sec % 3600) / 60
         val s = sec % 60
-        return when {
-            h > 0 -> "${h} ч ${m} мин ${s} с"
-            m > 0 -> "${m} мин ${s} с"
-            else -> "${s} с"
+        val isEn = locale.language.equals("en", ignoreCase = true)
+        return if (isEn) {
+            when {
+                h > 0 -> "${h} h ${m} m ${s} s"
+                m > 0 -> "${m} m ${s} s"
+                else -> "${s} s"
+            }
+        } else {
+            when {
+                h > 0 -> "${h} ч ${m} мин ${s} с"
+                m > 0 -> "${m} мин ${s} с"
+                else -> "${s} с"
+            }
         }
     }
 }
