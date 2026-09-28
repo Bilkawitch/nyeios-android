@@ -67,6 +67,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import ru.nya.nyeios.ui.language.LanguageManager
+import ru.nya.nyeios.ui.language.LanguageTypewriterManager
+import ru.nya.nyeios.ui.language.typewriterText
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -227,17 +232,36 @@ class MainActivity : ComponentActivity() {
                     }
 
                     Scaffold(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .pointerInput(Unit) {
+                                awaitPointerEventScope {
+                                    while (true) {
+                                        val event = awaitPointerEvent(PointerEventPass.Final)
+                                        if (event.type == PointerEventType.Press) {
+                                            if (LanguageTypewriterManager.isAnimating) {
+                                                if (LanguageTypewriterManager.wasLanguageOptionClick) {
+                                                    LanguageTypewriterManager.wasLanguageOptionClick = false
+                                                } else {
+                                                    LanguageTypewriterManager.skip()
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
                         containerColor = ru.nya.nyeios.ui.theme.NierBg,
                         topBar = {
                             if (isNycModern) {
                                 // Parallel NyC-modern chrome: same state, mockup rendering.
-                                val nycTitle = when (currentTab) {
+                                val rawNycTitle = when (currentTab) {
                                     0 -> stringResource(R.string.tab_schedule)
                                     1 -> stringResource(R.string.tab_feed)
                                     2 -> stringResource(R.string.tab_curriculum)
                                     3 -> stringResource(R.string.tab_settings)
                                     else -> "NyEIOS"
                                 }
+                                val nycTitle = typewriterText(rawNycTitle, order = 0.05f)
                                 val nycBase = remember(lastSyncTime) { formatSyncTime(lastSyncTime) }
                                 val nycFresh = remember(nycBase, currentTab, feedUiState) {
                                     if (nycBase.isEmpty()) "" else {
@@ -370,14 +394,15 @@ class MainActivity : ComponentActivity() {
                                                     verticalAlignment = Alignment.CenterVertically,
                                                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                                                 ) {
+                                                    val rawClassicTitle = when (currentTab) {
+                                                        0 -> "NyEIOS"
+                                                        1 -> stringResource(R.string.feed_title)
+                                                        2 -> stringResource(R.string.curriculum_title)
+                                                        3 -> stringResource(R.string.tab_settings)
+                                                        else -> "NyEIOS"
+                                                    }
                                                     Text(
-                                                        text = when (currentTab) {
-                                                            0 -> "NyEIOS"
-                                                            1 -> stringResource(R.string.feed_title)
-                                                            2 -> stringResource(R.string.curriculum_title)
-                                                            3 -> stringResource(R.string.tab_settings)
-                                                            else -> "NyEIOS"
-                                                        },
+                                                        text = typewriterText(rawClassicTitle, order = 0.05f),
                                                         fontWeight = FontWeight.Bold,
                                                         fontSize = 18.sp,
                                                         fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
@@ -675,8 +700,12 @@ class MainActivity : ComponentActivity() {
                                                 )
                                             },
                                             label = {
-                                                Text(
+                                                val animBottomTitle = typewriterText(
                                                     text = title.uppercase(),
+                                                    order = 0.93f + (index * 0.02f)
+                                                )
+                                                Text(
+                                                    text = animBottomTitle,
                                                     fontSize = 10.sp,
                                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
                                                     fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,

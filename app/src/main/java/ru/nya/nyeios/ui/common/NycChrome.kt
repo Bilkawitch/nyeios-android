@@ -408,9 +408,12 @@ fun NycBottomNav(
                         modifier = Modifier.size(21.dp)
                     )
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
+                val animTitle = ru.nya.nyeios.ui.language.typewriterText(
                     text = tab.title.uppercase(),
+                    order = 0.93f + (tab.index * 0.02f)
+                )
+                Text(
+                    text = animTitle,
                     fontFamily = NycMonoFamily,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 7.8.sp,

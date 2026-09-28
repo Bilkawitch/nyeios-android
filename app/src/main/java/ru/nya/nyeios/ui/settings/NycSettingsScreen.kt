@@ -149,25 +149,37 @@ private fun NycSubtabBar(
         NycSegButton(
             selected = currentSubtab == SettingsSubtab.GENERAL,
             icon = Icons.Default.Tune,
-            text = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.settings_tab_general),
+            text = ru.nya.nyeios.ui.language.typewriterText(
+                androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.settings_tab_general),
+                0.15f
+            ),
             onClick = { onSelectSubtab(SettingsSubtab.GENERAL) }
         )
         NycSegButton(
             selected = currentSubtab == SettingsSubtab.THEME,
             icon = Icons.Default.Visibility,
-            text = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.settings_tab_theme),
+            text = ru.nya.nyeios.ui.language.typewriterText(
+                androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.settings_tab_theme),
+                0.17f
+            ),
             onClick = { onSelectSubtab(SettingsSubtab.THEME) }
         )
         NycSegButton(
             selected = currentSubtab == SettingsSubtab.VERSION,
             icon = Icons.Default.Description,
-            text = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.settings_tab_version),
+            text = ru.nya.nyeios.ui.language.typewriterText(
+                androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.settings_tab_version),
+                0.19f
+            ),
             onClick = { onSelectSubtab(SettingsSubtab.VERSION) }
         )
         NycSegButton(
             selected = currentSubtab == SettingsSubtab.LANGUAGE,
             icon = Icons.Default.Language,
-            text = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.settings_tab_language),
+            text = ru.nya.nyeios.ui.language.typewriterText(
+                androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.settings_tab_language),
+                0.21f
+            ),
             onClick = { onSelectSubtab(SettingsSubtab.LANGUAGE) }
         )
     }

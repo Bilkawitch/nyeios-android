@@ -182,8 +182,12 @@ private fun SettingsSubtabBar(
                         size = 12.dp
                     )
 
-                    Text(
+                    val animSubtabTitle = ru.nya.nyeios.ui.language.typewriterText(
                         text = androidx.compose.ui.res.stringResource(subtab.titleResId),
+                        order = 0.15f + (subtab.ordinal * 0.02f)
+                    )
+                    Text(
+                        text = animSubtabTitle,
                         color = if (isSelected) NierSelectionText else NierDark,
                         fontSize = 10.5.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
@@ -750,7 +754,12 @@ fun LanguageSettingsContent() {
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        SectionHeader(title = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_settings_title))
+        SectionHeader(
+            title = ru.nya.nyeios.ui.language.typewriterText(
+                androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_settings_title),
+                order = 0.30f
+            )
+        )
 
         NierCard {
             Column(
@@ -758,11 +767,17 @@ fun LanguageSettingsContent() {
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 ThemeItemRow(
-                    title = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_system_title),
-                    subtitle = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_system_desc),
+                    title = ru.nya.nyeios.ui.language.typewriterText(
+                        androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_system_title),
+                        order = 0.40f
+                    ),
+                    subtitle = ru.nya.nyeios.ui.language.typewriterText(
+                        androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_system_desc),
+                        order = 0.45f
+                    ),
                     isSelected = currentLang == ru.nya.nyeios.ui.language.AppLanguage.SYSTEM,
                     onClick = {
-                        ru.nya.nyeios.ui.language.LanguageManager.setLanguage(context, ru.nya.nyeios.ui.language.AppLanguage.SYSTEM)
+                        ru.nya.nyeios.ui.language.LanguageTypewriterManager.triggerLanguageChange(context, ru.nya.nyeios.ui.language.AppLanguage.SYSTEM)
                     }
                 )
 
@@ -774,11 +789,17 @@ fun LanguageSettingsContent() {
                 )
 
                 ThemeItemRow(
-                    title = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_ru_title),
-                    subtitle = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_ru_desc),
+                    title = ru.nya.nyeios.ui.language.typewriterText(
+                        androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_ru_title),
+                        order = 0.52f
+                    ),
+                    subtitle = ru.nya.nyeios.ui.language.typewriterText(
+                        androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_ru_desc),
+                        order = 0.57f
+                    ),
                     isSelected = currentLang == ru.nya.nyeios.ui.language.AppLanguage.RU,
                     onClick = {
-                        ru.nya.nyeios.ui.language.LanguageManager.setLanguage(context, ru.nya.nyeios.ui.language.AppLanguage.RU)
+                        ru.nya.nyeios.ui.language.LanguageTypewriterManager.triggerLanguageChange(context, ru.nya.nyeios.ui.language.AppLanguage.RU)
                     }
                 )
 
@@ -790,17 +811,28 @@ fun LanguageSettingsContent() {
                 )
 
                 ThemeItemRow(
-                    title = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_en_title),
-                    subtitle = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_en_desc),
+                    title = ru.nya.nyeios.ui.language.typewriterText(
+                        androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_en_title),
+                        order = 0.64f
+                    ),
+                    subtitle = ru.nya.nyeios.ui.language.typewriterText(
+                        androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_en_desc),
+                        order = 0.69f
+                    ),
                     isSelected = currentLang == ru.nya.nyeios.ui.language.AppLanguage.EN,
                     onClick = {
-                        ru.nya.nyeios.ui.language.LanguageManager.setLanguage(context, ru.nya.nyeios.ui.language.AppLanguage.EN)
+                        ru.nya.nyeios.ui.language.LanguageTypewriterManager.triggerLanguageChange(context, ru.nya.nyeios.ui.language.AppLanguage.EN)
                     }
                 )
             }
         }
 
-        SectionHeader(title = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_server_note_title))
+        SectionHeader(
+            title = ru.nya.nyeios.ui.language.typewriterText(
+                androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_server_note_title),
+                order = 0.76f
+            )
+        )
 
         NierCard {
             Column(
@@ -808,7 +840,10 @@ fun LanguageSettingsContent() {
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    text = androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_server_note_desc),
+                    text = ru.nya.nyeios.ui.language.typewriterText(
+                        androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.language_server_note_desc),
+                        order = 0.84f
+                    ),
                     color = NierDim,
                     fontSize = 11.sp,
                     lineHeight = 16.sp,
