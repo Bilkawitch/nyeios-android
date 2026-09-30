@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import ru.nya.nyeios.R
+import ru.nya.nyeios.ui.common.NycPillSegmentedMeter
 import ru.nya.nyeios.ui.common.localizeErrorMessage
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -267,6 +268,25 @@ fun NycFeedScreen(
 
                     // 1. Feed status card.
                     item {
+                        val lastSyncTimeState by (feedViewModel?.lastSyncTime ?: remember { MutableStateFlow(0L).asStateFlow() }).collectAsState()
+                        val lastSyncTime = if (lastSyncTimeState > 0L) lastSyncTimeState else (feedViewModel?.getLastSyncTime() ?: 0L)
+                        val syncDateString = remember(lastSyncTime) {
+                            if (lastSyncTime > 0L) {
+                                val sdfDate = java.text.SimpleDateFormat("dd.MM", java.util.Locale.getDefault())
+                                sdfDate.format(java.util.Date(lastSyncTime))
+                            } else {
+                                "28.09"
+                            }
+                        }
+                        val syncTimeString = remember(lastSyncTime) {
+                            if (lastSyncTime > 0L) {
+                                val sdfTime = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+                                sdfTime.format(java.util.Date(lastSyncTime))
+                            } else {
+                                "11:02"
+                            }
+                        }
+
                         NycStatusCard(
                             icon = Icons.Default.Sync,
                             title = stringResource(R.string.feed_nyc_title),
@@ -274,6 +294,8 @@ fun NycFeedScreen(
                             actionText = stringResource(R.string.action_update_caps),
                             actionIcon = Icons.Default.Refresh,
                             dimAction = false,
+                            syncDate = syncDateString,
+                            syncTime = syncTimeString,
                             onAction = {
                                 if (!isUserLoggedIn) {
                                     onOpenLogin()
@@ -390,6 +412,8 @@ private fun NycStatusCard(
     actionText: String,
     actionIcon: ImageVector?,
     dimAction: Boolean,
+    syncDate: String? = null,
+    syncTime: String? = null,
     onAction: () -> Unit
 ) {
     Row(
@@ -430,8 +454,46 @@ private fun NycStatusCard(
                 fontSize = 9.sp,
                 letterSpacing = 0.5.sp,
                 color = nycFaint,
-                modifier = Modifier.padding(top = 3.dp)
+                modifier = Modifier.padding(top = 2.dp)
             )
+            if (syncDate != null && syncTime != null) {
+                Row(
+                    modifier = Modifier.padding(top = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    NycPillSegmentedMeter(
+                        progress = 0.85f,
+                        activeColor = NycCyan,
+                        inactiveColor = Color(150, 185, 235, alpha = 20),
+                        segments = 10,
+                        height = 4.dp,
+                        spacing = 1.5.dp,
+                        pillCorner = 2.dp,
+                        modifier = Modifier.width(52.dp)
+                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                        Text(
+                            text = stringResource(R.string.feed_sync_date_fmt, syncDate),
+                            fontFamily = NycMonoFamily,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 8.sp,
+                            letterSpacing = 0.3.sp,
+                            color = NycCyan.copy(alpha = 0.9f),
+                            lineHeight = 9.sp
+                        )
+                        Text(
+                            text = "       $syncTime",
+                            fontFamily = NycMonoFamily,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 8.sp,
+                            letterSpacing = 0.3.sp,
+                            color = nycFaint,
+                            lineHeight = 9.sp
+                        )
+                    }
+                }
+            }
         }
 
         Row(

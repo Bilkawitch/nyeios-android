@@ -169,6 +169,7 @@
     <string name="feed_sync_start">Start download</string>
     <string name="feed_fetch_from_server">FETCH FROM SERVER</string>
     <string name="feed_sync_time_fmt">SYNCED %1$s</string>
+    <string name="feed_sync_date_fmt">SYNCED %1$s</string>
     <string name="feed_downloading_data">Fetching data from eios.gukolomna.ru</string>
     <string name="feed_cancel_sync">CANCEL</string>
     <string name="feed_downloads_title">DOWNLOADED FILES</string>

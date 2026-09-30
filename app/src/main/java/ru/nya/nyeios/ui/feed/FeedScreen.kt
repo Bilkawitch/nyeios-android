@@ -556,17 +556,20 @@ fun FeedScreen(
                                 val postsCount = uiState.posts.size
                                 val lastSyncTimeState by (feedViewModel?.lastSyncTime ?: remember { MutableStateFlow(0L).asStateFlow() }).collectAsState()
                                 val lastSyncTime = if (lastSyncTimeState > 0L) lastSyncTimeState else (feedViewModel?.getLastSyncTime() ?: 0L)
-                                val syncTimeString = remember(lastSyncTime, UiPreferencesManager.showSecondsInSync) {
+                                val syncDateString = remember(lastSyncTime) {
                                     if (lastSyncTime > 0L) {
-                                        val sdf = if (UiPreferencesManager.showSecondsInSync) {
-                                            java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault())
-                                        } else {
-                                            java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
-                                        }
-                                        val timeStr = sdf.format(java.util.Date(lastSyncTime))
-                                        context.getString(R.string.feed_sync_time_fmt, timeStr)
+                                        val sdfDate = java.text.SimpleDateFormat("dd.MM", java.util.Locale.getDefault())
+                                        sdfDate.format(java.util.Date(lastSyncTime))
                                     } else {
-                                        context.getString(R.string.feed_sync_time_fmt, "11:02")
+                                        "28.09"
+                                    }
+                                }
+                                val syncTimeString = remember(lastSyncTime) {
+                                    if (lastSyncTime > 0L) {
+                                        val sdfTime = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+                                        sdfTime.format(java.util.Date(lastSyncTime))
+                                    } else {
+                                        "11:02"
                                     }
                                 }
 
@@ -613,14 +616,24 @@ fun FeedScreen(
                                                 activeColor = ru.nya.nyeios.ui.theme.NierGreen,
                                                 segments = 16,
                                                 height = 5.dp,
-                                                modifier = Modifier.width(96.dp)
+                                                modifier = Modifier.width(84.dp)
                                             )
-                                            Text(
-                                                text = syncTimeString,
-                                                fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
-                                                fontSize = 9.sp,
-                                                color = ru.nya.nyeios.ui.theme.NierDim
-                                            )
+                                            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                                                Text(
+                                                    text = stringResource(R.string.feed_sync_date_fmt, syncDateString),
+                                                    fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                                                    fontSize = 8.5.sp,
+                                                    color = ru.nya.nyeios.ui.theme.NierDim,
+                                                    lineHeight = 9.5.sp
+                                                )
+                                                Text(
+                                                    text = "       $syncTimeString",
+                                                    fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                                                    fontSize = 8.5.sp,
+                                                    color = ru.nya.nyeios.ui.theme.NierDim,
+                                                    lineHeight = 9.5.sp
+                                                )
+                                            }
                                         }
                                     }
 

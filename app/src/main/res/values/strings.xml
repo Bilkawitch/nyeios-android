@@ -169,6 +169,7 @@
     <string name="feed_sync_start">Начать загрузку</string>
     <string name="feed_fetch_from_server">ЗАГРУЗИТЬ С СЕРВЕРА</string>
     <string name="feed_sync_time_fmt">СИНХР. %1$s</string>
+    <string name="feed_sync_date_fmt">СИНХР. %1$s</string>
     <string name="feed_downloading_data">Загрузка данных с eios.gukolomna.ru</string>
     <string name="feed_cancel_sync">ОТМЕНА</string>
     <string name="feed_downloads_title">ЗАГРУЖЕННЫЕ ФАЙЛЫ</string>

@@ -71,6 +71,7 @@ import ru.nya.nyeios.R
 import ru.nya.nyeios.data.model.AuthSession
 import ru.nya.nyeios.data.net.NetworkMetricsTracker
 import ru.nya.nyeios.data.net.PingResult
+import ru.nya.nyeios.ui.common.NycPillSegmentedMeter
 import ru.nya.nyeios.ui.common.localizeErrorMessage
 import ru.nya.nyeios.ui.theme.NierRed
 import ru.nya.nyeios.ui.theme.NycCyan
@@ -560,7 +561,15 @@ fun NycLoginBottomSheet(
                             activeColor = meterColor,
                             inactiveColor = Color(0xFF223042),
                             segments = 26,
-                            height = 7.dp
+                            height = 7.dp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .shadow(
+                                    elevation = 6.dp,
+                                    shape = RoundedCornerShape(3.dp),
+                                    ambientColor = meterColor.copy(alpha = 0.45f),
+                                    spotColor = meterColor.copy(alpha = 0.45f)
+                                )
                         )
 
                         // Telemetry details: TCP RTT | TLS 1.3 | VPN
@@ -606,47 +615,3 @@ fun NycLoginBottomSheet(
     }
 }
 
-/**
- * Segmented level meter with rounded pill segments and soft glow matching the mockup.
- */
-@Composable
-private fun NycPillSegmentedMeter(
-    progress: Float,
-    activeColor: Color,
-    inactiveColor: Color,
-    segments: Int = 26,
-    height: Dp = 7.dp,
-    spacing: Dp = 2.dp
-) {
-    val clamped = progress.coerceIn(0f, 1f)
-    val activeCount = kotlin.math.round(clamped * segments).toInt().coerceIn(0, segments)
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = 6.dp,
-                shape = RoundedCornerShape(3.dp),
-                ambientColor = activeColor.copy(alpha = 0.45f),
-                spotColor = activeColor.copy(alpha = 0.45f)
-            )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(height),
-            horizontalArrangement = Arrangement.spacedBy(spacing)
-        ) {
-            for (i in 0 until segments) {
-                val isActive = i < activeCount
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .clip(RoundedCornerShape(2.5.dp))
-                        .background(if (isActive) activeColor else inactiveColor)
-                )
-            }
-        }
-    }
-}
