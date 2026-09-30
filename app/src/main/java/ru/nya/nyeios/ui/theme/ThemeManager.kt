@@ -6,31 +6,41 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import ru.nya.nyeios.R
 
-enum class NierThemeMode(val id: String, val title: String, val descResId: Int) {
+enum class NierThemeMode(
+    val id: String,
+    val title: String,
+    val descResId: Int,
+    val logoResId: Int
+) {
     REGULAR(
         id = "regular",
         title = "YoRHa Regular",
-        descResId = R.string.theme_desc_regular
+        descResId = R.string.theme_desc_regular,
+        logoResId = R.drawable.logo_yorha_regular
     ),
     NIGHT(
         id = "night",
         title = "YoRHa Night",
-        descResId = R.string.theme_desc_night
+        descResId = R.string.theme_desc_night,
+        logoResId = R.drawable.logo_yorha_night
     ),
     BLACK(
         id = "black",
         title = "YoRHa Black",
-        descResId = R.string.theme_desc_black
+        descResId = R.string.theme_desc_black,
+        logoResId = R.drawable.logo_yorha_black
     ),
     RETRO(
         id = "retro",
         title = "YoRHa Retro",
-        descResId = R.string.theme_desc_retro
+        descResId = R.string.theme_desc_retro,
+        logoResId = R.drawable.logo_yorha_retro
     ),
     NYC_MODERN(
         id = "nyc_modern",
         title = "NyC-modern",
-        descResId = R.string.theme_desc_nyc_modern
+        descResId = R.string.theme_desc_nyc_modern,
+        logoResId = R.drawable.logo_nyc_modern
     )
 }
 

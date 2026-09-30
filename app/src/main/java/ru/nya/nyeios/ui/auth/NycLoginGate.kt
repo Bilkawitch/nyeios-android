@@ -166,15 +166,13 @@ fun NycLoginGate(
                         spotColor = NycCyan.copy(alpha = 0.16f)
                     )
                     .nycRaised(24.dp)
-                    .border(1.dp, NycCyan.copy(alpha = 0.4f), RoundedCornerShape(29.dp)),
+                    .border(1.dp, NycCyan.copy(alpha = 0.4f), RoundedCornerShape(24.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "Ny",
-                    fontFamily = NycSansFamily,
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 26.sp,
-                    color = NycCyan
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(R.drawable.logo_nyc_modern),
+                    contentDescription = "Logo",
+                    modifier = Modifier.size(52.dp)
                 )
             }
 

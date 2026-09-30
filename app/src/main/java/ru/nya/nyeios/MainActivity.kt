@@ -390,12 +390,10 @@ class MainActivity : ComponentActivity() {
                                                     ),
                                                 contentAlignment = Alignment.Center
                                             ) {
-                                                Text(
-                                                    text = "Ny",
-                                                    color = ru.nya.nyeios.ui.theme.NierBg,
-                                                    fontSize = 16.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily
+                                                Image(
+                                                    painter = painterResource(ru.nya.nyeios.ui.theme.ThemeManager.currentTheme.logoResId),
+                                                    contentDescription = "Logo",
+                                                    modifier = Modifier.size(24.dp)
                                                 )
                                             }
 

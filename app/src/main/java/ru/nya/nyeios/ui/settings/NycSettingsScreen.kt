@@ -1295,12 +1295,10 @@ private fun NycVersionContent(
                             .nycWell(12.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "Ny",
-                            color = NycCyan,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = NycSansFamily
+                        androidx.compose.foundation.Image(
+                            painter = androidx.compose.ui.res.painterResource(R.drawable.logo_nyc_modern),
+                            contentDescription = "Logo",
+                            modifier = Modifier.size(34.dp)
                         )
                     }
 
@@ -1612,6 +1610,31 @@ private fun NycLanguageContent() {
                     onClick = {
                         ru.nya.nyeios.ui.language.LanguageTypewriterManager.triggerLanguageChange(context, ru.nya.nyeios.ui.language.AppLanguage.EN)
                     }
+                )
+            }
+        }
+
+        NycSecHdr(
+            ru.nya.nyeios.ui.language.typewriterText(
+                stringResource(R.string.language_server_note_title),
+                order = 0.76f
+            )
+        )
+
+        NycSetCard {
+            Column(
+                modifier = Modifier.padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = ru.nya.nyeios.ui.language.typewriterText(
+                        stringResource(R.string.language_server_note_desc),
+                        order = 0.84f
+                    ),
+                    color = nycMuted,
+                    fontSize = 11.sp,
+                    lineHeight = 16.sp,
+                    fontFamily = NycSansFamily
                 )
             }
         }

@@ -1415,12 +1415,10 @@ internal fun VersionSettingsContent(
                             .border(1.dp, NierBorderLight, appRectShape()),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "Ny",
-                            color = NierBg,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = RajdhaniFamily
+                        androidx.compose.foundation.Image(
+                            painter = androidx.compose.ui.res.painterResource(ThemeManager.currentTheme.logoResId),
+                            contentDescription = "Logo",
+                            modifier = Modifier.size(34.dp)
                         )
                     }
 

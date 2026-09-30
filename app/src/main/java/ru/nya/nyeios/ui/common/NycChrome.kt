@@ -127,13 +127,10 @@ fun NycTopBar(
                 .clickable { onLogoClick() },
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "Ny",
-                fontFamily = NycSansFamily,
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 15.sp,
-                color = NycCyan,
-                // textShadow approximated with drawBehind glow is skipped; solid cyan per mockup
+            androidx.compose.foundation.Image(
+                painter = androidx.compose.ui.res.painterResource(ru.nya.nyeios.R.drawable.logo_nyc_modern),
+                contentDescription = "Logo",
+                modifier = Modifier.size(28.dp)
             )
         }
 
