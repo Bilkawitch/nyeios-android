@@ -17,10 +17,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Language
@@ -59,13 +62,18 @@ import ru.nya.nyeios.data.net.EiosLastGetInfo
 import ru.nya.nyeios.data.net.EndpointHealthItem
 import ru.nya.nyeios.data.net.EndpointStatus
 import ru.nya.nyeios.data.net.PingResult
+import ru.nya.nyeios.ui.theme.ListDensityMode
+import ru.nya.nyeios.ui.theme.NierThemeMode
 import ru.nya.nyeios.ui.theme.NycCyan
 import ru.nya.nyeios.ui.theme.NycLed
 import ru.nya.nyeios.ui.theme.NycMonoFamily
 import ru.nya.nyeios.ui.theme.NycSansFamily
+import ru.nya.nyeios.ui.theme.ThemeManager
+import ru.nya.nyeios.ui.theme.UiAnimatedVisibility
+import ru.nya.nyeios.ui.theme.UiPreferencesManager
+import ru.nya.nyeios.ui.theme.applyThemeWithRestart
 import ru.nya.nyeios.ui.theme.nycCard
 import ru.nya.nyeios.ui.theme.nycRaised
-import ru.nya.nyeios.ui.theme.UiAnimatedVisibility
 import ru.nya.nyeios.ui.theme.nycWell
 import ru.nya.nyeios.ui.update.UpdateViewModel
 import java.text.SimpleDateFormat
@@ -113,10 +121,10 @@ fun NycSettingsScreen(
                     )
                 }
                 SettingsSubtab.THEME -> {
-                    ThemeSettingsContent()
+                    NycThemeContent()
                 }
                 SettingsSubtab.VERSION -> {
-                    VersionSettingsContent(
+                    NycVersionContent(
                         uiState = uiState,
                         onCheckForUpdates = { viewModel.checkForUpdates() },
                         onDownloadUpdate = { info: UpdateInfo ->
@@ -125,7 +133,7 @@ fun NycSettingsScreen(
                     )
                 }
                 SettingsSubtab.LANGUAGE -> {
-                    LanguageSettingsContent()
+                    NycLanguageContent()
                 }
             }
         }
@@ -1093,3 +1101,669 @@ private fun NycEndpointHealthRow(item: EndpointHealthItem) {
         }
     }
 }
+
+// ---------------------------------------------------------------------------
+// NyC THEME TAB
+// ---------------------------------------------------------------------------
+
+@Composable
+private fun NycThemeContent() {
+    val context = LocalContext.current
+    val currentTheme = ThemeManager.currentTheme
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(horizontal = 14.dp, vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp)
+    ) {
+        // ── 01. ВЫБОР ТЕМЫ ОФОРМЛЕНИЯ ──
+        NycSecHdr(stringResource(R.string.theme_section_title))
+
+        NycSetCard {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                NycThemeOptionRow(
+                    title = stringResource(R.string.theme_regular_title),
+                    subtitle = stringResource(R.string.theme_regular_desc),
+                    isSelected = currentTheme == NierThemeMode.REGULAR,
+                    onClick = { applyThemeWithRestart(context, NierThemeMode.REGULAR) }
+                )
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(150, 185, 235, alpha = 15)))
+
+                NycThemeOptionRow(
+                    title = stringResource(R.string.theme_night_title),
+                    subtitle = stringResource(R.string.theme_night_desc),
+                    isSelected = currentTheme == NierThemeMode.NIGHT,
+                    onClick = { applyThemeWithRestart(context, NierThemeMode.NIGHT) }
+                )
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(150, 185, 235, alpha = 15)))
+
+                NycThemeOptionRow(
+                    title = stringResource(R.string.theme_black_title),
+                    subtitle = stringResource(R.string.theme_black_desc),
+                    isSelected = currentTheme == NierThemeMode.BLACK,
+                    onClick = { applyThemeWithRestart(context, NierThemeMode.BLACK) }
+                )
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(150, 185, 235, alpha = 15)))
+
+                NycThemeOptionRow(
+                    title = stringResource(R.string.theme_retro_title),
+                    subtitle = stringResource(R.string.theme_retro_desc),
+                    isSelected = currentTheme == NierThemeMode.RETRO,
+                    onClick = { applyThemeWithRestart(context, NierThemeMode.RETRO) }
+                )
+            }
+        }
+
+        // ── 02. ОСОБЫЕ ТЕМЫ ОФОРМЛЕНИЯ ──
+        NycSecHdr(stringResource(R.string.theme_special_title))
+
+        NycSetCard {
+            NycThemeOptionRow(
+                title = stringResource(R.string.theme_nyc_title),
+                subtitle = stringResource(R.string.theme_nyc_desc),
+                isSelected = currentTheme == NierThemeMode.NYC_MODERN,
+                onClick = { ThemeManager.setTheme(context, NierThemeMode.NYC_MODERN) }
+            )
+        }
+
+        // ── 03. ИНТЕРФЕЙС ──
+        NycSecHdr(stringResource(R.string.theme_ui_section_title))
+
+        NycSetCard {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                NycToggleRow(
+                    title = stringResource(R.string.theme_large_font_title),
+                    subtitle = stringResource(R.string.theme_large_font_desc),
+                    checked = UiPreferencesManager.largeScheduleFont,
+                    onCheckedChange = { UiPreferencesManager.setLargeScheduleFont(context, it) }
+                )
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(150, 185, 235, alpha = 15)))
+
+                NycToggleRow(
+                    title = stringResource(R.string.theme_animations_title),
+                    subtitle = stringResource(R.string.theme_animations_desc),
+                    checked = UiPreferencesManager.animationsEnabled,
+                    onCheckedChange = { UiPreferencesManager.setAnimationsEnabled(context, it) }
+                )
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(150, 185, 235, alpha = 15)))
+
+                NycToggleRow(
+                    title = stringResource(R.string.theme_thick_borders_title),
+                    subtitle = stringResource(R.string.theme_thick_borders_desc),
+                    checked = UiPreferencesManager.thickBorders,
+                    onCheckedChange = { UiPreferencesManager.setThickBorders(context, it) }
+                )
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(150, 185, 235, alpha = 15)))
+
+                NycToggleRow(
+                    title = stringResource(R.string.theme_show_seconds_title),
+                    subtitle = stringResource(R.string.theme_show_seconds_desc),
+                    checked = UiPreferencesManager.showSecondsInSync,
+                    onCheckedChange = { UiPreferencesManager.setShowSecondsInSync(context, it) }
+                )
+            }
+        }
+
+        // ── 04. ПЛОТНОСТЬ СПИСКОВ ──
+        NycSecHdr(stringResource(R.string.theme_density_section_title))
+
+        NycSetCard {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ListDensityMode.entries.forEach { density ->
+                    val isSelected = density == UiPreferencesManager.listDensity
+                    val densityTitle = when (density) {
+                        ListDensityMode.COMPACT -> stringResource(R.string.density_compact)
+                        ListDensityMode.STANDARD -> stringResource(R.string.density_standard)
+                        ListDensityMode.SPACIOUS -> stringResource(R.string.density_spacious)
+                    }
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(34.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .then(
+                                if (isSelected) {
+                                    Modifier
+                                        .background(NycCyan.copy(alpha = 0.15f))
+                                        .border(1.5.dp, NycCyan, RoundedCornerShape(10.dp))
+                                } else {
+                                    Modifier
+                                        .background(Color(150, 185, 235, alpha = 12))
+                                        .border(1.dp, Color(150, 185, 235, alpha = 20), RoundedCornerShape(10.dp))
+                                }
+                            )
+                            .clickable { UiPreferencesManager.setListDensity(context, density) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = densityTitle,
+                            color = if (isSelected) NycCyan else nycFaint,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = NycMonoFamily,
+                            letterSpacing = 0.8.sp
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+// ---------------------------------------------------------------------------
+// NyC VERSION TAB
+// ---------------------------------------------------------------------------
+
+@Composable
+private fun NycVersionContent(
+    uiState: SettingsUiState,
+    onCheckForUpdates: () -> Unit,
+    onDownloadUpdate: (UpdateInfo) -> Unit
+) {
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(horizontal = 14.dp, vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp)
+    ) {
+        // ── 01. СВЕДЕНИЯ О ВЕРСИИ СИСТЕМЫ ──
+        NycSecHdr(stringResource(R.string.version_section_title))
+
+        NycSetCard {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(46.dp)
+                            .nycWell(12.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Ny",
+                            color = NycCyan,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = NycSansFamily
+                        )
+                    }
+
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            text = "NyEIOS // EIOS CLIENT",
+                            color = nycText,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = NycSansFamily,
+                            letterSpacing = 0.5.sp
+                        )
+                        Text(
+                            text = stringResource(
+                                R.string.version_label_fmt,
+                                uiState.currentVersion.ifEmpty { "0.2.7" },
+                                17
+                            ),
+                            color = nycFaint,
+                            fontSize = 10.5.sp,
+                            fontFamily = NycMonoFamily
+                        )
+
+                        val update = uiState.availableUpdate
+                        if (update != null) {
+                            Box(
+                                modifier = Modifier
+                                    .padding(top = 2.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(nycAmber.copy(alpha = 0.15f))
+                                    .border(1.dp, nycAmber.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                                    .padding(horizontal = 7.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.version_available_fmt, update.version),
+                                    color = nycAmber,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = NycMonoFamily,
+                                    letterSpacing = 0.5.sp
+                                )
+                            }
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .padding(top = 2.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(nycGreen.copy(alpha = 0.15f))
+                                    .border(1.dp, nycGreen.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                                    .padding(horizontal = 7.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.version_latest_badge),
+                                    color = nycGreen,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = NycMonoFamily,
+                                    letterSpacing = 0.5.sp
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(150, 185, 235, alpha = 15)))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        val rem = uiState.githubRateLimit.remaining
+                        Text(
+                            text = stringResource(
+                                R.string.version_quota_fmt,
+                                if (rem != null) "$rem/60" else "60/60"
+                            ),
+                            color = nycFaint,
+                            fontSize = 9.sp,
+                            fontFamily = NycMonoFamily
+                        )
+                        if (!uiState.updateCheckStatus.isNullOrEmpty()) {
+                            Text(
+                                text = uiState.updateCheckStatus,
+                                color = if (uiState.availableUpdate != null) nycAmber else nycText,
+                                fontSize = 10.sp,
+                                fontFamily = NycMonoFamily
+                            )
+                        }
+                    }
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NycMiniButton(
+                            text = if (uiState.isCheckingUpdate)
+                                stringResource(R.string.version_checking_btn)
+                            else
+                                stringResource(R.string.version_check_btn),
+                            icon = Icons.Default.Refresh,
+                            enabled = !uiState.isCheckingUpdate,
+                            onClick = onCheckForUpdates
+                        )
+                        if (uiState.availableUpdate != null) {
+                            NycMiniButton(
+                                text = stringResource(R.string.version_download_btn),
+                                icon = Icons.Default.Download,
+                                enabled = true,
+                                onClick = { onDownloadUpdate(uiState.availableUpdate) }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── 02. ИСТОРИЯ ИЗМЕНЕНИЙ ──
+        NycSecHdr(stringResource(R.string.version_changelog_title))
+
+        ChangelogHistory.releases.forEach { release ->
+            val isCurrentInstalled = release.version == uiState.currentVersion || (uiState.currentVersion.isEmpty() && release.isLatest)
+
+            NycSetCard {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "v${release.version}",
+                                color = NycCyan,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = NycSansFamily
+                            )
+                            if (release.isLatest) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(Color(150, 185, 235, alpha = 20))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = "LATEST",
+                                        color = nycText,
+                                        fontSize = 8.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = NycMonoFamily
+                                    )
+                                }
+                            }
+                            if (isCurrentInstalled) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(Color(0xFFE2E8F0))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.version_installed_badge),
+                                        color = Color(0xFF0F172A),
+                                        fontSize = 8.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = NycMonoFamily
+                                    )
+                                }
+                            }
+                        }
+
+                        Text(
+                            text = release.releaseDate,
+                            color = nycFaint,
+                            fontSize = 9.sp,
+                            fontFamily = NycMonoFamily
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .nycWell(9.dp)
+                            .padding(horizontal = 10.dp, vertical = 8.dp)
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            release.sections.forEach { section ->
+                                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                    Text(
+                                        text = "■  ${section.title}",
+                                        color = NycCyan,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = NycMonoFamily,
+                                        letterSpacing = 0.5.sp
+                                    )
+                                    section.items.forEach { item ->
+                                        Row(
+                                            modifier = Modifier.padding(start = 4.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                            verticalAlignment = Alignment.Top
+                                        ) {
+                                            Text(
+                                                text = "—",
+                                                color = nycFaint,
+                                                fontSize = 9.5.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                fontFamily = NycMonoFamily
+                                            )
+                                            Text(
+                                                text = item,
+                                                color = nycBody,
+                                                fontSize = 9.5.sp,
+                                                lineHeight = 13.sp,
+                                                fontFamily = NycSansFamily
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+// ---------------------------------------------------------------------------
+// NyC LANGUAGE TAB
+// ---------------------------------------------------------------------------
+
+@Composable
+private fun NycLanguageContent() {
+    val context = LocalContext.current
+    val currentLang = ru.nya.nyeios.ui.language.LanguageManager.currentLanguage
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(horizontal = 14.dp, vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp)
+    ) {
+        NycSecHdr(
+            ru.nya.nyeios.ui.language.typewriterText(
+                stringResource(R.string.language_settings_title),
+                order = 0.30f
+            )
+        )
+
+        NycSetCard {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                NycThemeOptionRow(
+                    title = ru.nya.nyeios.ui.language.typewriterText(
+                        stringResource(R.string.language_system_title),
+                        order = 0.40f
+                    ),
+                    subtitle = ru.nya.nyeios.ui.language.typewriterText(
+                        stringResource(R.string.language_system_desc),
+                        order = 0.45f
+                    ),
+                    isSelected = currentLang == ru.nya.nyeios.ui.language.AppLanguage.SYSTEM,
+                    onClick = {
+                        ru.nya.nyeios.ui.language.LanguageTypewriterManager.triggerLanguageChange(context, ru.nya.nyeios.ui.language.AppLanguage.SYSTEM)
+                    }
+                )
+
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(150, 185, 235, alpha = 15)))
+
+                NycThemeOptionRow(
+                    title = ru.nya.nyeios.ui.language.typewriterText(
+                        stringResource(R.string.language_ru_title),
+                        order = 0.52f
+                    ),
+                    subtitle = ru.nya.nyeios.ui.language.typewriterText(
+                        stringResource(R.string.language_ru_desc),
+                        order = 0.57f
+                    ),
+                    isSelected = currentLang == ru.nya.nyeios.ui.language.AppLanguage.RU,
+                    onClick = {
+                        ru.nya.nyeios.ui.language.LanguageTypewriterManager.triggerLanguageChange(context, ru.nya.nyeios.ui.language.AppLanguage.RU)
+                    }
+                )
+
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(150, 185, 235, alpha = 15)))
+
+                NycThemeOptionRow(
+                    title = ru.nya.nyeios.ui.language.typewriterText(
+                        stringResource(R.string.language_en_title),
+                        order = 0.64f
+                    ),
+                    subtitle = ru.nya.nyeios.ui.language.typewriterText(
+                        stringResource(R.string.language_en_desc),
+                        order = 0.69f
+                    ),
+                    isSelected = currentLang == ru.nya.nyeios.ui.language.AppLanguage.EN,
+                    onClick = {
+                        ru.nya.nyeios.ui.language.LanguageTypewriterManager.triggerLanguageChange(context, ru.nya.nyeios.ui.language.AppLanguage.EN)
+                    }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+// ---------------------------------------------------------------------------
+// NyC OPTION & TOGGLE ROWS
+// ---------------------------------------------------------------------------
+
+@Composable
+private fun NycThemeOptionRow(
+    title: String,
+    subtitle: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .clickable { onClick() }
+            .padding(vertical = 8.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        // Modern rounded checkbox
+        Box(
+            modifier = Modifier
+                .size(20.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .then(
+                    if (isSelected) {
+                        Modifier
+                            .background(NycCyan.copy(alpha = 0.18f))
+                            .border(1.5.dp, NycCyan, RoundedCornerShape(6.dp))
+                    } else {
+                        Modifier
+                            .background(Color(150, 185, 235, alpha = 12))
+                            .border(1.dp, Color(150, 185, 235, alpha = 24), RoundedCornerShape(6.dp))
+                    }
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            if (isSelected) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    tint = NycCyan,
+                    modifier = Modifier.size(13.dp)
+                )
+            }
+        }
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                fontFamily = NycSansFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.5.sp,
+                letterSpacing = 0.3.sp,
+                color = if (isSelected) NycCyan else nycText
+            )
+            Text(
+                text = subtitle,
+                fontFamily = NycMonoFamily,
+                fontWeight = FontWeight.Medium,
+                fontSize = 8.5.sp,
+                lineHeight = 11.sp,
+                letterSpacing = 0.2.sp,
+                color = nycFaint,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+        }
+
+        if (isSelected) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(Color(0xFFE2E8F0))
+                    .padding(horizontal = 7.dp, vertical = 2.5.dp)
+            ) {
+                Text(
+                    text = "АКТИВНО",
+                    fontFamily = NycMonoFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 8.sp,
+                    letterSpacing = 0.8.sp,
+                    color = Color(0xFF0F172A)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun NycToggleRow(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .clickable { onCheckedChange(!checked) }
+            .padding(vertical = 8.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                fontFamily = NycSansFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+                letterSpacing = 0.3.sp,
+                color = nycText
+            )
+            Text(
+                text = subtitle,
+                fontFamily = NycMonoFamily,
+                fontWeight = FontWeight.Medium,
+                fontSize = 8.5.sp,
+                lineHeight = 11.sp,
+                letterSpacing = 0.2.sp,
+                color = nycFaint,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+        }
+
+        // Modern Pill Switch
+        Box(
+            modifier = Modifier
+                .width(38.dp)
+                .height(22.dp)
+                .clip(CircleShape)
+                .background(if (checked) NycCyan else Color(150, 185, 235, alpha = 20))
+                .border(1.dp, if (checked) NycCyan else Color(150, 185, 235, alpha = 30), CircleShape)
+                .padding(2.dp),
+            contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(16.dp)
+                    .clip(CircleShape)
+                    .background(if (checked) Color(0xFF0F172A) else nycFaint)
+            )
+        }
+    }
+}
+
