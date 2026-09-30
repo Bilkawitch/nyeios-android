@@ -102,9 +102,8 @@ object ScheduleParser {
             if (tds.size >= numDays + 1) {
                 val timeRaw = tds[0].text().trim()
                 if (timeRaw.any { it.isDigit() }) {
-                    currentTime = timeRaw
-                    val numMatch = Regex("""^(\d+)""").find(timeRaw)
-                    currentLessonNumber = numMatch?.value ?: ""
+                    currentTime = timeRaw.replace(Regex("""\s*[-—–]\s*"""), " - ")
+                    currentLessonNumber = inferLessonNumber(timeRaw)
                 }
                 dayTds = tds.drop(1)
             } else if (tds.size == numDays) {
@@ -136,10 +135,26 @@ object ScheduleParser {
                             val left = tdList[0].text().trim()
                             val right = tdList[1].text().trim()
 
+                            val hasStrong = tdList[1].selectFirst("strong") != null
+                            val hasI = tdList[1].selectFirst("i") != null
+
                             val rightUpper = right.uppercase(Locale.ROOT)
-                            val isRoom = right.any { it.isDigit() } ||
-                                    rightUpper in listOf("ДО", "СПОРТ", "ДИСТ", "КАБ", "АУД") ||
-                                    rightUpper.startsWith("СПОРТ")
+                            val isKnownType = isLessonType(right)
+                            val isKnownRoom = right.any { it.isDigit() } ||
+                                    rightUpper in listOf("ДО", "ДОТ", "ЭОР", "ДИСТ", "КАБ", "АУД", "СТАДИОН", "СПОРТЗАЛ", "СПОРТ", "БАССЕЙН", "МАНЕЖ", "ТИР", "ЗАЛ", "ПОЛЕ", "ПЛОЩАДКА") ||
+                                    rightUpper.startsWith("СПОРТ") ||
+                                    rightUpper.startsWith("СТАДИОН") ||
+                                    rightUpper.startsWith("КАБ") ||
+                                    rightUpper.startsWith("АУД")
+
+                            val isRoom = when {
+                                hasStrong && !hasI -> true
+                                hasI && !hasStrong -> false
+                                isKnownType -> false
+                                isKnownRoom -> true
+                                subject.isEmpty() -> true
+                                else -> false
+                            }
 
                             if (isRoom) {
                                 subject = left
@@ -283,4 +298,53 @@ object ScheduleParser {
             isCached = false
         )
     }
+
+    private fun isLessonType(text: String): Boolean {
+        val clean = text.trim().lowercase(Locale.ROOT)
+        if (clean.isEmpty()) return false
+        return clean.startsWith("лек") ||
+                clean.startsWith("прак") ||
+                clean.startsWith("сем") ||
+                clean.startsWith("лаб") ||
+                clean.startsWith("экз") ||
+                clean.startsWith("зач") ||
+                clean.startsWith("контр") ||
+                clean.startsWith("конс") ||
+                clean.startsWith("коллок") ||
+                clean.startsWith("тест") ||
+                clean == "кср" ||
+                clean.startsWith("диф") ||
+                clean.startsWith("олимп") ||
+                clean.startsWith("аттест")
+    }
+
+    private fun inferLessonNumber(timeRaw: String): String {
+        val explicitMatch = Regex("""(\d+)\s*(?:пара|п\b)""", RegexOption.IGNORE_CASE).find(timeRaw)
+        if (explicitMatch != null) return explicitMatch.groupValues[1]
+
+        // If it starts with clock time format "HH:mm", infer from time
+        val timeMatch = Regex("""^(\d{1,2}):(\d{2})""").find(timeRaw)
+        if (timeMatch != null) {
+            val h = timeMatch.groupValues[1].toIntOrNull() ?: return ""
+            val m = timeMatch.groupValues[2].toIntOrNull() ?: return ""
+            val totalMinutes = h * 60 + m
+            return when (totalMinutes) {
+                in 500..570 -> "1"   // ~ 08:30
+                in 590..660 -> "2"   // ~ 10:10 / 10:15
+                in 710..780 -> "3"   // ~ 12:10 / 12:15
+                in 810..890 -> "4"   // ~ 13:50 / 14:00
+                in 910..980 -> "5"   // ~ 15:30 / 15:45
+                in 1010..1080 -> "6"  // ~ 17:10 / 17:30
+                in 1100..1170 -> "7"  // ~ 18:50
+                else -> ""
+            }
+        }
+
+        // If it starts with a pair number like "1 08:30" or "1. 08:30" or "1"
+        val leadingDigit = Regex("""^(\d+)\b""").find(timeRaw)
+        if (leadingDigit != null) return leadingDigit.groupValues[1]
+
+        return ""
+    }
 }
+

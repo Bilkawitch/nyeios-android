@@ -336,5 +336,106 @@ class ScheduleParserTest {
         assertEquals("23АН-о-41", schedule!!.group)
         assertTrue(schedule.days.all { it.lessons.isEmpty() })
     }
+
+    @Test
+    fun testParseStadiumLessonWithQuotesAndDataHint() {
+        val html = """
+            <!DOCTYPE html>
+            <html>
+            <head><title>Расписание</title></head>
+            <body>
+                <h2>Расписание занятий с 28.09.2026 по 04.10.2026</h2>
+                <select id="group-select">
+                    <option selected>23АН-о-41</option>
+                </select>
+                <table class="schedule-table">
+                    <thead>
+                        <tr>
+                            <th>Время</th>
+                            <th>Понедельник 28.09</th>
+                            <th>Вторник 29.09</th>
+                            <th>Среда 30.09</th>
+                            <th>Четверг 01.10</th>
+                            <th>Пятница 02.10</th>
+                            <th>Суббота 03.10</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>13:50 -<br>15:20</td>
+                            <td>
+                                <table class="schedule-cell">
+                                    <tr class="schedule-cell-subgroup" colspan="2">
+                                        <td>
+                                            <span class="ui-btn ui-btn-xs ui-btn-round ui-btn-light-border">Подгруппа 1</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="vertical-align: top">Элективные дисциплины по физической культуре и спорту: "Спортивные игры" или "Оздоровительные виды гимнастики"                                                                <span data-hint="Развитие физических качеств средствами л/а"></span>
+                                        </td>
+                                        <td style="vertical-align: top"><strong>Стадион</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-size: 12px;color:#717a84; vertical-align: bottom">
+                                            Чайченко Мария Владимировна
+                                        </td>
+                                        <td style="vertical-align: bottom"><i>Прак</i></td>
+                                    </tr>
+                                </table>
+                            </td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </body>
+            </html>
+        """.trimIndent()
+
+        val schedule = ScheduleParser.parse(html, offsetWeeks = 0, "28.09.2026", "04.10.2026")
+        assertNotNull(schedule)
+        val monday = schedule!!.days[0]
+        assertEquals(1, monday.lessons.size)
+
+        val lesson = monday.lessons[0]
+        assertEquals("Элективные дисциплины по физической культуре и спорту: \"Спортивные игры\" или \"Оздоровительные виды гимнастики\"", lesson.subject)
+        assertEquals("Стадион", lesson.room)
+        assertEquals("Чайченко Мария Владимировна", lesson.teacher)
+        assertEquals(LessonType.PRACTICE, lesson.type)
+        assertEquals("Подгруппа 1", lesson.subgroup)
+        assertEquals("4", lesson.lessonNumber)
+        assertEquals("13:50 - 15:20", lesson.time)
+    }
+
+    @Test
+    fun testParseOtvetEiosIfFileExists() {
+        val file = java.io.File("C:/Users/Bulka/Downloads/otvet_eios.md")
+        if (!file.exists()) return
+        val html = file.readText(Charsets.UTF_8)
+        val schedule = ScheduleParser.parse(html)
+        assertNotNull(schedule)
+
+        // Monday (28.09): check stadium lesson
+        val monday = schedule!!.days.find { it.dateString == "28.09" }
+        assertNotNull(monday)
+        val peLessonMon = monday!!.lessons.find { it.room == "Стадион" }
+        assertNotNull(peLessonMon)
+        assertEquals("Чайченко Мария Владимировна", peLessonMon!!.teacher)
+        assertEquals(LessonType.PRACTICE, peLessonMon.type)
+        assertEquals("Подгруппа 1", peLessonMon.subgroup)
+
+        // Wednesday (30.09): check stadium lesson
+        val wednesday = schedule.days.find { it.dateString == "30.09" }
+        assertNotNull(wednesday)
+        val peLessonWed = wednesday!!.lessons.find { it.room == "Стадион" }
+        assertNotNull(peLessonWed)
+        assertEquals("Чайченко Мария Владимировна", peLessonWed!!.teacher)
+        assertEquals(LessonType.PRACTICE, peLessonWed.type)
+        assertEquals("Подгруппа 1", peLessonWed.subgroup)
+    }
 }
+
 
