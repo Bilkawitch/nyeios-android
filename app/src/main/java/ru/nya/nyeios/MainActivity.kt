@@ -27,8 +27,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import ru.nya.nyeios.ui.theme.appPillShape
@@ -48,9 +51,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -68,6 +68,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import ru.nya.nyeios.ui.language.LanguageManager
 import ru.nya.nyeios.ui.language.LanguageTypewriterManager
 import ru.nya.nyeios.ui.language.typewriterText
@@ -695,24 +697,23 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .background(ru.nya.nyeios.ui.theme.NierPanel)
+                                    .navigationBarsPadding()
                             ) {
-                                NavigationBar(
-                                    containerColor = ru.nya.nyeios.ui.theme.NierPanel,
-                                    tonalElevation = 0.dp,
+                                // YoRHa bottom nav: fully custom sharp row. No Material3
+                                // NavigationBar here — its selected indicator is a rounded
+                                // pill and YoRHa forbids rounding. Selection is shown with
+                                // angular > < brackets in the interface accent color plus
+                                // the gliding top marker. Zero backgrounds, zero clips.
+                                Row(
                                     modifier = Modifier
-                                        .drawBehind {
-                                            // Thick top border of the NieR navigation bar
-                                            drawLine(
-                                                color = ru.nya.nyeios.ui.theme.NierDark,
-                                                start = Offset(0f, 0f),
-                                                end = Offset(size.width, 0f),
-                                                strokeWidth = 2.dp.toPx()
-                                            )
-                                        }
-                                        // NavigationBar paints its own container colour after the
-                                        // caller's drawBehind, so the marker has to be drawn with
-                                        // drawWithContent to stay visible.
+                                        .fillMaxWidth()
                                         .drawWithContent {
+                                            // Thick top border of the NieR navigation bar.
+                                            drawRect(
+                                                color = ru.nya.nyeios.ui.theme.NierDark,
+                                                topLeft = Offset(0f, 0f),
+                                                size = androidx.compose.ui.geometry.Size(size.width, 2.dp.toPx())
+                                            )
                                             drawContent()
                                             // Marker is positioned by the animated index, not the item.
                                             val itemWidth = size.width / tabs.size
@@ -723,42 +724,74 @@ class MainActivity : ComponentActivity() {
                                                     navMarkerIndex * itemWidth + (itemWidth - barWidth) / 2f,
                                                     0f
                                                 ),
-                                                size = androidx.compose.ui.geometry.Size(barWidth, 2.dp.toPx())
+                                                size = androidx.compose.ui.geometry.Size(barWidth, 2.5.dp.toPx())
                                             )
                                         }
                                 ) {
                                     tabs.forEach { (index, icon, title) ->
                                         val isSelected = currentTab == index
-                                        NavigationBarItem(
-                                            selected = isSelected,
-                                            onClick = { currentTab = index },
-                                            icon = {
+                                        val itemTint = if (isSelected) {
+                                            ru.nya.nyeios.ui.theme.selectionAccent()
+                                        } else {
+                                            ru.nya.nyeios.ui.theme.NierDim
+                                        }
+                                        Column(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(62.dp)
+                                                .selectable(
+                                                    selected = isSelected,
+                                                    onClick = { currentTab = index },
+                                                    role = Role.Tab
+                                                )
+                                                .padding(top = 8.dp, bottom = 4.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterVertically)
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                            ) {
+                                                if (isSelected) {
+                                                    Text(
+                                                        text = ">",
+                                                        color = itemTint,
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 16.sp,
+                                                        fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                                        modifier = Modifier.clearAndSetSemantics { }
+                                                    )
+                                                }
                                                 Icon(
                                                     imageVector = icon,
-                                                    contentDescription = title
+                                                    contentDescription = null,
+                                                    tint = itemTint,
+                                                    modifier = Modifier.size(24.dp)
                                                 )
-                                            },
-                                            label = {
-                                                val animBottomTitle = typewriterText(
-                                                    text = title.uppercase(),
-                                                    order = 0.93f + (index * 0.02f)
-                                                )
-                                                Text(
-                                                    text = animBottomTitle,
-                                                    fontSize = 10.sp,
-                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-                                                    fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
-                                                    letterSpacing = 0.5.sp
-                                                )
-                                            },
-                                            colors = NavigationBarItemDefaults.colors(
-                                                selectedIconColor = ru.nya.nyeios.ui.theme.selectionAccent(),
-                                                selectedTextColor = ru.nya.nyeios.ui.theme.selectionAccent(),
-                                                unselectedIconColor = ru.nya.nyeios.ui.theme.NierDim,
-                                                unselectedTextColor = ru.nya.nyeios.ui.theme.NierDim,
-                                                indicatorColor = Color.Transparent
+                                                if (isSelected) {
+                                                    Text(
+                                                        text = "<",
+                                                        color = itemTint,
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 16.sp,
+                                                        fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                                        modifier = Modifier.clearAndSetSemantics { }
+                                                    )
+                                                }
+                                            }
+                                            val animBottomTitle = typewriterText(
+                                                text = title.uppercase(),
+                                                order = 0.93f + (index * 0.02f)
                                             )
-                                        )
+                                            Text(
+                                                text = animBottomTitle,
+                                                color = itemTint,
+                                                fontSize = 10.sp,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                                                fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                                letterSpacing = 0.5.sp
+                                            )
+                                        }
                                     }
                                 }
 
