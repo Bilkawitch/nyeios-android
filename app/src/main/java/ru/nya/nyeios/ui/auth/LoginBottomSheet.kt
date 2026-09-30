@@ -91,6 +91,18 @@ fun LoginBottomSheet(
     onLogout: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    if (ru.nya.nyeios.ui.theme.isNycModern) {
+        NycLoginBottomSheet(
+            authSession = authSession,
+            isLoggingIn = isLoggingIn,
+            errorMessage = errorMessage,
+            onLogin = onLogin,
+            onLogout = onLogout,
+            onDismiss = onDismiss
+        )
+        return
+    }
+
     val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val focusManager = LocalFocusManager.current

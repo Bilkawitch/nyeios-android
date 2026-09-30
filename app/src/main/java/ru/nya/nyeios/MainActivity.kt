@@ -97,6 +97,7 @@ import ru.nya.nyeios.data.model.CurriculumUiState
 import ru.nya.nyeios.data.model.FeedUiState
 import ru.nya.nyeios.data.model.ScheduleUiState
 import ru.nya.nyeios.ui.auth.LoginBottomSheet
+import ru.nya.nyeios.ui.auth.NycLoginBottomSheet
 import ru.nya.nyeios.ui.auth.NycLoginGate
 import ru.nya.nyeios.ui.auth.LoginFullscreenGate
 import ru.nya.nyeios.ui.debug.NetworkLogsBottomSheet
@@ -915,22 +916,41 @@ class MainActivity : ComponentActivity() {
                             }
 
                             if (isLoginSheetVisible) {
-                                LoginBottomSheet(
-                                    authSession = authSession,
-                                    isLoggingIn = isLoggingIn,
-                                    errorMessage = loginError,
-                                    onLogin = { u, p ->
-                                        scheduleViewModel.performLogin(u, p)
-                                        feedViewModel.refresh()
-                                        curriculumViewModel.refresh()
-                                    },
-                                    onLogout = {
-                                        scheduleViewModel.logout()
-                                        feedViewModel.refresh()
-                                        curriculumViewModel.refresh()
-                                    },
-                                    onDismiss = { scheduleViewModel.hideLoginSheet() }
-                                )
+                                if (isNycModern) {
+                                    NycLoginBottomSheet(
+                                        authSession = authSession,
+                                        isLoggingIn = isLoggingIn,
+                                        errorMessage = loginError,
+                                        onLogin = { u, p ->
+                                            scheduleViewModel.performLogin(u, p)
+                                            feedViewModel.refresh()
+                                            curriculumViewModel.refresh()
+                                        },
+                                        onLogout = {
+                                            scheduleViewModel.logout()
+                                            feedViewModel.refresh()
+                                            curriculumViewModel.refresh()
+                                        },
+                                        onDismiss = { scheduleViewModel.hideLoginSheet() }
+                                    )
+                                } else {
+                                    LoginBottomSheet(
+                                        authSession = authSession,
+                                        isLoggingIn = isLoggingIn,
+                                        errorMessage = loginError,
+                                        onLogin = { u, p ->
+                                            scheduleViewModel.performLogin(u, p)
+                                            feedViewModel.refresh()
+                                            curriculumViewModel.refresh()
+                                        },
+                                        onLogout = {
+                                            scheduleViewModel.logout()
+                                            feedViewModel.refresh()
+                                            curriculumViewModel.refresh()
+                                        },
+                                        onDismiss = { scheduleViewModel.hideLoginSheet() }
+                                    )
+                                }
                             }
 
                             if (isNetworkLogsSheetVisible) {
