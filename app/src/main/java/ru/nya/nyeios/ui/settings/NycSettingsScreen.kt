@@ -1317,7 +1317,7 @@ private fun NycVersionContent(
                         Text(
                             text = stringResource(
                                 R.string.version_label_fmt,
-                                uiState.currentVersion.ifEmpty { "0.2.7" },
+                                uiState.currentVersion.ifEmpty { "0.2.8" },
                                 17
                             ),
                             color = nycFaint,

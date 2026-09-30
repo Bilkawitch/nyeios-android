@@ -18,9 +18,33 @@ object ChangelogHistory {
     val releases: List<ChangelogVersion>
         get() = listOf(
             ChangelogVersion(
+                version = "0.2.8",
+                releaseDate = "30.09.2026",
+                isLatest = true,
+                sections = listOf(
+                    ChangelogSection(
+                        title = AppLocale.pick("ИНТЕРФЕЙС", "INTERFACE"),
+                        items = listOf(
+                            AppLocale.pick(
+                                "Теперь в темах семейства YoRHa нормальный bottombar",
+                                "YoRHa family themes now have a proper bottom navigation bar"
+                            ),
+                            AppLocale.pick(
+                                "В NyC теперь красивые экраны логина и все настройки",
+                                "NyC now features beautiful login screens and completely redesigned settings"
+                            ),
+                            AppLocale.pick(
+                                "Новый логотип ура",
+                                "New app and theme logos"
+                            )
+                        )
+                    )
+                )
+            ),
+            ChangelogVersion(
                 version = "0.2.7",
                 releaseDate = "29.09.2026",
-                isLatest = true,
+                isLatest = false,
                 sections = listOf(
                     ChangelogSection(
                         title = AppLocale.pick("ИНТЕРФЕЙС", "INTERFACE"),
