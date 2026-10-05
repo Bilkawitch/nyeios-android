@@ -18,9 +18,25 @@ object ChangelogHistory {
     val releases: List<ChangelogVersion>
         get() = listOf(
             ChangelogVersion(
+                version = "0.2.9",
+                releaseDate = "05.10.2026",
+                isLatest = true,
+                sections = listOf(
+                    ChangelogSection(
+                        title = AppLocale.pick("РАСПИСАНИЕ", "SCHEDULE"),
+                        items = listOf(
+                            AppLocale.pick(
+                                "Исправлен глупый баг когда время начала пары читалось как номер пары, выдавая перлы по типу 12й пары за день",
+                                "Fixed a bug where lesson start time was parsed as lesson number, causing incorrect lesson numbering"
+                            )
+                        )
+                    )
+                )
+            ),
+            ChangelogVersion(
                 version = "0.2.8a",
                 releaseDate = "30.09.2026",
-                isLatest = true,
+                isLatest = false,
                 sections = listOf(
                     ChangelogSection(
                         title = AppLocale.pick("РАСПИСАНИЕ", "SCHEDULE"),

@@ -436,6 +436,40 @@ class ScheduleParserTest {
         assertEquals(LessonType.PRACTICE, peLessonWed.type)
         assertEquals("Подгруппа 1", peLessonWed.subgroup)
     }
+
+    @Test
+    fun testInferLessonNumberForAllGsguSlots() {
+        // Official university time slots from eios.gukolomna.ru
+        assertEquals("1", ScheduleParser.inferLessonNumber("08:30 - 10:00"))
+        assertEquals("1", ScheduleParser.inferLessonNumber("8:30 - 10:00"))
+        assertEquals("2", ScheduleParser.inferLessonNumber("10:10 - 11:40"))
+        assertEquals("2", ScheduleParser.inferLessonNumber("10:15 - 11:45"))
+        assertEquals("3", ScheduleParser.inferLessonNumber("12:10 - 13:40"))
+        assertEquals("3", ScheduleParser.inferLessonNumber("12:15 - 13:45"))
+        assertEquals("4", ScheduleParser.inferLessonNumber("13:50 - 15:20"))
+        assertEquals("4", ScheduleParser.inferLessonNumber("14:00 - 15:30"))
+        assertEquals("5", ScheduleParser.inferLessonNumber("15:30 - 17:00"))
+        assertEquals("5", ScheduleParser.inferLessonNumber("15:45 - 17:15"))
+        assertEquals("6", ScheduleParser.inferLessonNumber("17:10 - 18:40"))
+        assertEquals("6", ScheduleParser.inferLessonNumber("17:30 - 19:00"))
+        assertEquals("7", ScheduleParser.inferLessonNumber("18:50 - 20:20"))
+        assertEquals("7", ScheduleParser.inferLessonNumber("19:00 - 20:30"))
+
+        // With explicit prefix
+        assertEquals("2", ScheduleParser.inferLessonNumber("2 пара 10:10 - 11:40"))
+        assertEquals("1", ScheduleParser.inferLessonNumber("1 пара 08:30 - 10:00"))
+        assertEquals("3", ScheduleParser.inferLessonNumber("3 п. 12:10 - 13:40"))
+
+        // With non-breaking spaces or whitespace
+        assertEquals("1", ScheduleParser.inferLessonNumber("\u00A008:30 - 10:00"))
+        assertEquals("2", ScheduleParser.inferLessonNumber(" 10:10 - 11:40 "))
+
+        // Must NEVER treat two-digit hours like "08", "10", "12", "14" as pair numbers
+        assertTrue(ScheduleParser.inferLessonNumber("08:30 - 10:00") != "08")
+        assertTrue(ScheduleParser.inferLessonNumber("10:10 - 11:40") != "10")
+        assertTrue(ScheduleParser.inferLessonNumber("12:10 - 13:40") != "12")
+    }
 }
+
 
 

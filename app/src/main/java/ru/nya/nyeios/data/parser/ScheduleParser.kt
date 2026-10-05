@@ -182,10 +182,12 @@ object ScheduleParser {
                             else -> LessonType.OTHER
                         }
 
+                        val effLessonNumber = currentLessonNumber.ifEmpty { inferLessonNumber(currentTime) }
+
                         dayLessonsMap[dayKey]?.add(
                             LessonItem(
                                 time = currentTime,
-                                lessonNumber = currentLessonNumber,
+                                lessonNumber = effLessonNumber,
                                 subgroup = subgroup,
                                 subject = subject,
                                 room = room,
@@ -318,30 +320,35 @@ object ScheduleParser {
                 clean.startsWith("аттест")
     }
 
-    private fun inferLessonNumber(timeRaw: String): String {
-        val explicitMatch = Regex("""(\d+)\s*(?:пара|п\b)""", RegexOption.IGNORE_CASE).find(timeRaw)
+    fun inferLessonNumber(timeRaw: String): String {
+        val cleanTime = timeRaw.replace('\u00A0', ' ').trim()
+
+        val explicitMatch = Regex("""\b([1-8])\s*(?:пара|п\b)""", RegexOption.IGNORE_CASE).find(cleanTime)
         if (explicitMatch != null) return explicitMatch.groupValues[1]
 
-        // If it starts with clock time format "HH:mm", infer from time
-        val timeMatch = Regex("""^(\d{1,2}):(\d{2})""").find(timeRaw)
+        // Clock time format "HH:mm" anywhere in string
+        val timeMatch = Regex("""(\d{1,2}):(\d{2})""").find(cleanTime)
         if (timeMatch != null) {
             val h = timeMatch.groupValues[1].toIntOrNull() ?: return ""
             val m = timeMatch.groupValues[2].toIntOrNull() ?: return ""
             val totalMinutes = h * 60 + m
-            return when (totalMinutes) {
-                in 500..570 -> "1"   // ~ 08:30
-                in 590..660 -> "2"   // ~ 10:10 / 10:15
-                in 710..780 -> "3"   // ~ 12:10 / 12:15
-                in 810..890 -> "4"   // ~ 13:50 / 14:00
-                in 910..980 -> "5"   // ~ 15:30 / 15:45
-                in 1010..1080 -> "6"  // ~ 17:10 / 17:30
-                in 1100..1170 -> "7"  // ~ 18:50
+            val inferred = when (totalMinutes) {
+                in 480..570 -> "1"   // 08:00 - 09:30 (e.g. 08:30)
+                in 580..670 -> "2"   // 09:40 - 11:10 (e.g. 10:10, 10:15)
+                in 700..790 -> "3"   // 11:40 - 13:10 (e.g. 12:10, 12:15)
+                in 800..890 -> "4"   // 13:20 - 14:50 (e.g. 13:50, 14:00)
+                in 900..990 -> "5"   // 15:00 - 16:30 (e.g. 15:30, 15:45)
+                in 1000..1090 -> "6" // 16:40 - 18:10 (e.g. 17:10, 17:30)
+                in 1100..1175 -> "7" // 18:20 - 19:35 (e.g. 18:50, 19:00)
+                in 1176..1260 -> "8" // 19:36 - 21:00 (e.g. 20:20, 20:30)
                 else -> ""
             }
+            if (inferred.isNotEmpty()) return inferred
         }
 
-        // If it starts with a pair number like "1 08:30" or "1. 08:30" or "1"
-        val leadingDigit = Regex("""^(\d+)\b""").find(timeRaw)
+        // If it starts with a single-digit pair number 1..8 (like "1 08:30" or "1. 08:30" or "1")
+        // Note: strictly 1..8 so 2-digit clock times like "08" or "10" are never matched as pair numbers
+        val leadingDigit = Regex("""^([1-8])\b""").find(cleanTime)
         if (leadingDigit != null) return leadingDigit.groupValues[1]
 
         return ""

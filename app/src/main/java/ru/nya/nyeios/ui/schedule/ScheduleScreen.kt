@@ -891,9 +891,14 @@ fun LessonCard(
                                 color = ru.nya.nyeios.ui.theme.NierDark
                             )
                         }
-                        if (lesson.lessonNumber.isNotEmpty()) {
+                        val displayLessonNumber = if (lesson.lessonNumber.isNotEmpty() && lesson.lessonNumber.toIntOrNull() in 1..8 && !lesson.lessonNumber.startsWith("0")) {
+                            lesson.lessonNumber
+                        } else {
+                            ru.nya.nyeios.data.parser.ScheduleParser.inferLessonNumber(lesson.time)
+                        }
+                        if (displayLessonNumber.isNotEmpty()) {
                             Text(
-                                text = stringResource(R.string.lesson_pair_fmt, lesson.lessonNumber),
+                                text = stringResource(R.string.lesson_pair_fmt, displayLessonNumber),
                                 fontSize = 8.sp,
                                 fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
                                 color = ru.nya.nyeios.ui.theme.NierDim,

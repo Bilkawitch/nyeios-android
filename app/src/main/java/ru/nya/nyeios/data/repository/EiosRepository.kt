@@ -680,7 +680,16 @@ class EiosRepository(private val context: Context) {
         val updatedDays = cached.days.map { day ->
             val cleanDate = Regex("""(\d{1,2}\.\d{1,2})""").find(day.dateString.ifEmpty { day.dayTitle })?.value ?: day.dateString
             val isToday = (cached.offsetWeeks == 0 && cleanDate == todayDayMonth)
-            day.copy(dateString = cleanDate, isToday = isToday)
+            val updatedLessons = day.lessons.map { lesson ->
+                val num = lesson.lessonNumber.toIntOrNull()
+                val validNumber = if (num != null && num in 1..8 && !lesson.lessonNumber.startsWith("0")) {
+                    lesson.lessonNumber
+                } else {
+                    ScheduleParser.inferLessonNumber(lesson.time)
+                }
+                lesson.copy(lessonNumber = validNumber)
+            }
+            day.copy(dateString = cleanDate, isToday = isToday, lessons = updatedLessons)
         }
         return cached.copy(days = updatedDays, isCached = true)
     }
