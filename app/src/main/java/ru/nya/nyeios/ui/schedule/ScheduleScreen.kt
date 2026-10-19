@@ -124,8 +124,24 @@ import ru.nya.nyeios.ui.theme.TextMuted
 import ru.nya.nyeios.ui.theme.TextPrimary
 import ru.nya.nyeios.ui.theme.TextSecondary
 import ru.nya.nyeios.ui.floormap.FloorMapBottomSheet
+import ru.nya.nyeios.data.notes.LessonNotesRepository
+import ru.nya.nyeios.ui.notes.LessonNoteIconButton
+import ru.nya.nyeios.ui.notes.editor.LessonNoteEditorScreen
+import ru.nya.nyeios.ui.notes.weekly.HomeworkPullUpHandle
+import ru.nya.nyeios.ui.notes.weekly.WeeklyHomeworkSheet
+import ru.nya.nyeios.ui.notes.preview.LessonNotePreviewSheet
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.platform.LocalContext
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+
+data class ScheduleActiveNoteLesson(
+    val dateString: String,
+    val lessonNumber: String,
+    val time: String,
+    val subject: String,
+    val teacher: String
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -143,6 +159,13 @@ fun ScheduleScreen(
 ) {
     var floorMapTargetRoom by rememberSaveable { mutableStateOf<String?>(null) }
     var floorMapFromRoom by rememberSaveable { mutableStateOf<String?>(null) }
+    var activeNoteLesson by remember { mutableStateOf<ScheduleActiveNoteLesson?>(null) }
+    var previewNoteLesson by remember { mutableStateOf<ScheduleActiveNoteLesson?>(null) }
+    var isHomeworkSheetVisible by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val notesRepo = remember { LessonNotesRepository.getInstance(context) }
+    val notesMap by notesRepo.notesFlow.collectAsState()
 
     Column(
         modifier = modifier.fillMaxSize()
@@ -493,9 +516,34 @@ fun ScheduleScreen(
                                             null
                                         }
 
+                                        val cleanDate = currentDay.dateString.ifEmpty { (uiState as? ScheduleUiState.Success)?.schedule?.startDate.orEmpty() }
+                                        val noteKey = remember(cleanDate, lesson.time, lesson.lessonNumber, lesson.subject) {
+                                            notesRepo.buildKey(cleanDate, lesson.time, lesson.lessonNumber, lesson.subject)
+                                        }
+                                        val hasNote = notesMap[noteKey]?.rawText?.isNotBlank() == true
+
                                         LessonCard(
                                             lesson = lesson,
                                             isToday = isDayToday,
+                                            hasNote = hasNote,
+                                            onNoteClick = {
+                                                activeNoteLesson = ScheduleActiveNoteLesson(
+                                                    dateString = cleanDate,
+                                                    lessonNumber = lesson.lessonNumber,
+                                                    time = lesson.time,
+                                                    subject = lesson.subject,
+                                                    teacher = lesson.teacher
+                                                )
+                                            },
+                                            onNoteLongClick = {
+                                                previewNoteLesson = ScheduleActiveNoteLesson(
+                                                    dateString = cleanDate,
+                                                    lessonNumber = lesson.lessonNumber,
+                                                    time = lesson.time,
+                                                    subject = lesson.subject,
+                                                    teacher = lesson.teacher
+                                                )
+                                            },
                                             onRoomClick = { room ->
                                                 floorMapTargetRoom = room
                                                 floorMapFromRoom = previousRoom
@@ -511,7 +559,11 @@ fun ScheduleScreen(
                     }
                 }
             }
-        }
+
+        // Нижний триггер открытия ДЗ на неделю (Скриншот 2)
+        HomeworkPullUpHandle(
+            onSwipeUp = { isHomeworkSheetVisible = true }
+        )
 
         if (floorMapTargetRoom != null) {
             FloorMapBottomSheet(
@@ -523,7 +575,44 @@ fun ScheduleScreen(
                 }
             )
         }
+
+        if (isHomeworkSheetVisible) {
+            WeeklyHomeworkSheet(
+                currentSchedule = (uiState as? ScheduleUiState.Success)?.schedule,
+                onDismiss = { isHomeworkSheetVisible = false }
+            )
+        }
+
+        if (previewNoteLesson != null) {
+            val noteLesson = previewNoteLesson!!
+            LessonNotePreviewSheet(
+                dateString = noteLesson.dateString,
+                lessonNumber = noteLesson.lessonNumber,
+                time = noteLesson.time,
+                subject = noteLesson.subject,
+                teacher = noteLesson.teacher,
+                onDismiss = { previewNoteLesson = null },
+                onEdit = {
+                    val lessonToEdit = previewNoteLesson!!
+                    previewNoteLesson = null
+                    activeNoteLesson = lessonToEdit
+                }
+            )
+        }
+
+        if (activeNoteLesson != null) {
+            val noteLesson = activeNoteLesson!!
+            LessonNoteEditorScreen(
+                dateString = noteLesson.dateString,
+                lessonNumber = noteLesson.lessonNumber,
+                time = noteLesson.time,
+                subject = noteLesson.subject,
+                teacher = noteLesson.teacher,
+                onDismiss = { activeNoteLesson = null }
+            )
+        }
     }
+}
 
 @Composable
 fun WeekNavigator(
@@ -798,6 +887,9 @@ fun ScheduleTransferItem(
 fun LessonCard(
     lesson: LessonItem,
     isToday: Boolean,
+    hasNote: Boolean = false,
+    onNoteClick: () -> Unit = {},
+    onNoteLongClick: () -> Unit = {},
     onRoomClick: (String) -> Unit = {}
 ) {
     val fontDelta = UiPreferencesManager.scheduleFontDeltaSp
@@ -957,30 +1049,42 @@ fun LessonCard(
                             }
                         }
 
-                        if (isOngoing) {
-                            Row(
-                                modifier = Modifier
-                                    .background(ru.nya.nyeios.ui.theme.NierGreen.copy(alpha = 0.18f))
-                                    .border(1.dp, ru.nya.nyeios.ui.theme.NierGreen)
-                                    .padding(horizontal = 5.dp, vertical = 1.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(3.dp)
-                            ) {
-                                Box(
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            if (isOngoing) {
+                                Row(
                                     modifier = Modifier
-                                        .size(4.dp)
-                                        .clip(CircleShape)
-                                        .background(ru.nya.nyeios.ui.theme.NierGreen)
+                                        .background(ru.nya.nyeios.ui.theme.NierGreen.copy(alpha = 0.18f))
+                                        .border(1.dp, ru.nya.nyeios.ui.theme.NierGreen)
+                                        .padding(horizontal = 5.dp, vertical = 1.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(4.dp)
+                                            .clip(CircleShape)
+                                            .background(ru.nya.nyeios.ui.theme.NierGreen)
                                     )
-                                Text(
-                                    text = stringResource(R.string.lesson_now_badge),
-                                    fontSize = 8.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
-                                    color = ru.nya.nyeios.ui.theme.NierGreen,
-                                    letterSpacing = 0.5.sp
-                                )
+                                    Text(
+                                        text = stringResource(R.string.lesson_now_badge),
+                                        fontSize = 8.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                                        color = ru.nya.nyeios.ui.theme.NierGreen,
+                                        letterSpacing = 0.5.sp
+                                    )
+                                }
                             }
+
+                            // Кнопка заметки к паре (Скриншот 1)
+                            LessonNoteIconButton(
+                                hasNote = hasNote,
+                                onClick = onNoteClick,
+                                onLongClick = onNoteLongClick
+                            )
                         }
                     }
 

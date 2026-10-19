@@ -482,4 +482,23 @@
     <string name="downloads_nyc_downloading_fmt">Загрузка: %1$d</string>
     <string name="downloads_saved_fmt">СОХРАНЕНО: %1$d · %2$s</string>
     <string name="curriculum_title">УСПЕВАЕМОСТЬ (БРС)</string>
+
+    <!-- Notes & Homework -->
+    <string name="notes_pull_to_open_hw">Потяните чтобы открыть ДЗ на неделю.</string>
+    <string name="notes_title_weekly">ДОМАШНЕЕ ЗАДАНИЕ НА НЕДЕЛЮ</string>
+    <string name="notes_empty_tap_to_add">Нет записей · Нажмите, чтобы добавить...</string>
+    <string name="notes_editor_title">ЗАМЕТКА К ПАРЕ</string>
+    <string name="notes_editor_done">ГОТОВО</string>
+    <string name="notes_editor_placeholder">Введите заметку или домашнее задание к паре...</string>
+    <string name="notes_editor_saved">Сохранено</string>
+    <string name="notes_has_entry">ДЗ</string>
+    <string name="notes_count_fmt">%1$d ЗАПИСЕЙ</string>
+    <string name="notes_no_weeks_loaded">Нет подгруженных недель расписания</string>
+    <string name="notes_preview_title">ПРЕДПРОСМОТР ЗАМЕТКИ</string>
+    <string name="notes_preview_edit_btn">ОТКРЫТЬ В РЕДАКТОРЕ</string>
+    <string name="notes_preview_empty">К этой паре пока нет записей</string>
+    <string name="notes_preview_empty_hint">Нажмите кнопку ниже, чтобы добавить первую запись</string>
+    <string name="notes_week_current_tag">ТЕКУЩАЯ</string>
+    <string name="notes_collapsed_summary">%1$d пар · %2$d записей</string>
+    <string name="action_back">Назад</string>
 </resources>

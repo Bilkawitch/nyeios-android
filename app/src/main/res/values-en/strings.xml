@@ -482,4 +482,23 @@
     <string name="downloads_nyc_downloading_fmt">Downloading: %1$d</string>
     <string name="downloads_saved_fmt">SAVED: %1$d · %2$s</string>
     <string name="curriculum_title">GRADES (BRS)</string>
+
+    <!-- Notes & Homework -->
+    <string name="notes_pull_to_open_hw">Pull up to open weekly homework.</string>
+    <string name="notes_title_weekly">WEEKLY HOMEWORK &amp; NOTES</string>
+    <string name="notes_empty_tap_to_add">No notes · Tap to add...</string>
+    <string name="notes_editor_title">LESSON NOTE</string>
+    <string name="notes_editor_done">DONE</string>
+    <string name="notes_editor_placeholder">Enter note or homework for this lesson...</string>
+    <string name="notes_editor_saved">Saved</string>
+    <string name="notes_has_entry">HW</string>
+    <string name="notes_count_fmt">%1$d NOTES</string>
+    <string name="notes_no_weeks_loaded">No schedule weeks loaded</string>
+    <string name="notes_preview_title">NOTE PREVIEW</string>
+    <string name="notes_preview_edit_btn">OPEN IN EDITOR</string>
+    <string name="notes_preview_empty">No notes for this lesson yet</string>
+    <string name="notes_preview_empty_hint">Tap the button below to add your first note</string>
+    <string name="notes_week_current_tag">CURRENT</string>
+    <string name="notes_collapsed_summary">%1$d lessons · %2$d notes</string>
+    <string name="action_back">Back</string>
 </resources>

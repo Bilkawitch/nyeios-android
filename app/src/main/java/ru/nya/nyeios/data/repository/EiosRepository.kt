@@ -574,7 +574,7 @@ class EiosRepository(private val context: Context) {
                 val json = cacheFile.readText()
                 val cached = gson.fromJson(json, WeekSchedule::class.java)
                 if (cached != null) {
-                    return@withContext Result.success(sanitizeCachedSchedule(cached))
+                    return@withContext Result.success(sanitizeCachedSchedule(cached.copy(offsetWeeks = offsetWeeks)))
                 }
             } catch (e: Exception) {
                 // Ignore corrupt cache
@@ -588,7 +588,7 @@ class EiosRepository(private val context: Context) {
                 val cached = gson.fromJson(json, WeekSchedule::class.java)
                 if (cached != null) {
                     NetworkLogger.logInfo("SCHEDULE", AppLocale.pick("Идёт синхронизация ленты: расписание отдано из кэша", "Feed sync in progress: schedule served from cache"))
-                    return@withContext Result.success(sanitizeCachedSchedule(cached))
+                    return@withContext Result.success(sanitizeCachedSchedule(cached.copy(offsetWeeks = offsetWeeks)))
                 }
             } catch (e: Exception) {
                 // ignore
@@ -609,7 +609,7 @@ class EiosRepository(private val context: Context) {
                 if (!response.isSuccessful) {
                     if (currentCacheFile.exists()) {
                         val cached = gson.fromJson(currentCacheFile.readText(), WeekSchedule::class.java)
-                        if (cached != null) return@withLock Result.success(sanitizeCachedSchedule(cached))
+                        if (cached != null) return@withLock Result.success(sanitizeCachedSchedule(cached.copy(offsetWeeks = offsetWeeks)))
                     }
                     val msg = if (response.code in 500..599) ERROR_SERVER_EMPTY_OR_DOWN else AppLocale.pick("Ошибка сервера: HTTP ${response.code}", "Server error: HTTP ${response.code}")
                     return@withLock Result.failure(Exception(msg))
@@ -621,7 +621,7 @@ class EiosRepository(private val context: Context) {
                 if (ScheduleParser.isAuthRequired(html)) {
                     if (currentCacheFile.exists()) {
                         val cached = gson.fromJson(currentCacheFile.readText(), WeekSchedule::class.java)
-                        if (cached != null) return@withLock Result.success(sanitizeCachedSchedule(cached))
+                        if (cached != null) return@withLock Result.success(sanitizeCachedSchedule(cached.copy(offsetWeeks = offsetWeeks)))
                     }
                     return@withLock Result.failure(Exception(AppLocale.pick("Сессия завершена. Требуется авторизация в ЭИОС.", "Session expired. Authorization in EIOS is required.")))
                 }
@@ -654,7 +654,7 @@ class EiosRepository(private val context: Context) {
                         val cached = gson.fromJson(currentCacheFile.readText(), WeekSchedule::class.java)
                         if (cached != null) {
                             NetworkLogger.logInfo("SCHEDULE", AppLocale.pick("Сетевая ошибка расписания, данные взяты из локального кэша", "Schedule network error, data taken from the local cache"))
-                            return@withLock Result.success(sanitizeCachedSchedule(cached))
+                            return@withLock Result.success(sanitizeCachedSchedule(cached.copy(offsetWeeks = offsetWeeks)))
                         }
                     }
                     Result.failure(Exception(ERROR_SERVER_EMPTY_OR_DOWN))
@@ -662,7 +662,7 @@ class EiosRepository(private val context: Context) {
             } catch (e: Exception) {
                 if (currentCacheFile.exists()) {
                     val cached = gson.fromJson(currentCacheFile.readText(), WeekSchedule::class.java)
-                    if (cached != null) return@withLock Result.success(sanitizeCachedSchedule(cached))
+                    if (cached != null) return@withLock Result.success(sanitizeCachedSchedule(cached.copy(offsetWeeks = offsetWeeks)))
                 }
                 Result.failure(Exception(ERROR_NO_CONNECTION))
             }

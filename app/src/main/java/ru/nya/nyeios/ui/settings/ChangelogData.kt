@@ -18,9 +18,33 @@ object ChangelogHistory {
     val releases: List<ChangelogVersion>
         get() = listOf(
             ChangelogVersion(
+                version = "0.3.0",
+                releaseDate = "19.10.2026",
+                isLatest = true,
+                sections = listOf(
+                    ChangelogSection(
+                        title = AppLocale.pick("ЗАМЕТКИ И ДЗ", "NOTES & HOMEWORK"),
+                        items = listOf(
+                            AppLocale.pick(
+                                "Добавил текстовый редактор заметок",
+                                "Added rich-text editor for notes"
+                            ),
+                            AppLocale.pick(
+                                "Добавил заметки для дз. Есть 2 типа:\n" +
+                                    "• Кнопка в правом верхнем углу пары — открывает задания именно на эту пару (долгое нажатие — предпросмотр)\n" +
+                                    "• Свайп снизу вверх по направляющим стрелкам — открывает общие записи на неделю, текущая неделя выделена цветом. Тап по паре в этом виде открывает редактор соответствующей пары",
+                                "Added homework notes with 2 access modes:\n" +
+                                    "• Button in top-right corner of lesson card opens per-lesson notes (long press opens quick preview)\n" +
+                                    "• Swipe-up handle opens weekly notebook with current week highlighted. Tapping a lesson opens its editor"
+                            )
+                        )
+                    )
+                )
+            ),
+            ChangelogVersion(
                 version = "0.2.9",
                 releaseDate = "05.10.2026",
-                isLatest = true,
+                isLatest = false,
                 sections = listOf(
                     ChangelogSection(
                         title = AppLocale.pick("РАСПИСАНИЕ", "SCHEDULE"),
