@@ -125,6 +125,7 @@ import ru.nya.nyeios.ui.theme.TextPrimary
 import ru.nya.nyeios.ui.theme.TextSecondary
 import ru.nya.nyeios.ui.floormap.FloorMapBottomSheet
 import ru.nya.nyeios.data.notes.LessonNotesRepository
+import ru.nya.nyeios.data.notes.hasVisibleContent
 import ru.nya.nyeios.ui.notes.LessonNoteIconButton
 import ru.nya.nyeios.ui.notes.editor.LessonNoteEditorScreen
 import ru.nya.nyeios.ui.notes.weekly.HomeworkPullUpHandle
@@ -520,7 +521,7 @@ fun ScheduleScreen(
                                         val noteKey = remember(cleanDate, lesson.time, lesson.lessonNumber, lesson.subject) {
                                             notesRepo.buildKey(cleanDate, lesson.time, lesson.lessonNumber, lesson.subject)
                                         }
-                                        val hasNote = notesMap[noteKey]?.rawText?.isNotBlank() == true
+                                        val hasNote = notesMap[noteKey]?.hasVisibleContent == true
 
                                         LessonCard(
                                             lesson = lesson,

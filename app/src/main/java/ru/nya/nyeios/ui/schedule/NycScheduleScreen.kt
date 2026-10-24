@@ -98,6 +98,7 @@ import ru.nya.nyeios.ui.theme.nycWell
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.LocalContext
 import ru.nya.nyeios.data.notes.LessonNotesRepository
+import ru.nya.nyeios.data.notes.hasVisibleContent
 import ru.nya.nyeios.ui.notes.LessonNoteIconButton
 import ru.nya.nyeios.ui.notes.editor.LessonNoteEditorScreen
 import ru.nya.nyeios.ui.notes.preview.LessonNotePreviewSheet
@@ -338,7 +339,7 @@ fun NycScheduleScreen(
                                     val noteKey = remember(cleanDate, lesson.time, lesson.lessonNumber, lesson.subject) {
                                         notesRepo.buildKey(cleanDate, lesson.time, lesson.lessonNumber, lesson.subject)
                                     }
-                                    val hasNote = notesMap[noteKey]?.rawText?.isNotBlank() == true
+                                    val hasNote = notesMap[noteKey]?.hasVisibleContent == true
 
                                     NycLessonCard(
                                         lesson = lesson,

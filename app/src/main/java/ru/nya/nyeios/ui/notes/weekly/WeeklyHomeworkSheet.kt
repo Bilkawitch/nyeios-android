@@ -7,9 +7,11 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,9 +19,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -45,6 +50,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,15 +63,30 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import ru.nya.nyeios.R
 import ru.nya.nyeios.data.model.DaySchedule
 import ru.nya.nyeios.data.model.LessonItem
 import ru.nya.nyeios.data.model.WeekSchedule
+import ru.nya.nyeios.data.notes.LessonNoteSearch
 import ru.nya.nyeios.data.notes.LessonNotesRepository
+import ru.nya.nyeios.data.notes.LessonTag
+import ru.nya.nyeios.data.notes.NotePhotoAttachment
+import ru.nya.nyeios.data.notes.hasVisibleContent
+import ru.nya.nyeios.ui.common.localizedDayTitle
+import ru.nya.nyeios.ui.notes.common.LessonTagText
+import ru.nya.nyeios.ui.notes.common.NotePhotoStrip
+import ru.nya.nyeios.ui.notes.common.NotePhotoViewer
 import ru.nya.nyeios.ui.notes.editor.LessonNoteEditorScreen
 import ru.nya.nyeios.ui.notes.editor.RichTextFormatter
 import ru.nya.nyeios.ui.notes.preview.LessonNotePreviewSheet
@@ -187,9 +208,38 @@ fun WeeklyHomeworkSheet(
     val repository = remember { LessonNotesRepository.getInstance(context) }
     val notesMap by repository.notesFlow.collectAsState()
 
-    val allWeeks = remember(currentSchedule, notesMap) {
+    val allWeeks = remember(currentSchedule) {
         repository.loadAllCachedWeeks(currentSchedule)
     }
+    val searchIndex = remember(notesMap) { LessonNoteSearch.build(notesMap.values) }
+    val cachedNoteKeys = remember(allWeeks) {
+        allWeeks.asSequence()
+            .flatMap { week ->
+                week.days.asSequence().flatMap { day ->
+                    val date = day.dateString.ifEmpty { week.startDate }
+                    day.lessons.asSequence().map { lesson ->
+                        repository.buildKey(date, lesson.time, lesson.lessonNumber, lesson.subject)
+                    }
+                }
+            }
+            .toSet()
+    }
+    val allTags = remember(allWeeks) {
+        allWeeks.asSequence()
+            .flatMap { it.days.asSequence() }
+            .flatMap { it.lessons.asSequence() }
+            .mapNotNull { LessonTag.fromSubject(it.subject) }
+            .distinct()
+            .sorted()
+            .toList()
+    }
+
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var selectedTag by rememberSaveable { mutableStateOf<String?>(null) }
+    var matchedNoteKeys by remember { mutableStateOf<Set<String>?>(null) }
+    var viewerPhoto by remember { mutableStateOf<NotePhotoAttachment?>(null) }
+    var viewerTag by remember { mutableStateOf<String?>(null) }
+    val isFiltering = searchQuery.isNotBlank() || selectedTag != null
 
     // Состояние аккордеона: по умолчанию развернута строго нынешняя неделя (offsetWeeks == 0)
     var expandedWeeks by remember(allWeeks) {
@@ -201,6 +251,50 @@ fun WeeklyHomeworkSheet(
 
     var activeEditorParams by remember { mutableStateOf<EditorLaunchParams?>(null) }
     var activePreviewParams by remember { mutableStateOf<EditorLaunchParams?>(null) }
+
+    LaunchedEffect(searchQuery, selectedTag, searchIndex, cachedNoteKeys) {
+        if (!isFiltering) {
+            matchedNoteKeys = null
+            return@LaunchedEffect
+        }
+        if (searchQuery.isNotBlank()) delay(180)
+        matchedNoteKeys = withContext(Dispatchers.Default) {
+            searchIndex.search(searchQuery, selectedTag).intersect(cachedNoteKeys)
+        }
+    }
+
+    val visibleWeeks = remember(allWeeks, notesMap, matchedNoteKeys, isFiltering) {
+        if (!isFiltering) {
+            allWeeks
+        } else {
+            val keys = matchedNoteKeys.orEmpty()
+            allWeeks.mapNotNull { week ->
+                val days = week.days.mapNotNull { day ->
+                    val date = day.dateString.ifEmpty { week.startDate }
+                    val lessons = day.lessons.filter { lesson ->
+                        val key = repository.buildKey(
+                            date, lesson.time, lesson.lessonNumber, lesson.subject
+                        )
+                        key in keys && notesMap[key]?.hasVisibleContent == true
+                    }
+                    if (lessons.isEmpty()) null else day.copy(lessons = lessons)
+                }
+                if (days.isEmpty()) null else week.copy(days = days)
+            }
+        }
+    }
+
+    val visibleNoteCount = remember(visibleWeeks, notesMap) {
+        visibleWeeks.sumOf { week ->
+            week.days.sumOf { day ->
+                val date = day.dateString.ifEmpty { week.startDate }
+                day.lessons.count { lesson ->
+                    notesMap[repository.buildKey(date, lesson.time, lesson.lessonNumber, lesson.subject)]
+                        ?.hasVisibleContent == true
+                }
+            }
+        }
+    }
 
     val listState = rememberLazyListState()
     var hasScrolledToInitial by remember { mutableStateOf(false) }
@@ -223,8 +317,16 @@ fun WeeklyHomeworkSheet(
         }
     }
 
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val density = LocalDensity.current
+    val imeVisible = WindowInsets.ime.getBottom(density) > 0
+
     BackHandler {
-        onDismiss()
+        if (imeVisible) {
+            keyboardController?.hide()
+        } else {
+            onDismiss()
+        }
     }
 
     val isModern = isNycModern
@@ -240,7 +342,7 @@ fun WeeklyHomeworkSheet(
     val subtitleFont = if (isModern) NycMonoFamily else ShareTechMonoFamily
 
     val totalNotesCount = remember(notesMap) {
-        notesMap.values.count { it.rawText.isNotBlank() }
+        notesMap.values.count { it.hasVisibleContent }
     }
 
     Box(
@@ -282,7 +384,11 @@ fun WeeklyHomeworkSheet(
                             color = textColor
                         )
                         Text(
-                            text = stringResource(R.string.notes_count_fmt, totalNotesCount),
+                            text = pluralStringResource(
+                                R.plurals.notes_total_count,
+                                totalNotesCount,
+                                totalNotesCount
+                            ),
                             fontFamily = subtitleFont,
                             fontSize = 10.sp,
                             color = mutedColor
@@ -303,6 +409,29 @@ fun WeeklyHomeworkSheet(
                 }
             }
 
+            if (allWeeks.isNotEmpty()) {
+                WeeklyNotesSearchBar(
+                    query = searchQuery,
+                    onQueryChange = { searchQuery = it },
+                    tags = allTags,
+                    selectedTag = selectedTag,
+                    onTagSelected = { selectedTag = it }
+                )
+                if (isFiltering) {
+                    Text(
+                        text = pluralStringResource(
+                            R.plurals.notes_found_count,
+                            visibleNoteCount,
+                            visibleNoteCount
+                        ),
+                        fontFamily = subtitleFont,
+                        fontSize = 10.sp,
+                        color = mutedColor,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
             // Continuous vertical list of all loaded weeks
             if (allWeeks.isEmpty()) {
                 Box(
@@ -318,6 +447,54 @@ fun WeeklyHomeworkSheet(
                         color = mutedColor
                     )
                 }
+            } else if (isFiltering && matchedNoteKeys != null && visibleWeeks.isEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.notes_search_empty_title),
+                        fontFamily = titleFont,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = textColor
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = stringResource(R.string.notes_search_empty_hint),
+                        fontFamily = subtitleFont,
+                        fontSize = 10.sp,
+                        color = mutedColor
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Box(
+                        modifier = Modifier
+                            .heightIn(min = 44.dp)
+                            .clip(if (isModern) RoundedCornerShape(10.dp) else RoundedCornerShape(0.dp))
+                            .border(
+                                1.dp,
+                                accentColor.copy(alpha = 0.5f),
+                                if (isModern) RoundedCornerShape(10.dp) else RoundedCornerShape(0.dp)
+                            )
+                            .clickable {
+                                searchQuery = ""
+                                selectedTag = null
+                            }
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = stringResource(R.string.notes_search_reset),
+                            fontFamily = subtitleFont,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = accentColor
+                        )
+                    }
+                }
             } else {
                 LazyColumn(
                     state = listState,
@@ -327,8 +504,8 @@ fun WeeklyHomeworkSheet(
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    allWeeks.forEach { week ->
-                        val isExpanded = week.startDate in expandedWeeks
+                    visibleWeeks.forEach { week ->
+                        val isExpanded = isFiltering || week.startDate in expandedWeeks
                         val isCurrent = (week.offsetWeeks == 0)
 
                         // Week Separator Header with adaptive borders and accordion toggle
@@ -344,10 +521,12 @@ fun WeeklyHomeworkSheet(
                                 notesMap = notesMap,
                                 repository = repository,
                                 onToggle = {
-                                    expandedWeeks = if (isExpanded) {
-                                        expandedWeeks - week.startDate
-                                    } else {
-                                        expandedWeeks + week.startDate
+                                    if (!isFiltering) {
+                                        expandedWeeks = if (isExpanded) {
+                                            expandedWeeks - week.startDate
+                                        } else {
+                                            expandedWeeks + week.startDate
+                                        }
                                     }
                                 }
                             )
@@ -383,6 +562,7 @@ fun WeeklyHomeworkSheet(
                                             day = day,
                                             lesson = lesson,
                                             note = note,
+                                            photoStore = repository.photoStore,
                                             textColor = textColor,
                                             mutedColor = mutedColor,
                                             accentColor = accentColor,
@@ -396,6 +576,19 @@ fun WeeklyHomeworkSheet(
                                                     subject = lesson.subject,
                                                     teacher = lesson.teacher
                                                 )
+                                            },
+                                            onPreview = {
+                                                activePreviewParams = EditorLaunchParams(
+                                                    dateString = day.dateString.ifEmpty { week.startDate },
+                                                    lessonNumber = lesson.lessonNumber,
+                                                    time = lesson.time,
+                                                    subject = lesson.subject,
+                                                    teacher = lesson.teacher
+                                                )
+                                            },
+                                            onPhotoOpen = { attachment ->
+                                                viewerPhoto = attachment
+                                                viewerTag = note?.lessonTag
                                             }
                                         )
                                     }
@@ -441,6 +634,15 @@ fun WeeklyHomeworkSheet(
                 onDismiss = { activeEditorParams = null }
             )
         }
+
+        viewerPhoto?.let { attachment ->
+            NotePhotoViewer(
+                attachment = attachment,
+                store = repository.photoStore,
+                tag = viewerTag,
+                onDismiss = { viewerPhoto = null }
+            )
+        }
     }
 }
 
@@ -475,22 +677,25 @@ private fun WeekDividerCard(
         week.days.sumOf { it.lessons.size }
     }
     val totalNotesInWeek = remember(week, notesMap) {
-        week.days.flatMap { it.lessons }.count { lesson ->
-            val key = repository.buildKey(
-                dateString = week.days.firstOrNull { d -> d.lessons.contains(lesson) }?.dateString?.ifEmpty { week.startDate } ?: week.startDate,
-                time = lesson.time,
-                lessonNumber = lesson.lessonNumber,
-                subject = lesson.subject
-            )
-            notesMap[key]?.rawText?.isNotBlank() == true
+        week.days.sumOf { day ->
+            val date = day.dateString.ifEmpty { week.startDate }
+            day.lessons.count { lesson ->
+                val key = repository.buildKey(
+                    dateString = date,
+                    time = lesson.time,
+                    lessonNumber = lesson.lessonNumber,
+                    subject = lesson.subject
+                )
+                notesMap[key]?.hasVisibleContent == true
+            }
         }
     }
 
     val currentTag = stringResource(R.string.notes_week_current_tag)
     val weekLabel = when {
-        isCurrent -> "НЕДЕЛЯ 0 ($currentTag)"
-        week.offsetWeeks > 0 -> "НЕДЕЛЯ +${week.offsetWeeks}"
-        else -> "НЕДЕЛЯ ${week.offsetWeeks}"
+        isCurrent -> stringResource(R.string.notes_week_current_fmt, 0, currentTag)
+        week.offsetWeeks > 0 -> stringResource(R.string.notes_week_positive_fmt, week.offsetWeeks)
+        else -> stringResource(R.string.notes_week_fmt, week.offsetWeeks)
     }
     val dateLabel = if (week.startDate.isNotEmpty()) "${week.startDate} — ${week.endDate}" else ""
 
@@ -556,7 +761,19 @@ private fun WeekDividerCard(
                         .padding(horizontal = 7.dp, vertical = 3.dp)
                 ) {
                     Text(
-                        text = stringResource(R.string.notes_collapsed_summary, totalLessons, totalNotesInWeek),
+                        text = stringResource(
+                            R.string.notes_collapsed_summary_fmt,
+                            pluralStringResource(
+                                R.plurals.notes_lessons_count,
+                                totalLessons,
+                                totalLessons
+                            ),
+                            pluralStringResource(
+                                R.plurals.notes_entries_count,
+                                totalNotesInWeek,
+                                totalNotesInWeek
+                            )
+                        ),
                         fontFamily = metaFont,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
@@ -590,7 +807,7 @@ private fun DayHeaderItem(
                 .background(accentColor, if (isModern) CircleShape else RoundedCornerShape(0.dp))
         )
         Text(
-            text = day.dayTitle.uppercase(),
+            text = localizedDayTitle(day),
             fontFamily = font,
             fontWeight = FontWeight.Bold,
             fontSize = 10.sp,
@@ -600,17 +817,21 @@ private fun DayHeaderItem(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun WeeklyLessonNoteCard(
     day: DaySchedule,
     lesson: LessonItem,
     note: ru.nya.nyeios.data.notes.LessonNote?,
+    photoStore: ru.nya.nyeios.data.notes.NotePhotoStore,
     textColor: Color,
     mutedColor: Color,
     accentColor: Color,
     borderColor: Color,
     panelBg: Color,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onPreview: () -> Unit,
+    onPhotoOpen: (NotePhotoAttachment) -> Unit
 ) {
     val isModern = isNycModern
     val cardShape = if (isModern) RoundedCornerShape(NycShapes.card) else RoundedCornerShape(0.dp)
@@ -618,7 +839,7 @@ private fun WeeklyLessonNoteCard(
     val titleFont = if (isModern) NycSansFamily else RajdhaniFamily
     val metaFont = if (isModern) NycMonoFamily else ShareTechMonoFamily
 
-    val hasNote = note != null && note.rawText.isNotBlank()
+    val hasNote = note?.hasVisibleContent == true
 
     Box(
         modifier = Modifier
@@ -630,7 +851,7 @@ private fun WeeklyLessonNoteCard(
                 color = if (hasNote) accentColor.copy(alpha = 0.8f) else borderColor,
                 shape = cardShape
             )
-            .clickable(onClick = onClick)
+            .combinedClickable(onClick = onClick, onLongClick = onPreview)
             .padding(12.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -644,7 +865,11 @@ private fun WeeklyLessonNoteCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    val pairStr = if (lesson.lessonNumber.isNotEmpty()) "ПАРА ${lesson.lessonNumber}" else "ЗАНЯТИЕ"
+                    val pairStr = if (lesson.lessonNumber.isNotEmpty()) {
+                        stringResource(R.string.notes_pair_fmt, lesson.lessonNumber)
+                    } else {
+                        stringResource(R.string.notes_activity_label)
+                    }
                     Text(
                         text = "$pairStr · ${lesson.time}",
                         fontFamily = metaFont,
@@ -693,30 +918,54 @@ private fun WeeklyLessonNoteCard(
                 )
             }
 
-            // Note Content or placeholder
+            // Note content, photos and derived tag
             if (hasNote) {
-                val formatted = remember(note!!.rawText) {
-                    RichTextFormatter.htmlToAnnotatedString(note.rawText)
-                }
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp)
-                        .clip(wellShape)
-                        .background(
-                            if (isModern) Color(0xFF131D2A) else textColor.copy(alpha = 0.04f),
-                            wellShape
+                if (note.rawText.isNotBlank()) {
+                    val formatted = remember(note.rawText) {
+                        RichTextFormatter.htmlToAnnotatedString(note.rawText)
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp)
+                            .clip(wellShape)
+                            .background(
+                                if (isModern) Color(0xFF131D2A) else textColor.copy(alpha = 0.04f),
+                                wellShape
+                            )
+                            .border(1.dp, accentColor.copy(alpha = 0.3f), wellShape)
+                            .padding(horizontal = 9.dp, vertical = 7.dp)
+                    ) {
+                        Text(
+                            text = formatted,
+                            fontSize = 11.sp,
+                            fontFamily = titleFont,
+                            color = textColor,
+                            lineHeight = 15.sp,
+                            maxLines = 6,
+                            overflow = TextOverflow.Ellipsis
                         )
-                        .border(1.dp, accentColor.copy(alpha = 0.3f), wellShape)
-                        .padding(horizontal = 9.dp, vertical = 7.dp)
-                ) {
-                    Text(
-                        text = formatted,
-                        fontSize = 11.sp,
-                        fontFamily = titleFont,
-                        color = textColor,
-                        lineHeight = 15.sp,
-                        maxLines = 6
+                    }
+                }
+                if (note.photoAttachments.orEmpty().isNotEmpty()) {
+                    NotePhotoStrip(
+                        attachments = note.photoAttachments,
+                        store = photoStore,
+                        textColor = textColor,
+                        mutedColor = mutedColor,
+                        accentColor = accentColor,
+                        onOpen = onPhotoOpen,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+                note.lessonTag?.let { tag ->
+                    LessonTagText(
+                        tag = tag,
+                        accentColor = accentColor,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 2.dp),
+                        fontSize = 9
                     )
                 }
             } else {

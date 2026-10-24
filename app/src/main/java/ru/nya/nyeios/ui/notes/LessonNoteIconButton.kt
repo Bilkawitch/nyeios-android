@@ -63,33 +63,39 @@ fun LessonNoteIconButton(
 
     Box(
         modifier = modifier
-            .size(26.dp)
-            .background(bg, shape)
-            .border(1.dp, border, shape)
-            .clip(shape)
+            .size(48.dp)
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick
             ),
         contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = Icons.Default.EditNote,
-            contentDescription = stringResource(R.string.notes_editor_title),
-            tint = iconTint,
-            modifier = Modifier.size(16.dp)
-        )
-
-        // Индикатор наличия сохраненной записи
-        if (hasNote) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(2.dp)
-                    .size(4.dp)
-                    .clip(CircleShape)
-                    .background(accentColor)
+        Box(
+            modifier = Modifier
+                .size(26.dp)
+                .background(bg, shape)
+                .border(1.dp, border, shape)
+                .clip(shape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.EditNote,
+                contentDescription = stringResource(R.string.notes_editor_title),
+                tint = iconTint,
+                modifier = Modifier.size(16.dp)
             )
+
+            // Индикатор наличия сохраненной записи
+            if (hasNote) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(2.dp)
+                        .size(4.dp)
+                        .clip(CircleShape)
+                        .background(accentColor)
+                )
+            }
         }
     }
 }

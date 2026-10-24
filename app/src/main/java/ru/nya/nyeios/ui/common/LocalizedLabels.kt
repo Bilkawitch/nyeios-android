@@ -7,6 +7,7 @@ import ru.nya.nyeios.data.floormap.FloorLevel
 import ru.nya.nyeios.data.floormap.RoomType
 import ru.nya.nyeios.data.floormap.RoomWing
 import ru.nya.nyeios.data.model.LessonType
+import ru.nya.nyeios.data.model.DaySchedule
 
 /**
  * Domain enums keep Russian titles because the data layer has no localized Context available.
@@ -47,6 +48,22 @@ fun localizedRoomWing(wing: RoomWing): String = stringResource(
 
 @Composable
 fun localizedFloorLevel(level: FloorLevel): String = stringResource(R.string.floor_level_fmt, level.number)
+
+@Composable
+fun localizedDayTitle(day: DaySchedule): String {
+    val full = when (day.dayName.trim().uppercase()) {
+        "ПН" -> stringResource(R.string.day_full_mon)
+        "ВТ" -> stringResource(R.string.day_full_tue)
+        "СР" -> stringResource(R.string.day_full_wed)
+        "ЧТ" -> stringResource(R.string.day_full_thu)
+        "ПТ" -> stringResource(R.string.day_full_fri)
+        "СБ" -> stringResource(R.string.day_full_sat)
+        "ВС" -> stringResource(R.string.day_full_sun)
+        else -> day.dayTitle.substringBefore(" - ").uppercase()
+    }
+    val date = day.dayTitle.substringAfter(" - ", "").ifBlank { day.dateString }
+    return if (date.isBlank()) full else "$full - $date"
+}
 
 /**
  * Staircase names arrive from the floor map JSON in Russian. Only the three known staircases
