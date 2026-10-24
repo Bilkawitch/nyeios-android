@@ -31,7 +31,9 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +45,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ru.nya.nyeios.R
 import ru.nya.nyeios.data.notes.LessonNotesRepository
+import ru.nya.nyeios.data.notes.NotePhotoAttachment
+import ru.nya.nyeios.data.notes.hasVisibleContent
+import ru.nya.nyeios.ui.notes.common.LessonTagText
+import ru.nya.nyeios.ui.notes.common.NotePhotoStrip
+import ru.nya.nyeios.ui.notes.common.NotePhotoViewer
 import ru.nya.nyeios.ui.notes.editor.RichTextFormatter
 import ru.nya.nyeios.ui.theme.NierBorder
 import ru.nya.nyeios.ui.theme.NierBorderLight
@@ -85,7 +92,8 @@ fun LessonNotePreviewSheet(
         repository.buildKey(dateString, time, lessonNumber, subject)
     }
     val note = notesMap[noteKey]
-    val hasContent = note != null && note.rawText.isNotBlank()
+    val hasContent = note?.hasVisibleContent == true
+    var viewerAttachment by remember { mutableStateOf<NotePhotoAttachment?>(null) }
 
     val isModern = isNycModern
     val bgCanvas = if (isModern) Color(0xFF0F172A) else NierPanel
@@ -113,7 +121,8 @@ fun LessonNotePreviewSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Header Bar
@@ -171,7 +180,11 @@ fun LessonNotePreviewSheet(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    val pairStr = if (lessonNumber.isNotEmpty()) "ПАРА $lessonNumber" else "ЗАНЯТИЕ"
+                    val pairStr = if (lessonNumber.isNotEmpty()) {
+                        stringResource(R.string.notes_pair_fmt, lessonNumber)
+                    } else {
+                        stringResource(R.string.notes_activity_label)
+                    }
                     Text(
                         text = "$pairStr · $time",
                         fontFamily = metaFont,
@@ -211,25 +224,42 @@ fun LessonNotePreviewSheet(
 
             // Note Content Box
             if (hasContent) {
-                val formatted = remember(note!!.rawText) {
-                    RichTextFormatter.htmlToAnnotatedString(note.rawText)
+                if (note!!.rawText.isNotBlank()) {
+                    val formatted = remember(note.rawText) {
+                        RichTextFormatter.htmlToAnnotatedString(note.rawText)
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 60.dp, max = 240.dp)
+                            .clip(noteBoxShape)
+                            .background(if (isModern) Color(0xFF131D2A) else textColor.copy(alpha = 0.04f), noteBoxShape)
+                            .border(1.dp, accentColor.copy(alpha = 0.4f), noteBoxShape)
+                            .padding(12.dp)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        Text(
+                            text = formatted,
+                            fontFamily = titleFont,
+                            fontSize = 13.sp,
+                            lineHeight = 18.sp,
+                            color = textColor
+                        )
+                    }
                 }
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 60.dp, max = 240.dp)
-                        .clip(noteBoxShape)
-                        .background(if (isModern) Color(0xFF131D2A) else textColor.copy(alpha = 0.04f), noteBoxShape)
-                        .border(1.dp, accentColor.copy(alpha = 0.4f), noteBoxShape)
-                        .padding(12.dp)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    Text(
-                        text = formatted,
-                        fontFamily = titleFont,
-                        fontSize = 13.sp,
-                        lineHeight = 18.sp,
-                        color = textColor
+                NotePhotoStrip(
+                    attachments = note.photoAttachments.orEmpty(),
+                    store = repository.photoStore,
+                    textColor = textColor,
+                    mutedColor = mutedColor,
+                    accentColor = accentColor,
+                    onOpen = { viewerAttachment = it }
+                )
+                note.lessonTag?.let { tag ->
+                    LessonTagText(
+                        tag = tag,
+                        accentColor = accentColor,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             } else {
@@ -291,5 +321,14 @@ fun LessonNotePreviewSheet(
 
             Spacer(modifier = Modifier.height(4.dp))
         }
+    }
+
+    viewerAttachment?.let { attachment ->
+        NotePhotoViewer(
+            attachment = attachment,
+            store = repository.photoStore,
+            tag = note?.lessonTag,
+            onDismiss = { viewerAttachment = null }
+        )
     }
 }

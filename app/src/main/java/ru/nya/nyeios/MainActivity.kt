@@ -170,6 +170,7 @@ class MainActivity : ComponentActivity() {
             }
 
             androidx.compose.runtime.CompositionLocalProvider(
+                androidx.activity.compose.LocalActivityResultRegistryOwner provides this@MainActivity,
                 LocalConfiguration provides localizedConfig,
                 LocalContext provides localizedContext
             ) {

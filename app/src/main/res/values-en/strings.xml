@@ -500,5 +500,53 @@
     <string name="notes_preview_empty_hint">Tap the button below to add your first note</string>
     <string name="notes_week_current_tag">CURRENT</string>
     <string name="notes_collapsed_summary">%1$d lessons · %2$d notes</string>
+    <string name="notes_search_placeholder">Search notes and captions...</string>
+    <string name="notes_search_clear">Clear search</string>
+    <string name="notes_filter_tag">Filter by tag</string>
+    <string name="notes_all_tags">All tags</string>
+    <string name="notes_selected_tag_clear">Clear tag</string>
+    <string name="notes_search_empty_title">Nothing found</string>
+    <string name="notes_search_empty_hint">Change the query or clear the tag filter</string>
+    <string name="notes_search_reset">Clear filters</string>
+    <string name="notes_photo_add">Add photo</string>
+    <string name="notes_photo_gallery">Gallery</string>
+    <string name="notes_photo_camera">Take photo</string>
+    <string name="notes_photo_caption">Photo caption...</string>
+    <string name="notes_photo_remove">Remove photo</string>
+    <string name="notes_photo_open">Open photo</string>
+    <string name="notes_photo_missing">Photo unavailable</string>
+    <string name="notes_photo_limit">A note can contain up to %1$d photos</string>
+    <string name="notes_photo_import_failed">Could not attach the photo</string>
+    <string name="notes_pair_fmt">LESSON %1$s</string>
+    <string name="notes_activity_label">LESSON</string>
+    <string name="notes_week_fmt">WEEK %1$d</string>
+    <string name="notes_week_positive_fmt">WEEK +%1$d</string>
+    <string name="notes_week_current_fmt">WEEK %1$d (%2$s)</string>
+    <string name="notes_collapsed_summary_fmt">%1$s · %2$s</string>
+    <string name="notes_toolbar_bold">Bold</string>
+    <string name="notes_toolbar_italic">Italic</string>
+    <string name="notes_toolbar_underline">Underline</string>
+    <string name="notes_toolbar_highlight">Highlight</string>
+    <string name="notes_toolbar_bullet">Bullet list</string>
+    <string name="notes_toolbar_numbered">Numbered list</string>
+    <string name="notes_toolbar_clear">Clear formatting</string>
+    <string name="notes_toolbar_undo">Undo</string>
+    <string name="notes_toolbar_redo">Redo</string>
+    <plurals name="notes_total_count">
+        <item quantity="one">%1$d note</item>
+        <item quantity="other">%1$d notes</item>
+    </plurals>
+    <plurals name="notes_found_count">
+        <item quantity="one">Found: %1$d</item>
+        <item quantity="other">Found: %1$d</item>
+    </plurals>
+    <plurals name="notes_lessons_count">
+        <item quantity="one">%1$d lesson</item>
+        <item quantity="other">%1$d lessons</item>
+    </plurals>
+    <plurals name="notes_entries_count">
+        <item quantity="one">%1$d note</item>
+        <item quantity="other">%1$d notes</item>
+    </plurals>
     <string name="action_back">Back</string>
 </resources>

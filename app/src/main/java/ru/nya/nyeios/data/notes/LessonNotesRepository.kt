@@ -24,6 +24,7 @@ class LessonNotesRepository(private val context: Context) {
     private val gson = Gson()
     private val scope = CoroutineScope(Dispatchers.IO)
     private val fileMutex = Mutex()
+    val photoStore = NotePhotoStore(context)
     private val notesFile: File
         get() = File(context.filesDir, "lesson_notes.json")
 
@@ -43,12 +44,14 @@ class LessonNotesRepository(private val context: Context) {
                 val type = object : TypeToken<List<LessonNote>>() {}.type
                 val list: List<LessonNote>? = gson.fromJson(json, type)
                 if (list != null) {
-                    list.forEach { note ->
+                    list.forEach { loaded ->
+                        val note = loaded.normalized()
                         notesMap[note.key] = note
                     }
                     _notesFlow.value = notesMap.toMap()
                 }
             }
+            photoStore.cleanupOrphans(notesMap.values)
         } catch (_: Exception) {
             // Ignore corrupted disk file
         }
@@ -59,13 +62,17 @@ class LessonNotesRepository(private val context: Context) {
     }
 
     fun saveNote(note: LessonNote) {
-        notesMap[note.key] = note
+        val normalized = note.normalized()
+        notesMap[normalized.key] = normalized
         _notesFlow.value = notesMap.toMap()
         persistAsync()
     }
 
     fun deleteNote(key: String) {
-        notesMap.remove(key)
+        notesMap.remove(key)?.let { note ->
+            note.photoAttachments.orEmpty().forEach(photoStore::deleteAttachment)
+            photoStore.deleteNoteFiles(key)
+        }
         _notesFlow.value = notesMap.toMap()
         persistAsync()
     }

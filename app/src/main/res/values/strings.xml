@@ -500,5 +500,61 @@
     <string name="notes_preview_empty_hint">Нажмите кнопку ниже, чтобы добавить первую запись</string>
     <string name="notes_week_current_tag">ТЕКУЩАЯ</string>
     <string name="notes_collapsed_summary">%1$d пар · %2$d записей</string>
+    <string name="notes_search_placeholder">Поиск по заметкам и подписям...</string>
+    <string name="notes_search_clear">Очистить поиск</string>
+    <string name="notes_filter_tag">Фильтр по тегу</string>
+    <string name="notes_all_tags">Все теги</string>
+    <string name="notes_selected_tag_clear">Сбросить тег</string>
+    <string name="notes_search_empty_title">Ничего не найдено</string>
+    <string name="notes_search_empty_hint">Измените запрос или сбросьте фильтр по тегу</string>
+    <string name="notes_search_reset">Сбросить фильтры</string>
+    <string name="notes_photo_add">Добавить фото</string>
+    <string name="notes_photo_gallery">Галерея</string>
+    <string name="notes_photo_camera">Сделать фото</string>
+    <string name="notes_photo_caption">Подпись к фото...</string>
+    <string name="notes_photo_remove">Удалить фото</string>
+    <string name="notes_photo_open">Открыть фото</string>
+    <string name="notes_photo_missing">Фото недоступно</string>
+    <string name="notes_photo_limit">К заметке можно прикрепить не больше %1$d фото</string>
+    <string name="notes_photo_import_failed">Не удалось прикрепить фото</string>
+    <string name="notes_pair_fmt">ПАРА %1$s</string>
+    <string name="notes_activity_label">ЗАНЯТИЕ</string>
+    <string name="notes_week_fmt">НЕДЕЛЯ %1$d</string>
+    <string name="notes_week_positive_fmt">НЕДЕЛЯ +%1$d</string>
+    <string name="notes_week_current_fmt">НЕДЕЛЯ %1$d (%2$s)</string>
+    <string name="notes_collapsed_summary_fmt">%1$s · %2$s</string>
+    <string name="notes_toolbar_bold">Жирный</string>
+    <string name="notes_toolbar_italic">Курсив</string>
+    <string name="notes_toolbar_underline">Подчеркнутый</string>
+    <string name="notes_toolbar_highlight">Выделение</string>
+    <string name="notes_toolbar_bullet">Список</string>
+    <string name="notes_toolbar_numbered">Нумерация</string>
+    <string name="notes_toolbar_clear">Очистить стиль</string>
+    <string name="notes_toolbar_undo">Отмена</string>
+    <string name="notes_toolbar_redo">Повтор</string>
+    <plurals name="notes_total_count">
+        <item quantity="one">%1$d запись</item>
+        <item quantity="few">%1$d записи</item>
+        <item quantity="many">%1$d записей</item>
+        <item quantity="other">%1$d записи</item>
+    </plurals>
+    <plurals name="notes_found_count">
+        <item quantity="one">Найдено: %1$d</item>
+        <item quantity="few">Найдено: %1$d</item>
+        <item quantity="many">Найдено: %1$d</item>
+        <item quantity="other">Найдено: %1$d</item>
+    </plurals>
+    <plurals name="notes_lessons_count">
+        <item quantity="one">%1$d пара</item>
+        <item quantity="few">%1$d пары</item>
+        <item quantity="many">%1$d пар</item>
+        <item quantity="other">%1$d пары</item>
+    </plurals>
+    <plurals name="notes_entries_count">
+        <item quantity="one">%1$d запись</item>
+        <item quantity="few">%1$d записи</item>
+        <item quantity="many">%1$d записей</item>
+        <item quantity="other">%1$d записи</item>
+    </plurals>
     <string name="action_back">Назад</string>
 </resources>
