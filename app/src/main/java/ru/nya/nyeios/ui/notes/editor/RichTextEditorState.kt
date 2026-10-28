@@ -286,8 +286,12 @@ class RichTextEditorState(
 }
 
 @Composable
-fun rememberRichTextEditorState(initialRawText: String = "", highlightColor: Color = RichTextFormatter.HighlightColor): RichTextEditorState {
-    return remember(initialRawText, highlightColor) {
+fun rememberRichTextEditorState(
+    initialRawText: String = "",
+    highlightColor: Color = RichTextFormatter.HighlightColor,
+    noteKey: String? = null
+): RichTextEditorState {
+    return remember(noteKey, initialRawText, highlightColor) {
         RichTextEditorState(initialRawText, highlightColor)
     }
 }

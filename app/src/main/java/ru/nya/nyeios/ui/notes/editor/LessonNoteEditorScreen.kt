@@ -132,6 +132,9 @@ fun LessonNoteEditorScreen(
     val noteKey = remember(dateString, time, lessonNumber, subject) {
         repository.buildKey(dateString, time, lessonNumber, subject)
     }
+    // Пары редактора фиксируются на момент открытия: заметка может быть сохранена
+    // только для той пары, чей редактор был открыт.
+    val launchedNoteKey = remember { noteKey }
 
     val existingNote = remember(noteKey) { repository.getNote(noteKey) }
     val initialRawText = remember(noteKey) { existingNote?.rawText ?: "" }
@@ -141,17 +144,21 @@ fun LessonNoteEditorScreen(
     var viewerAttachment by remember { mutableStateOf<NotePhotoAttachment?>(null) }
     var attachMenuOpen by remember { mutableStateOf(false) }
     var pendingCameraFile by remember { mutableStateOf<java.io.File?>(null) }
-    var saved by remember { mutableStateOf(false) }
+    var saved by remember(noteKey) { mutableStateOf(false) }
 
     val editorHighlightColor = if (isNycModern) NycCyan.copy(alpha = 0.35f) else Color(0xFFEAB308).copy(alpha = 0.35f)
     val editorState = rememberRichTextEditorState(
         initialRawText = initialRawText,
-        highlightColor = editorHighlightColor
+        highlightColor = editorHighlightColor,
+        noteKey = noteKey
     )
     val focusRequester = remember { FocusRequester() }
 
     fun saveCurrent() {
         if (saved) return
+        // Если параметры редактора успели смениться на другую пару, текст, набранный
+        // для исходной пары, не должен сохраняться под чужим ключом.
+        if (noteKey != launchedNoteKey) return
         saved = true
         val rawHtml = editorState.toRawHtml()
         val plainSnippet = editorState.toPlainSnippet()
