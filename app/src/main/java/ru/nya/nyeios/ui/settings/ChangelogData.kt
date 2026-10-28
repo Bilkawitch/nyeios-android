@@ -18,9 +18,29 @@ object ChangelogHistory {
     val releases: List<ChangelogVersion>
         get() = listOf(
             ChangelogVersion(
+                version = "0.3.1",
+                releaseDate = "28.10.2026",
+                isLatest = true,
+                sections = listOf(
+                    ChangelogSection(
+                        title = AppLocale.pick("ЗАМЕТКИ И ДЗ", "NOTES & HOMEWORK"),
+                        items = listOf(
+                            AppLocale.pick(
+                                "Вроде как поправил баг с самокопированием заметок.",
+                                "Seems the note self-copying bug is fixed."
+                            ),
+                            AppLocale.pick(
+                                "Теперь можно добавлять картинки к заметкам",
+                                "You can now add images to notes"
+                            )
+                        )
+                    )
+                )
+            ),
+            ChangelogVersion(
                 version = "0.3.0",
                 releaseDate = "19.10.2026",
-                isLatest = true,
+                isLatest = false,
                 sections = listOf(
                     ChangelogSection(
                         title = AppLocale.pick("ЗАМЕТКИ И ДЗ", "NOTES & HOMEWORK"),

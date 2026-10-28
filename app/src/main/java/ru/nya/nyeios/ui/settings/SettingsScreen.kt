@@ -1438,8 +1438,8 @@ internal fun VersionSettingsContent(
                             text = typewriterText(
                                 stringResource(
                                     R.string.version_label_fmt,
-                                    uiState.currentVersion.ifEmpty { "0.3.0" },
-                                    26
+                                    uiState.currentVersion.ifEmpty { ru.nya.nyeios.BuildConfig.VERSION_NAME },
+                                    ru.nya.nyeios.BuildConfig.VERSION_CODE
                                 ),
                                 0.25f
                             ),

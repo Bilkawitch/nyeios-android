@@ -1317,8 +1317,8 @@ private fun NycVersionContent(
                         Text(
                             text = stringResource(
                                 R.string.version_label_fmt,
-                                uiState.currentVersion.ifEmpty { "0.3.0" },
-                                26
+                                uiState.currentVersion.ifEmpty { ru.nya.nyeios.BuildConfig.VERSION_NAME },
+                                ru.nya.nyeios.BuildConfig.VERSION_CODE
                             ),
                             color = nycFaint,
                             fontSize = 10.5.sp,
