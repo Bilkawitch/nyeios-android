@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -133,6 +134,11 @@ fun NycScheduleScreen(
     var previewNoteLesson by remember { mutableStateOf<ScheduleActiveNoteLesson?>(null) }
     var isHomeworkSheetVisible by remember { mutableStateOf(false) }
 
+    // Scroll position of the day list per (week, day). The weekly homework sheet fully
+    // replaces the schedule content, so the state is kept outside the replaced subtree;
+    // otherwise closing the sheet would jump the list back to the top.
+    val dayListScrollStates = remember { mutableMapOf<Pair<Int, Int>, LazyListState>() }
+
     val context = LocalContext.current
     val notesRepo = remember { LessonNotesRepository.getInstance(context) }
     val notesMap by notesRepo.notesFlow.collectAsState()
@@ -162,7 +168,15 @@ fun NycScheduleScreen(
                 .fillMaxWidth()
                 .weight(1f)
         ) {
-            when (uiState) {
+            if (isHomeworkSheetVisible) {
+                // Шторка ДЗ на неделю полностью заменяет содержимое области:
+                // от ряда дней недели до нижней навигации.
+                WeeklyHomeworkSheet(
+                    currentSchedule = schedule,
+                    onDismiss = { isHomeworkSheetVisible = false },
+                    applyWindowInsets = false
+                )
+            } else when (uiState) {
                 is ScheduleUiState.Loading -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -249,7 +263,7 @@ fun NycScheduleScreen(
                         },
                         label = "nyc_day_schedule_transition",
                         modifier = Modifier.fillMaxSize()
-                    ) { (_, dayIdx) ->
+                    ) { (week, dayIdx) ->
                         val currentDay = uiState.schedule.days.getOrNull(dayIdx)
 
                         if (currentDay == null || currentDay.lessons.isEmpty()) {
@@ -297,7 +311,12 @@ fun NycScheduleScreen(
                                 )
 
                             val lessons = currentDay.lessons
+                            val dayScrollKey = week to dayIdx
+                            val dayListState = remember(dayScrollKey) {
+                                dayListScrollStates.getOrPut(dayScrollKey) { LazyListState() }
+                            }
                             LazyColumn(
+                                state = dayListState,
                                 modifier = Modifier.fillMaxSize(),
                                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = UiPreferencesManager.listSpace(10.dp)),
                                 verticalArrangement = Arrangement.spacedBy(UiPreferencesManager.listSpace(10.dp))
@@ -379,10 +398,13 @@ fun NycScheduleScreen(
             }
         }
 
-        // Нижний триггер открытия ДЗ на неделю (Скриншот 2)
-        HomeworkPullUpHandle(
-            onSwipeUp = { isHomeworkSheetVisible = true }
-        )
+        // Нижний триггер открытия ДЗ на неделю (Скриншот 2). Пока шторка открыта,
+        // плашка не композируется вовсе: ни узла разметки, ни узла доступности.
+        if (!isHomeworkSheetVisible) {
+            HomeworkPullUpHandle(
+                onSwipeUp = { isHomeworkSheetVisible = true }
+            )
+        }
 
         if (floorMapTargetRoom != null) {
             if (isNycModern) {
@@ -404,13 +426,6 @@ fun NycScheduleScreen(
                     }
                 )
             }
-        }
-
-        if (isHomeworkSheetVisible) {
-            WeeklyHomeworkSheet(
-                currentSchedule = (uiState as? ScheduleUiState.Success)?.schedule,
-                onDismiss = { isHomeworkSheetVisible = false }
-            )
         }
 
         if (previewNoteLesson != null) {
