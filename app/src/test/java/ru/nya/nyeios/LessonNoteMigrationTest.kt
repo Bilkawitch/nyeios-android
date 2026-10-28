@@ -225,4 +225,40 @@ class LessonNoteMigrationTest {
         assertEquals(2, result.removedDuplicates.size)
         assertTrue(result.removedDuplicates.all { it.rawText == "Презентация по чуме" })
     }
+
+    @Test
+    fun migrate_doesNotDeduplicateShortRepeatedNotes() {
+        val shortNo = note(
+            key = LessonNoteKey.buildKey("20.10", "10:10 - 11:40", "2", "Аналитическая химия"),
+            date = "20.10", number = "2", time = "10:10 - 11:40",
+            subject = "Аналитическая химия", rawText = "нет", updatedAt = 100L
+        )
+        val shortNoOtherPair = note(
+            key = LessonNoteKey.buildKey(
+                "20.10", "12:10 - 13:40", "3", "Пакеты прикладных программ современного учителя"
+            ),
+            date = "20.10", number = "3", time = "12:10 - 13:40",
+            subject = "Пакеты прикладных программ современного учителя", rawText = "нет", updatedAt = 200L
+        )
+        val seeLecture = note(
+            key = LessonNoteKey.buildKey("22.10", "10:10 - 11:40", "2", "Аналитическая химия"),
+            date = "22.10", number = "2", time = "10:10 - 11:40",
+            subject = "Аналитическая химия", rawText = "см. лекцию", updatedAt = 300L
+        )
+        val seeLectureOtherPair = note(
+            key = LessonNoteKey.buildKey(
+                "22.10", "12:10 - 13:40", "3", "Элективные дисциплины по физической культуре и спорту"
+            ),
+            date = "22.10", number = "3", time = "12:10 - 13:40",
+            subject = "Элективные дисциплины по физической культуре и спорту", rawText = "см. лекцию", updatedAt = 400L
+        )
+
+        val result = LessonNoteMigration.migrate(
+            listOf(shortNo, shortNoOtherPair, seeLecture, seeLectureOtherPair)
+        )
+
+        assertEquals(4, result.notes.size)
+        assertTrue(result.removedDuplicates.isEmpty())
+        assertFalse(result.changed)
+    }
 }

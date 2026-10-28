@@ -291,10 +291,10 @@ fun LessonNotePreviewSheet(
                     .fillMaxWidth()
                     .clip(buttonShape)
                     .background(accentColor, buttonShape)
-                    .clickable {
-                        onDismiss()
-                        onEdit()
-                    }
+                    // Callers read their pending lesson state inside onEdit before clearing it,
+                    // so the sheet must not be dismissed here: onDismiss() would null the state
+                    // and make the caller's own onEdit body throw KotlinNullPointerException.
+                    .clickable { onEdit() }
                     .padding(vertical = 11.dp),
                 contentAlignment = Alignment.Center
             ) {

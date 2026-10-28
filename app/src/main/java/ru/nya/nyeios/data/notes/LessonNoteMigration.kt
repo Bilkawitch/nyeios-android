@@ -31,6 +31,8 @@ data class LessonNoteMigrationResult(
  *    чуме», схлопываются: остаётся самая ранняя по `updatedAt`. Правило намеренно
  *    узкое и не может удалить уникальный контент:
  *    - `rawText` непустой и полностью совпадает, `plainSnippet` совпадает;
+ *    - очищенный `plainSnippet` не короче [MIN_DEDUPE_SNIPPET_LENGTH] (короткие пометки
+ *      вроде «нет» или «см. лекцию» пользователь ставит на разные пары осознанно);
  *    - у заметок нет фотографий (фото-вложения не трогаем никогда);
  *    - заметки относятся к одной календарной неделе (дата dd.MM);
  *    - ключи пары различаются (то есть это реально разные пары, а не одна запись).
@@ -38,6 +40,17 @@ data class LessonNoteMigrationResult(
  *    `files/lesson_notes_duplicates.json`.
  */
 object LessonNoteMigration {
+
+    /**
+     * Минимальная длина очищенного текста, начиная с которой одинаковые записи считаются
+     * размноженными багом, а не осознанно повторёнными пользователем. Порог 16 символов
+     * выбран с запасом над короткими служебными пометками, которые пользователи ставят
+     * на разные пары намеренно: «нет» (3), «нет дз» (6), «см. лекцию» (10). Такие записи
+     * не схлопываются никогда, а реальное размноженное ДЗ из отчёта («Презентация по
+     * чуме», 18 символов) — схлопывается. Риск потерять настоящую связь заметки с парой
+     * выше, чем польза от автоочистки коротких пометок.
+     */
+    private const val MIN_DEDUPE_SNIPPET_LENGTH = 16
 
     private const val WEEK_REFERENCE_YEAR = 2000
     private val DATE_PARTS = Regex("""(\d{1,2})\.(\d{1,2})""")
@@ -92,6 +105,7 @@ object LessonNoteMigration {
         companion object {
             fun of(note: LessonNote): ContentSignature? {
                 if (note.rawText.isBlank()) return null
+                if (note.plainSnippet.trim().length < MIN_DEDUPE_SNIPPET_LENGTH) return null
                 if (note.photoAttachments.isNotEmpty()) return null
                 val weekStart = weekStartOf(note.date) ?: return null
                 return ContentSignature(
