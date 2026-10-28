@@ -44,9 +44,13 @@ class LessonNotesRepository(private val context: Context) {
                 val type = object : TypeToken<List<LessonNote>>() {}.type
                 val list: List<LessonNote>? = gson.fromJson(json, type)
                 if (list != null) {
-                    list.forEach { loaded ->
-                        val note = loaded.normalized()
+                    val migration = LessonNoteMigration.migrate(list.map { it.normalized() })
+                    migration.notes.forEach { note ->
                         notesMap[note.key] = note
+                    }
+                    if (migration.changed) {
+                        archiveDuplicates(migration.removedDuplicates)
+                        persistAsync()
                     }
                     _notesFlow.value = notesMap.toMap()
                 }
@@ -61,9 +65,31 @@ class LessonNotesRepository(private val context: Context) {
         return notesMap[key]
     }
 
+    /**
+     * Сохраняет заметку строго под ключом, выведенным из её собственных полей.
+     * Ключ, переданный вызывающим кодом, игнорируется, если он не совпадает:
+     * заметка физически не может «переехать» на чужую пару.
+     */
     fun saveNote(note: LessonNote) {
         val normalized = note.normalized()
-        notesMap[normalized.key] = normalized
+        val canonicalKey = buildKey(
+            normalized.date,
+            normalized.time,
+            normalized.lessonNumber,
+            normalized.subject
+        )
+        val stored = normalized.copy(key = canonicalKey)
+        if (normalized.key != canonicalKey) {
+            val stale = notesMap[normalized.key]
+            if (stale != null &&
+                stale.subject == stored.subject &&
+                stale.date == stored.date &&
+                stale.time == stored.time
+            ) {
+                notesMap.remove(normalized.key)
+            }
+        }
+        notesMap[canonicalKey] = stored
         _notesFlow.value = notesMap.toMap()
         persistAsync()
     }
@@ -99,6 +125,37 @@ class LessonNotesRepository(private val context: Context) {
             }
         } catch (_: Exception) {
             // Log or ignore persistence failures
+        }
+    }
+
+    /**
+     * Складывает снятые миграцией дубли в отдельный файл, чтобы содержимое не терялось
+     * безвозвратно. Файл не участвует в отображении и может быть удалён вручную.
+     */
+    private fun archiveDuplicates(removed: List<LessonNote>) {
+        if (removed.isEmpty()) return
+        try {
+            val archiveFile = File(context.filesDir, "lesson_notes_duplicates.json")
+            val type = object : TypeToken<List<LessonNote>>() {}.type
+            val existing: List<LessonNote>? = if (archiveFile.exists()) {
+                try {
+                    gson.fromJson<List<LessonNote>>(archiveFile.readText(), type)
+                } catch (_: Exception) {
+                    null
+                }
+            } else {
+                null
+            }
+            val merged = LinkedHashMap<String, LessonNote>()
+            existing.orEmpty().forEach { archived ->
+                merged["${archived.key}@${archived.updatedAt}"] = archived
+            }
+            removed.forEach { duplicate ->
+                merged["${duplicate.key}@${duplicate.updatedAt}"] = duplicate
+            }
+            archiveFile.writeText(gson.toJson(merged.values.toList()))
+        } catch (_: Exception) {
+            // Archiving is best-effort; migration result is still valid without it.
         }
     }
 
@@ -237,12 +294,6 @@ class LessonNotesRepository(private val context: Context) {
             time: String,
             lessonNumber: String,
             subject: String
-        ): String {
-            val cleanDate = dateString.trim().replace('/', '.').replace('-', '.')
-            val cleanNum = lessonNumber.trim().ifEmpty { "0" }
-            val cleanTime = time.trim().replace(' ', '_')
-            val cleanSubj = subject.trim().lowercase(Locale.ROOT).replace(Regex("""[^a-zA-Zа-яА-Я0-9]"""), "_")
-            return "${cleanDate}_${cleanNum}_${cleanTime}_${cleanSubj.take(40)}"
-        }
+        ): String = LessonNoteKey.buildKey(dateString, time, lessonNumber, subject)
     }
 }

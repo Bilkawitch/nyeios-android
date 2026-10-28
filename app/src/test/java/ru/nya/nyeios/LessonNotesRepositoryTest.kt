@@ -40,9 +40,11 @@ class LessonNotesRepositoryTest {
         )
 
         assertEquals("Ключи для одинаковой даты и пары должны совпадать", key1, keySame)
-        assertNotEquals("Ключи для разных недель должны быть изолированы", key1, key2)
-        assertTrue(key1.contains("20.10.2026"))
-        assertTrue(key2.contains("27.10.2026"))
+        assertNotEquals("Ключи для разных дат должны быть изолированы", key1, key2)
+        // Дата канонизируется до dd.MM (год отбрасывается), нормализация дисциплины
+        // схлопывает пунктуацию и пробелы.
+        assertTrue(key1.startsWith("20.10_1_13:50-15:28_"))
+        assertTrue(key2.startsWith("27.10_1_13:50-15:28_"))
     }
 
     @Test
