@@ -198,11 +198,19 @@ private fun TripleChevronUp(
  * Полная поддержка тем оформления:
  * - В NyC-modern: мягкие скругленные карточки (16dp), чипы (9dp), круглые маркеры, отсутствие острых 90° углов.
  * - В YoRHa: строгие прямоугольные рамки (0dp), ShareTechMono, ASCII разделители.
+ *
+ * @param modifier внешний модификатор контейнера шторки. По умолчанию она
+ *   растягивается на всю область контента, которую ей отвёл экран расписания.
+ * @param applyWindowInsets `false`, когда шторка встроена в область контента,
+ *   которая уже лежит внутри Scaffold под системными панелями. Иначе
+ *   `statusBarsPadding()/navigationBarsPadding()` сдвигали бы заголовок вниз.
  */
 @Composable
 fun WeeklyHomeworkSheet(
     currentSchedule: WeekSchedule?,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+    applyWindowInsets: Boolean = true
 ) {
     val context = LocalContext.current
     val repository = remember { LessonNotesRepository.getInstance(context) }
@@ -345,12 +353,19 @@ fun WeeklyHomeworkSheet(
         notesMap.values.count { it.hasVisibleContent }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(bgCanvas)
+    val windowInsetsModifier = if (applyWindowInsets) {
+        Modifier
             .statusBarsPadding()
             .navigationBarsPadding()
+    } else {
+        Modifier
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(bgCanvas)
+            .then(windowInsetsModifier)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Header
