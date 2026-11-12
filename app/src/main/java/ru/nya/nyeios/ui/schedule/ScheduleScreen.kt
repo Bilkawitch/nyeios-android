@@ -62,6 +62,7 @@ import androidx.compose.material.icons.filled.Warning
 import ru.nya.nyeios.data.floormap.FloorMapRepository
 import ru.nya.nyeios.ui.common.isAuthRelatedMessage
 import ru.nya.nyeios.ui.common.localizeErrorMessage
+import ru.nya.nyeios.ui.common.localizedLessonScopeLabel
 import ru.nya.nyeios.ui.common.localizedLessonType
 import ru.nya.nyeios.ui.theme.UiPreferencesManager
 import androidx.compose.material3.Button
@@ -548,6 +549,10 @@ fun ScheduleScreen(
 
                                         LessonCard(
                                             lesson = lesson,
+                                            scopeLabel = localizedLessonScopeLabel(
+                                                lesson,
+                                                uiState.schedule.group
+                                            ),
                                             isToday = isDayToday,
                                             hasNote = hasNote,
                                             onNoteClick = {
@@ -907,6 +912,7 @@ fun ScheduleTransferItem(
 fun LessonCard(
     lesson: LessonItem,
     isToday: Boolean,
+    scopeLabel: String? = null,
     hasNote: Boolean = false,
     onNoteClick: () -> Unit = {},
     onNoteLongClick: () -> Unit = {},
@@ -1051,9 +1057,9 @@ fun LessonCard(
                                     letterSpacing = 0.8.sp
                                 )
                             }
-                            if (lesson.subgroup.isNotEmpty()) {
+                            if (!scopeLabel.isNullOrEmpty()) {
                                 Text(
-                                    text = "· ${lesson.subgroup.uppercase()}",
+                                    text = "· $scopeLabel",
                                     fontSize = 9.sp,
                                     fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
                                     color = ru.nya.nyeios.ui.theme.NierDim

@@ -8,6 +8,10 @@ import ru.nya.nyeios.data.floormap.RoomType
 import ru.nya.nyeios.data.floormap.RoomWing
 import ru.nya.nyeios.data.model.LessonType
 import ru.nya.nyeios.data.model.DaySchedule
+import ru.nya.nyeios.data.model.GroupShortName
+import ru.nya.nyeios.data.model.LessonItem
+import ru.nya.nyeios.data.model.LessonScope
+import ru.nya.nyeios.data.model.LessonScopeParser
 
 /**
  * Domain enums keep Russian titles because the data layer has no localized Context available.
@@ -24,6 +28,28 @@ fun localizedLessonType(type: LessonType): String = stringResource(
         LessonType.OTHER -> R.string.lesson_type_other
     }
 )
+
+@Composable
+fun localizedLessonScopeLabel(lesson: LessonItem, group: String?): String {
+    return when (LessonScopeParser.scopeOf(lesson.subgroup)) {
+        LessonScope.STREAM -> stringResource(R.string.lesson_scope_stream)
+        LessonScope.SUBGROUP -> {
+            val number = LessonScopeParser.subgroupNumber(lesson.subgroup)
+            if (number != null) {
+                stringResource(
+                    R.string.lesson_scope_subgroup_fmt,
+                    GroupShortName.of(group),
+                    number
+                ).trim()
+            } else {
+                // Нестандартная отметка портала: показываем как есть, но с кодом группы.
+                val raw = lesson.subgroup.trim()
+                val code = GroupShortName.of(group)
+                if (code.isEmpty()) raw else "$code $raw"
+            }
+        }
+    }
+}
 
 @Composable
 fun localizedRoomType(type: RoomType): String = stringResource(

@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -49,6 +51,7 @@ import androidx.compose.ui.res.stringResource
 import ru.nya.nyeios.R
 import ru.nya.nyeios.ui.common.isAuthRelatedMessage
 import ru.nya.nyeios.ui.common.localizeErrorMessage
+import ru.nya.nyeios.ui.common.localizedLessonScopeLabel
 import ru.nya.nyeios.ui.common.localizedLessonType
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,12 +65,15 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import ru.nya.nyeios.data.floormap.FloorMapRepository
 import ru.nya.nyeios.data.model.DaySchedule
 import ru.nya.nyeios.data.model.LessonItem
+import ru.nya.nyeios.data.model.LessonScope
+import ru.nya.nyeios.data.model.LessonScopeParser
 import ru.nya.nyeios.data.model.LessonType
 import ru.nya.nyeios.data.model.ScheduleUiState
 import ru.nya.nyeios.data.model.WeekSchedule
@@ -362,6 +368,10 @@ fun NycScheduleScreen(
 
                                     NycLessonCard(
                                         lesson = lesson,
+                                        scopeLabel = localizedLessonScopeLabel(
+                                            lesson,
+                                            uiState.schedule.group
+                                        ),
                                         isToday = isDayToday,
                                         hasNote = hasNote,
                                         onNoteClick = {
@@ -738,10 +748,12 @@ private fun NycDayRow(
 
 // ---------- Lesson card ----------
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun NycLessonCard(
     lesson: LessonItem,
     isToday: Boolean,
+    scopeLabel: String? = null,
     hasNote: Boolean = false,
     onNoteClick: () -> Unit = {},
     onNoteLongClick: () -> Unit = {},
@@ -905,13 +917,21 @@ private fun NycLessonCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    FlowRow(
+                        modifier = Modifier.weight(1f, fill = false),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         NycTypeBadge(text = localizedLessonType(lesson.type).uppercase(), color = typeColor)
-                        if (lesson.subgroup.isNotEmpty()) {
-                            NycTypeBadge(text = lesson.subgroup.uppercase(), color = NierAmber)
+                        if (!scopeLabel.isNullOrEmpty()) {
+                            NycTypeBadge(
+                                text = scopeLabel,
+                                color = if (LessonScopeParser.scopeOf(lesson.subgroup) == LessonScope.STREAM) {
+                                    nycMuted
+                                } else {
+                                    NierAmber
+                                }
+                            )
                         }
                     }
 
@@ -1040,7 +1060,10 @@ private fun NycLessonCard(
 }
 
 @Composable
-private fun NycTypeBadge(text: String, color: Color) {
+private fun NycTypeBadge(
+    text: String,
+    color: Color
+) {
     Row(
         modifier = Modifier
             .height(20.dp)
@@ -1059,7 +1082,8 @@ private fun NycTypeBadge(text: String, color: Color) {
             fontSize = 7.8.sp,
             letterSpacing = 1.sp,
             color = color,
-            maxLines = 1
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }

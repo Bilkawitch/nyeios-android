@@ -249,6 +249,8 @@
     <string name="lesson_left_min_fmt">ОСТАЛОСЬ %1$d МИН</string>
     <string name="lesson_left_sec_fmt">ОСТАЛОСЬ %1$d С</string>
     <string name="lesson_room_prefix">ауд. %1$s</string>
+    <string name="lesson_scope_stream">ПОТОК</string>
+    <string name="lesson_scope_subgroup_fmt">%1$s подгруппа %2$d</string>
 
     <!-- Map Extras -->
     <string name="map_route_cross_floor_title">Межэтажный маршрут</string>
