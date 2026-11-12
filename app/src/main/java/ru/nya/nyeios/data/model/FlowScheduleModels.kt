@@ -67,8 +67,14 @@ object PublicLessonKey {
 }
 
 /**
- * Состав потока: группы того же курса (первые две цифры номера группы), того же факультета
- * и той же формы обучения. Для 23АН-о-41 это 23АК-о-41, 23АФ-о-41 и 23ПП-о-41.
+ * Кандидаты в поток: группы того же курса (год — две первые цифры номера группы), того же
+ * факультета и той же формы обучения.
+ *
+ * Какие из кандидатов реально идут одним потоком, решается не по названию группы, а по
+ * фактическому совпадению пар: совпавшая пара (день + время + аудитория) означает, что две
+ * группы сидят в одной аудитории в одно время, то есть учатся вместе. Поэтому 23ПП-о-41
+ * остаётся кандидатом для 23АН-о-41, но потоковой для него не станет, пока у групп нет общих
+ * пар — и точно так же приложение работает для студента из 23ПП.
  */
 object FlowGroupMatcher {
 
@@ -76,8 +82,10 @@ object FlowGroupMatcher {
     const val MAX_SIBLINGS = 8
 
     fun yearPrefix(groupName: String): String? {
-        val prefix = groupName.trim().take(2)
-        return prefix.takeIf { it.length == 2 && it.all(Char::isDigit) }
+        val canonical = groupName.trim().lowercase(Locale.ROOT).filter { it.isLetterOrDigit() }
+        if (canonical.length < 2) return null
+        if (!canonical[0].isDigit() || !canonical[1].isDigit()) return null
+        return canonical.take(2)
     }
 
     fun siblings(own: PublicGroupInfo, all: List<PublicGroupInfo>): List<PublicGroupInfo> {

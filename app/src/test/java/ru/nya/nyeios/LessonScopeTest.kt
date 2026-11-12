@@ -127,7 +127,7 @@ class LessonScopeTest {
     }
 
     @Test
-    fun flowSiblingsShareYearFacultyAndEduForm() {
+    fun flowCandidatesShareYearFacultyAndEduForm() {
         val own = PublicGroupInfo(
             name = "23АН-о-41", compoundKey = "k0",
             facultyName = "Факультет иностранных языков", facultyUid = "f1",
@@ -137,6 +137,8 @@ class LessonScopeTest {
             own,
             own.copy(name = "23АК-о-41", compoundKey = "k1"),
             own.copy(name = "23АФ-о-41", compoundKey = "k2"),
+            // 23ПП — другой поток, но остаётся кандидатом: потоковость решается по общим парам,
+            // а не по названию группы, поэтому приложение работает и для студента из 23ПП.
             own.copy(name = "23ПП-о-41", compoundKey = "k3"),
             own.copy(name = "24АН-о-31", compoundKey = "k4"),
             own.copy(name = "23ИНФ-о-41", compoundKey = "k5", facultyUid = "f2"),
@@ -145,7 +147,15 @@ class LessonScopeTest {
 
         val siblings = FlowGroupMatcher.siblings(own, all).map { it.name }
         assertEquals(listOf("23АК-о-41", "23АФ-о-41", "23ПП-о-41"), siblings)
-        assertTrue(siblings.none { it == "23АН-о-41" })
+        assertTrue("23АН-о-41 не должен попадать в собственные соседи", "23АН-о-41" !in siblings)
+        assertTrue("23ПП-о-41 — кандидат, его пары просто не совпадут", "23ПП-о-41" in siblings)
+    }
+
+    @Test
+    fun yearPrefixIsTwoDigits() {
+        assertEquals("23", FlowGroupMatcher.yearPrefix("23АН-о-41"))
+        assertEquals("23", FlowGroupMatcher.yearPrefix("23ПП-о-41"))
+        assertNull(FlowGroupMatcher.yearPrefix("АН-41"))
     }
 
     @Test
