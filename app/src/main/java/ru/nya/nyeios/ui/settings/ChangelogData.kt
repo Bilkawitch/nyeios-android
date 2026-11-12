@@ -18,9 +18,34 @@ object ChangelogHistory {
     val releases: List<ChangelogVersion>
         get() = listOf(
             ChangelogVersion(
+                version = "0.3.2",
+                releaseDate = "12.11.2026",
+                isLatest = true,
+                sections = listOf(
+                    ChangelogSection(
+                        title = AppLocale.pick("ЗАМЕТКИ И ДЗ", "NOTES & HOMEWORK"),
+                        items = listOf(
+                            AppLocale.pick(
+                                "Поправил баг с вылетом, когда приложение в заметках встречает 2 одновременных параллельных пары в потоке и ломается на идентификаторах",
+                                "Fixed a crash when the notes screen meets two parallel stream lessons and fails on duplicate identifiers"
+                            )
+                        )
+                    ),
+                    ChangelogSection(
+                        title = AppLocale.pick("РАСПИСАНИЕ", "SCHEDULE"),
+                        items = listOf(
+                            AppLocale.pick(
+                                "КРАЙНЕ тестовая функция определения типа пары - пара группы, подгруппы, или потоковая.",
+                                "HIGHLY experimental lesson type detection: group, subgroup or stream lesson."
+                            )
+                        )
+                    )
+                )
+            ),
+            ChangelogVersion(
                 version = "0.3.1",
                 releaseDate = "28.10.2026",
-                isLatest = true,
+                isLatest = false,
                 sections = listOf(
                     ChangelogSection(
                         title = AppLocale.pick("ЗАМЕТКИ И ДЗ", "NOTES & HOMEWORK"),
