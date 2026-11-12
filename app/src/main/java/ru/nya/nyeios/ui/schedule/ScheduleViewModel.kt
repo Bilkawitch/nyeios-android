@@ -10,17 +10,23 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import ru.nya.nyeios.data.model.AuthSession
+import ru.nya.nyeios.data.model.FlowWeekState
 import ru.nya.nyeios.data.model.ScheduleUiState
 import ru.nya.nyeios.data.model.WeekSchedule
 import ru.nya.nyeios.data.repository.EiosRepository
+import ru.nya.nyeios.data.repository.PublicScheduleFlowRepository
 import java.time.LocalDate
 
 class ScheduleViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = EiosRepository.getInstance(application.applicationContext)
+    private val flowRepository = PublicScheduleFlowRepository.getInstance(application.applicationContext)
 
     private val _uiState = MutableStateFlow<ScheduleUiState>(ScheduleUiState.Loading)
     val uiState: StateFlow<ScheduleUiState> = _uiState.asStateFlow()
+
+    /** Тихо досчитанные уровни пар (поток/группа) по неделям. */
+    val flowWeeks: StateFlow<Map<String, FlowWeekState>> = flowRepository.weekStates
 
     val lastSyncTime: StateFlow<Long> = repository.lastSyncTime
 
@@ -97,11 +103,22 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                     }
                 }
                 _uiState.value = ScheduleUiState.Success(schedule, isRefreshing = false)
+                // Основное расписание уже показано; соседние группы досверяем тихо в фоне.
+                flowRepository.requestWeek(
+                    ownGroup = schedule.group,
+                    weekStart = schedule.startDate,
+                    weekEnd = schedule.endDate,
+                    forceRefresh = forceNetwork
+                )
             }.onFailure { error ->
+                val cachedSchedule = currentSchedule
                 _uiState.value = ScheduleUiState.Error(
                     message = error.localizedMessage ?: "Не удалось загрузить расписание",
-                    cachedSchedule = currentSchedule
+                    cachedSchedule = cachedSchedule
                 )
+                cachedSchedule?.let { cached ->
+                    flowRepository.requestWeek(cached.group, cached.startDate, cached.endDate)
+                }
             }
         }
     }

@@ -101,6 +101,7 @@ import androidx.compose.ui.unit.sp
 import ru.nya.nyeios.R
 import ru.nya.nyeios.data.model.AuthSession
 import ru.nya.nyeios.data.model.DaySchedule
+import ru.nya.nyeios.data.model.FlowWeekState
 import ru.nya.nyeios.data.model.LessonItem
 import ru.nya.nyeios.data.model.LessonType
 import ru.nya.nyeios.data.model.ScheduleUiState
@@ -158,6 +159,7 @@ fun ScheduleScreen(
     onSelectDay: (Int) -> Unit,
     onRefresh: () -> Unit,
     onOpenLogin: () -> Unit,
+    flowState: FlowWeekState? = null,
     modifier: Modifier = Modifier
 ) {
     var floorMapTargetRoom by rememberSaveable { mutableStateOf<String?>(null) }
@@ -551,7 +553,9 @@ fun ScheduleScreen(
                                             lesson = lesson,
                                             scopeLabel = localizedLessonScopeLabel(
                                                 lesson,
-                                                uiState.schedule.group
+                                                uiState.schedule.group,
+                                                dayIdx,
+                                                flowState
                                             ),
                                             isToday = isDayToday,
                                             hasNote = hasNote,

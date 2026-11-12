@@ -193,6 +193,10 @@ class MainActivity : ComponentActivity() {
                     val scheduleUiState by scheduleViewModel.uiState.collectAsState()
                     val weekOffset by scheduleViewModel.weekOffset.collectAsState()
                     val selectedDayIndex by scheduleViewModel.selectedDayIndex.collectAsState()
+                    val flowWeeks by scheduleViewModel.flowWeeks.collectAsState()
+                    val currentFlowState = (scheduleUiState as? ScheduleUiState.Success)?.schedule?.let { schedule ->
+                        flowWeeks["${schedule.startDate}_${schedule.endDate}"]
+                    }
 
                     val feedUiState by feedViewModel.uiState.collectAsState()
                     val feedSyncProgress by feedViewModel.feedSyncProgress.collectAsState()
@@ -820,7 +824,8 @@ class MainActivity : ComponentActivity() {
                                                 onCurrentWeek = { scheduleViewModel.currentWeek() },
                                                 onSelectDay = { scheduleViewModel.selectDay(it) },
                                                 onRefresh = { scheduleViewModel.refresh() },
-                                                onOpenLogin = { scheduleViewModel.showLoginSheet() }
+                                                onOpenLogin = { scheduleViewModel.showLoginSheet() },
+                                                flowState = currentFlowState
                                             )
                                         } else {
                                             ScheduleScreen(
@@ -832,7 +837,8 @@ class MainActivity : ComponentActivity() {
                                                 onCurrentWeek = { scheduleViewModel.currentWeek() },
                                                 onSelectDay = { scheduleViewModel.selectDay(it) },
                                                 onRefresh = { scheduleViewModel.refresh() },
-                                                onOpenLogin = { scheduleViewModel.showLoginSheet() }
+                                                onOpenLogin = { scheduleViewModel.showLoginSheet() },
+                                                flowState = currentFlowState
                                             )
                                         }
                                         1 -> if (isNycModern) {

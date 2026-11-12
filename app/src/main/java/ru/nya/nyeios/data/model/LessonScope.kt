@@ -3,35 +3,27 @@ package ru.nya.nyeios.data.model
 import java.util.Locale
 
 /**
- * Кому принадлежит пара в расписании группы.
+ * Кому принадлежит пара в расписании.
  *
- * Портал помечает подгрупповые пары строкой вида «Подгруппа 1»; у лекций для всего
- * потока (всех групп и подгрупп) эта строка пустая. Отдельной сущности «поток» в
- * разметке нет, поэтому пустая отметка трактуется как потоковая пара.
+ * - [SUBGROUP] — пара только для одной подгруппы (группы): портал пишет «Подгруппа N».
+ * - [GROUP] — пара для всей своей группы (всех её подгрупп), но не для потока.
+ * - [STREAM] — пара для всего потока (всех групп года), подтверждается расписанием соседних групп.
+ *
+ * В разметке ЭИОС потоковые и групповые пары выглядят одинаково (пустая строка подгруппы),
+ * поэтому GROUP/STREAM различаются только сверкой с публичным расписанием соседних групп.
  */
 enum class LessonScope {
-    /** Пара только для одной подгруппы (группы): в разметке есть номер подгруппы. */
     SUBGROUP,
-
-    /** Пара для всего потока: подгруппа в разметке не указана. */
+    GROUP,
     STREAM
 }
 
 object LessonScopeParser {
 
-    /** Маркеры потока на случай, если портал начнёт писать их в строку подгруппы. */
-    private val STREAM_MARKERS = listOf("поток", "все подгруппы", "все группы", "весь курс")
-
     private val DIGITS = Regex("""\d{1,2}""")
 
-    fun scopeOf(subgroup: String): LessonScope {
-        val clean = subgroup.trim().lowercase(Locale.ROOT)
-        return when {
-            clean.isEmpty() -> LessonScope.STREAM
-            STREAM_MARKERS.any { clean.contains(it) } -> LessonScope.STREAM
-            else -> LessonScope.SUBGROUP
-        }
-    }
+    /** Маркеры потока на случай, если портал начнёт писать их в строку подгруппы. */
+    private val STREAM_MARKERS = listOf("поток", "все подгруппы", "все группы", "весь курс")
 
     /**
      * Номер подгруппы из текста портала: «Подгруппа 1», «1 подгруппа», «1 п/г».
@@ -39,6 +31,41 @@ object LessonScopeParser {
      */
     fun subgroupNumber(subgroup: String): Int? =
         DIGITS.find(subgroup)?.value?.toIntOrNull()?.takeIf { it in 1..9 }
+
+    fun isStreamMarker(subgroup: String): Boolean {
+        val clean = subgroup.trim().lowercase(Locale.ROOT)
+        return clean.isNotEmpty() && STREAM_MARKERS.any { clean.contains(it) }
+    }
+}
+
+/**
+ * Определение уровня пары. Для пар с отметкой подгруппы достаточно текста портала,
+ * для пар без отметки нужен результат сверки с соседними группами.
+ */
+object LessonScopeResolver {
+
+    /**
+     * @param dayIndex индекс дня недели в расписании (0 — понедельник).
+     * @param flow состояние сверки недели; null — сверка ещё не дала данных.
+     * @return null, если уровень пока неизвестен (ждём тихую досверку).
+     */
+    fun scopeOf(lesson: LessonItem, dayIndex: Int, flow: FlowWeekState?): LessonScope? {
+        val subgroup = lesson.subgroup.trim()
+        if (subgroup.isNotEmpty()) {
+            return if (LessonScopeParser.isStreamMarker(subgroup)) {
+                LessonScope.STREAM
+            } else {
+                LessonScope.SUBGROUP
+            }
+        }
+        if (flow == null) return null
+        val key = PublicLessonKey.of(dayIndex, lesson.time, lesson.subject, lesson.room)
+        return when {
+            key in flow.streamLessonKeys -> LessonScope.STREAM
+            flow.isComplete -> LessonScope.GROUP
+            else -> null
+        }
+    }
 }
 
 /**

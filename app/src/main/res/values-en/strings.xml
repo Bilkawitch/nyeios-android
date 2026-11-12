@@ -250,6 +250,7 @@
     <string name="lesson_left_sec_fmt">%1$d SEC REMAINING</string>
     <string name="lesson_room_prefix">room %1$s</string>
     <string name="lesson_scope_stream">STREAM</string>
+    <string name="lesson_scope_group">GROUP</string>
     <string name="lesson_scope_subgroup_fmt">%1$s subgroup %2$d</string>
 
     <!-- Map Extras -->

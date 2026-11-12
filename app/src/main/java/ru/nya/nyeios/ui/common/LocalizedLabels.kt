@@ -9,9 +9,11 @@ import ru.nya.nyeios.data.floormap.RoomWing
 import ru.nya.nyeios.data.model.LessonType
 import ru.nya.nyeios.data.model.DaySchedule
 import ru.nya.nyeios.data.model.GroupShortName
+import ru.nya.nyeios.data.model.FlowWeekState
 import ru.nya.nyeios.data.model.LessonItem
 import ru.nya.nyeios.data.model.LessonScope
 import ru.nya.nyeios.data.model.LessonScopeParser
+import ru.nya.nyeios.data.model.LessonScopeResolver
 
 /**
  * Domain enums keep Russian titles because the data layer has no localized Context available.
@@ -29,10 +31,20 @@ fun localizedLessonType(type: LessonType): String = stringResource(
     }
 )
 
+/**
+ * Подпись принадлежности пары: «АН подгруппа 1», «ПОТОК» или «ГРУППА».
+ * null — уровень ещё неизвестен (идёт тихая сверка недели с соседними группами).
+ */
 @Composable
-fun localizedLessonScopeLabel(lesson: LessonItem, group: String?): String {
-    return when (LessonScopeParser.scopeOf(lesson.subgroup)) {
+fun localizedLessonScopeLabel(
+    lesson: LessonItem,
+    group: String?,
+    dayIndex: Int,
+    flow: FlowWeekState?
+): String? {
+    return when (LessonScopeResolver.scopeOf(lesson, dayIndex, flow)) {
         LessonScope.STREAM -> stringResource(R.string.lesson_scope_stream)
+        LessonScope.GROUP -> stringResource(R.string.lesson_scope_group)
         LessonScope.SUBGROUP -> {
             val number = LessonScopeParser.subgroupNumber(lesson.subgroup)
             if (number != null) {
@@ -48,6 +60,7 @@ fun localizedLessonScopeLabel(lesson: LessonItem, group: String?): String {
                 if (code.isEmpty()) raw else "$code $raw"
             }
         }
+        null -> null
     }
 }
 

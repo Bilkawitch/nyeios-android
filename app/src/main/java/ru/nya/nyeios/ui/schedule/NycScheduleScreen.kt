@@ -71,9 +71,10 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import ru.nya.nyeios.data.floormap.FloorMapRepository
 import ru.nya.nyeios.data.model.DaySchedule
+import ru.nya.nyeios.data.model.FlowWeekState
 import ru.nya.nyeios.data.model.LessonItem
 import ru.nya.nyeios.data.model.LessonScope
-import ru.nya.nyeios.data.model.LessonScopeParser
+import ru.nya.nyeios.data.model.LessonScopeResolver
 import ru.nya.nyeios.data.model.LessonType
 import ru.nya.nyeios.data.model.ScheduleUiState
 import ru.nya.nyeios.data.model.WeekSchedule
@@ -132,6 +133,7 @@ fun NycScheduleScreen(
     onSelectDay: (Int) -> Unit,
     onRefresh: () -> Unit,
     onOpenLogin: () -> Unit,
+    flowState: FlowWeekState? = null,
     modifier: Modifier = Modifier
 ) {
     var floorMapTargetRoom by rememberSaveable { mutableStateOf<String?>(null) }
@@ -370,8 +372,15 @@ fun NycScheduleScreen(
                                         lesson = lesson,
                                         scopeLabel = localizedLessonScopeLabel(
                                             lesson,
-                                            uiState.schedule.group
+                                            uiState.schedule.group,
+                                            dayIdx,
+                                            flowState
                                         ),
+                                        scopeIsStream = LessonScopeResolver.scopeOf(
+                                            lesson,
+                                            dayIdx,
+                                            flowState
+                                        ) == LessonScope.STREAM,
                                         isToday = isDayToday,
                                         hasNote = hasNote,
                                         onNoteClick = {
@@ -754,6 +763,7 @@ private fun NycLessonCard(
     lesson: LessonItem,
     isToday: Boolean,
     scopeLabel: String? = null,
+    scopeIsStream: Boolean = false,
     hasNote: Boolean = false,
     onNoteClick: () -> Unit = {},
     onNoteLongClick: () -> Unit = {},
@@ -926,11 +936,7 @@ private fun NycLessonCard(
                         if (!scopeLabel.isNullOrEmpty()) {
                             NycTypeBadge(
                                 text = scopeLabel,
-                                color = if (LessonScopeParser.scopeOf(lesson.subgroup) == LessonScope.STREAM) {
-                                    nycMuted
-                                } else {
-                                    NierAmber
-                                }
+                                color = if (scopeIsStream) nycMuted else NierAmber
                             )
                         }
                     }
