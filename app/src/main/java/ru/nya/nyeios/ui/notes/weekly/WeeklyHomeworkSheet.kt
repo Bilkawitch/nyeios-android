@@ -31,7 +31,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -524,7 +524,7 @@ fun WeeklyHomeworkSheet(
                         val isCurrent = (week.offsetWeeks == 0)
 
                         // Week Separator Header with adaptive borders and accordion toggle
-                        item(key = "week_${week.startDate}") {
+                        item(key = WeeklyHomeworkKeys.week(week)) {
                             WeekDividerCard(
                                 week = week,
                                 isCurrent = isCurrent,
@@ -551,7 +551,7 @@ fun WeeklyHomeworkSheet(
                             week.days.forEach { day ->
                                 if (day.lessons.isNotEmpty()) {
                                     // Day Header
-                                    item(key = "day_${week.startDate}_${day.dayTitle}") {
+                                    item(key = WeeklyHomeworkKeys.day(week, day)) {
                                         DayHeaderItem(
                                             day = day,
                                             mutedColor = mutedColor,
@@ -559,12 +559,12 @@ fun WeeklyHomeworkSheet(
                                         )
                                     }
 
-                                    items(
+                                    itemsIndexed(
                                         items = day.lessons,
-                                        key = { lesson ->
-                                            "${week.startDate}_${day.dateString}_${lesson.time}_${lesson.subject}_${lesson.lessonNumber}"
+                                        key = { index, lesson ->
+                                            WeeklyHomeworkKeys.lesson(week, day, lesson, index)
                                         }
-                                    ) { lesson ->
+                                    ) { _, lesson ->
                                         val noteKey = repository.buildKey(
                                             dateString = day.dateString.ifEmpty { week.startDate },
                                             time = lesson.time,
