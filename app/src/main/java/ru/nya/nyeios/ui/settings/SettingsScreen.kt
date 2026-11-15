@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -51,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
 import ru.nya.nyeios.data.net.EiosLastGetInfo
+import ru.nya.nyeios.data.net.EiosMonitorSummary
 import ru.nya.nyeios.data.net.PingResult
 import ru.nya.nyeios.data.update.GithubRateLimitState
 import android.widget.Toast
@@ -88,6 +90,7 @@ import ru.nya.nyeios.data.model.UpdateInfo
 import ru.nya.nyeios.data.net.EndpointHealthItem
 import ru.nya.nyeios.data.net.EndpointStatus
 import ru.nya.nyeios.ui.update.UpdateViewModel
+import android.net.Uri
 
 @Composable
 fun SettingsScreen(
@@ -123,7 +126,8 @@ fun SettingsScreen(
                         onMeasurePing = { viewModel.measurePing() },
                         onRefreshIp = { viewModel.fetchExternalIp() },
                         onRefreshAll = { viewModel.refreshDiagnostics() },
-                        onCheckEndpoints = { viewModel.checkEndpoints() }
+                        onCheckEndpoints = { viewModel.checkEndpoints() },
+                        onCheckViaServer = { viewModel.checkViaMonitor() }
                     )
                 }
                 SettingsSubtab.THEME -> {
@@ -211,7 +215,8 @@ private fun GeneralSettingsContent(
     onMeasurePing: () -> Unit,
     onRefreshIp: () -> Unit,
     onRefreshAll: () -> Unit,
-    onCheckEndpoints: () -> Unit
+    onCheckEndpoints: () -> Unit,
+    onCheckViaServer: () -> Unit
 ) {
     val scrollState = rememberScrollState()
 
@@ -369,6 +374,26 @@ private fun GeneralSettingsContent(
                     uiState.endpointsHealth.forEach { ep ->
                         EndpointHealthRow(item = ep)
                     }
+                }
+
+                // ── Отдельная проверка через сервер (ЛВС-монитор ЭИОС) ────
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(NierBorderLight)
+                )
+
+                ServerCheckRow(
+                    isChecking = uiState.isCheckingMonitor,
+                    onCheck = onCheckViaServer
+                )
+
+                if (uiState.monitorChecked) {
+                    MonitorDigestBlock(
+                        summary = uiState.monitorSummary,
+                        endpoint = uiState.monitorEndpoint
+                    )
                 }
             }
         }
@@ -1272,6 +1297,300 @@ private fun EndpointHealthRow(item: EndpointHealthItem) {
     }
 }
 
+// ── «ЧЕРЕЗ СЕРВЕР»: отдельная проверка ЛВС-монитора ЭИОС ─────────────────────
+// Независима от checkEndpoints()/endpointsHealth: собственный опрос, собственный
+// результат, встроенный в карточку (без диалога).
+
+@Composable
+private fun ServerCheckRow(
+    isChecking: Boolean,
+    onCheck: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(modifier = Modifier.weight(1f).padding(end = 10.dp)) {
+            Text(
+                text = stringResource(R.string.settings_server_check_title),
+                color = NierDim,
+                fontSize = 10.sp,
+                fontFamily = RajdhaniFamily,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.5.sp
+            )
+            Text(
+                text = stringResource(R.string.settings_server_check_desc),
+                color = NierDarkSecondary,
+                fontSize = 11.sp,
+                lineHeight = 14.sp,
+                fontFamily = RajdhaniFamily
+            )
+        }
+
+        NieROutlineButton(
+            text = if (isChecking) {
+                stringResource(R.string.settings_server_check_running)
+            } else {
+                stringResource(R.string.settings_server_check_action)
+            },
+            enabled = !isChecking,
+            color = NierBlue,
+            modifier = Modifier.heightIn(min = 44.dp),
+            onClick = onCheck
+        )
+    }
+}
+
+@Composable
+private fun MonitorDigestBlock(
+    summary: EiosMonitorSummary?,
+    endpoint: String?
+) {
+    val tone = monitorStatusTone(summary)
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(NierBg)
+            .border(1.dp, tone.copy(alpha = 0.65f))
+            .padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp)
+    ) {
+        if (summary == null) {
+            Text(
+                text = stringResource(R.string.eios_health_monitor_unreachable),
+                color = NierAmber,
+                fontSize = 11.sp,
+                lineHeight = 15.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = RajdhaniFamily
+            )
+        } else {
+            MonitorBadge(
+                text = summary.label.ifBlank { summary.state }.ifBlank { summary.status },
+                color = tone
+            )
+
+            if (summary.stale || !summary.confirmed) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (summary.stale) {
+                        MonitorBadge(
+                            text = stringResource(R.string.eios_health_badge_stale),
+                            color = NierAmber
+                        )
+                    }
+                    if (!summary.confirmed) {
+                        MonitorBadge(
+                            text = stringResource(R.string.eios_health_badge_unconfirmed),
+                            color = NierDim
+                        )
+                    }
+                }
+            }
+
+            if (summary.reason.isNotBlank()) {
+                Text(
+                    text = summary.reason,
+                    color = NierDarkSecondary,
+                    fontSize = 10.5.sp,
+                    lineHeight = 14.sp,
+                    fontFamily = RajdhaniFamily
+                )
+            }
+
+            MonitorMetricGrid(summary = summary)
+
+            summary.session?.let { session ->
+                val sessionLabel = when {
+                    !session.configured -> stringResource(R.string.settings_endpoint_auth_required)
+                    session.ok -> stringResource(R.string.login_active_session)
+                    else -> stringResource(R.string.login_auth_failed)
+                }
+                val sessionTone = when {
+                    !session.configured -> NierDim
+                    session.ok -> NierGreen
+                    else -> NierAmber
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Icon(
+                        imageVector = if (session.configured && session.ok) Icons.Default.Check else Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = sessionTone,
+                        modifier = Modifier.size(12.dp)
+                    )
+                    Text(
+                        text = sessionLabel,
+                        color = sessionTone,
+                        fontSize = 9.5.sp,
+                        fontFamily = RajdhaniFamily,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    )
+                }
+            }
+        }
+
+        if (!endpoint.isNullOrBlank()) {
+            Text(
+                text = stringResource(R.string.settings_server_source_fmt, monitorEndpointHost(endpoint)),
+                color = NierDim,
+                fontSize = 9.sp,
+                fontFamily = ShareTechMonoFamily,
+                letterSpacing = 0.5.sp,
+                maxLines = 1
+            )
+        }
+    }
+}
+
+@Composable
+private fun MonitorMetricGrid(summary: EiosMonitorSummary) {
+    val dash = stringResource(R.string.eios_health_value_dash)
+    val loading = summary.loading
+
+    val workers = loading.freeWorkers
+    val workersValue = if (workers != null) {
+        stringResource(R.string.eios_health_value_workers_fmt, workers)
+    } else {
+        dash
+    }
+    val queue = loading.queueRatio
+    val queueValue = if (queue != null) {
+        stringResource(R.string.eios_health_value_queue_fmt, queue)
+    } else {
+        dash
+    }
+    val rps = loading.rps
+    val rpsValue = if (rps != null) {
+        stringResource(R.string.eios_health_value_rps_fmt, rps)
+    } else {
+        dash
+    }
+    val uptime = summary.uptime
+    val uptimeValue = if (uptime != null) {
+        stringResource(R.string.eios_health_value_uptime_fmt, uptime.h24)
+    } else {
+        dash
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            MonitorMetricCell(
+                label = stringResource(R.string.eios_health_field_ttfb),
+                value = stringResource(R.string.eios_health_value_ttfb_fmt, loading.ttfbMs),
+                modifier = Modifier.weight(1f)
+            )
+            MonitorMetricCell(
+                label = stringResource(R.string.eios_health_field_workers),
+                value = workersValue,
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            MonitorMetricCell(
+                label = stringResource(R.string.eios_health_field_queue),
+                value = queueValue,
+                modifier = Modifier.weight(1f)
+            )
+            MonitorMetricCell(
+                label = stringResource(R.string.eios_health_field_rps),
+                value = rpsValue,
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            MonitorMetricCell(
+                label = stringResource(R.string.eios_health_field_age),
+                value = stringResource(R.string.eios_health_value_age_fmt, summary.ageSec),
+                modifier = Modifier.weight(1f)
+            )
+            MonitorMetricCell(
+                label = stringResource(R.string.eios_health_field_uptime),
+                value = uptimeValue,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun MonitorMetricCell(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .background(NierPanel)
+            .border(1.dp, NierBorderLight)
+            .padding(horizontal = 7.dp, vertical = 5.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        Text(
+            text = label,
+            color = NierDarkSecondary,
+            fontSize = 8.sp,
+            fontFamily = RajdhaniFamily,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.4.sp,
+            maxLines = 1
+        )
+        Text(
+            text = value,
+            color = NierDark,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = ShareTechMonoFamily,
+            maxLines = 1
+        )
+    }
+}
+
+@Composable
+private fun MonitorBadge(text: String, color: Color) {
+    Box(
+        modifier = Modifier
+            .background(color.copy(alpha = 0.15f))
+            .border(1.dp, color)
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+    ) {
+        Text(
+            text = text,
+            color = color,
+            fontSize = 9.sp,
+            fontFamily = RajdhaniFamily,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.5.sp,
+            maxLines = 1
+        )
+    }
+}
+
+private fun monitorStatusTone(summary: EiosMonitorSummary?): Color = when {
+    summary == null -> NierAmber
+    summary.status == EiosMonitorSummary.STATUS_UP -> NierGreen
+    summary.status == EiosMonitorSummary.STATUS_DEGRADED -> NierAmber
+    summary.status == EiosMonitorSummary.STATUS_DOWN -> NierRed
+    else -> NierDim
+}
+
+private fun monitorEndpointHost(endpoint: String): String =
+    Uri.parse(endpoint).host ?: endpoint
+
 @Composable
 private fun DiagnosticRow(
     label: String,
@@ -1355,10 +1674,11 @@ private fun NieROutlineButton(
     text: String,
     enabled: Boolean = true,
     color: Color = NierDark,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .border(
                 width = 1.dp,
                 color = if (enabled) color else NierBorderLight,

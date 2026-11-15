@@ -49,7 +49,7 @@
     <string name="eios_health_field_age">ДАННЫЕ МОНИТОРА</string>
     <string name="eios_health_field_uptime">АПТАЙМ 24Ч</string>
     <string name="eios_health_value_ttfb_fmt">%1$d мс</string>
-    <string name="eios_health_value_workers_fmt">%1$d свободно</string>
+    <string name="eios_health_value_workers_fmt">%1$d</string>
     <string name="eios_health_value_queue_fmt">×%1$.2f</string>
     <string name="eios_health_value_rps_fmt">%1$.1f зап/с</string>
     <string name="eios_health_value_age_fmt">%1$d с назад</string>

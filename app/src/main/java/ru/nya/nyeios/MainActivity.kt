@@ -102,6 +102,8 @@ import ru.nya.nyeios.ui.auth.NycLoginGate
 import ru.nya.nyeios.ui.auth.LoginFullscreenGate
 import ru.nya.nyeios.ui.debug.NetworkLogsBottomSheet
 import ru.nya.nyeios.ui.debug.NycLogsSheet
+import ru.nya.nyeios.ui.eios.EiosHealthViewModel
+import ru.nya.nyeios.ui.eios.EiosHealthWarningDialog
 import ru.nya.nyeios.ui.curriculum.CurriculumScreen
 import ru.nya.nyeios.ui.curriculum.NycCurriculumScreen
 import ru.nya.nyeios.ui.curriculum.CurriculumViewModel
@@ -184,6 +186,7 @@ class MainActivity : ComponentActivity() {
                     val curriculumViewModel: CurriculumViewModel = viewModel()
                     val updateViewModel: UpdateViewModel = viewModel()
                     val settingsViewModel: SettingsViewModel = viewModel()
+                    val eiosHealthViewModel: EiosHealthViewModel = viewModel()
 
                     val context = LocalContext.current
                     val currentAppVersion = remember(context) { AppVersionProvider.getVersionName(context) }
@@ -202,6 +205,7 @@ class MainActivity : ComponentActivity() {
                     val feedSyncProgress by feedViewModel.feedSyncProgress.collectAsState()
                     val curriculumUiState by curriculumViewModel.uiState.collectAsState()
                     val settingsUiState by settingsViewModel.uiState.collectAsState()
+                    val eiosHealthState by eiosHealthViewModel.uiState.collectAsState()
 
                     val authSession by scheduleViewModel.authSession.collectAsState()
                     val isLoginSheetVisible by scheduleViewModel.isLoginSheetVisible.collectAsState()
@@ -320,10 +324,12 @@ class MainActivity : ComponentActivity() {
                                             ).show()
                                             return@NycTopBar
                                         }
-                                        when (currentTab) {
-                                            0 -> scheduleViewModel.refresh()
-                                            1 -> feedViewModel.requestSyncFeed()
-                                            2 -> curriculumViewModel.refresh()
+                                        eiosHealthViewModel.requestRefresh {
+                                            when (currentTab) {
+                                                0 -> scheduleViewModel.refresh()
+                                                1 -> feedViewModel.requestSyncFeed()
+                                                2 -> curriculumViewModel.refresh()
+                                            }
                                         }
                                     },
                                     hasPendingUpdate = hasPendingUpdate,
@@ -573,10 +579,12 @@ class MainActivity : ComponentActivity() {
                                                     ).show()
                                                     return@IconButton
                                                 }
-                                                when (currentTab) {
-                                                    0 -> scheduleViewModel.refresh()
-                                                    1 -> feedViewModel.requestSyncFeed()
-                                                    2 -> curriculumViewModel.refresh()
+                                                eiosHealthViewModel.requestRefresh {
+                                                    when (currentTab) {
+                                                        0 -> scheduleViewModel.refresh()
+                                                        1 -> feedViewModel.requestSyncFeed()
+                                                        2 -> curriculumViewModel.refresh()
+                                                    }
                                                 }
                                             }
                                         ) {
@@ -823,7 +831,7 @@ class MainActivity : ComponentActivity() {
                                                 onNextWeek = { scheduleViewModel.nextWeek() },
                                                 onCurrentWeek = { scheduleViewModel.currentWeek() },
                                                 onSelectDay = { scheduleViewModel.selectDay(it) },
-                                                onRefresh = { scheduleViewModel.refresh() },
+                                                onRefresh = { eiosHealthViewModel.requestRefresh { scheduleViewModel.refresh() } },
                                                 onOpenLogin = { scheduleViewModel.showLoginSheet() },
                                                 flowState = currentFlowState
                                             )
@@ -836,7 +844,7 @@ class MainActivity : ComponentActivity() {
                                                 onNextWeek = { scheduleViewModel.nextWeek() },
                                                 onCurrentWeek = { scheduleViewModel.currentWeek() },
                                                 onSelectDay = { scheduleViewModel.selectDay(it) },
-                                                onRefresh = { scheduleViewModel.refresh() },
+                                                onRefresh = { eiosHealthViewModel.requestRefresh { scheduleViewModel.refresh() } },
                                                 onOpenLogin = { scheduleViewModel.showLoginSheet() },
                                                 flowState = currentFlowState
                                             )
@@ -845,29 +853,35 @@ class MainActivity : ComponentActivity() {
                                             NycFeedScreen(
                                                 uiState = feedUiState,
                                                 feedViewModel = feedViewModel,
-                                                onRefresh = { feedViewModel.refresh() },
-                                                onOpenLogin = { scheduleViewModel.showLoginSheet() }
+                                                onRefresh = { eiosHealthViewModel.requestRefresh { feedViewModel.refresh() } },
+                                                onOpenLogin = { scheduleViewModel.showLoginSheet() },
+                                                onRequestSync = {
+                                                    eiosHealthViewModel.requestRefresh { feedViewModel.requestSyncFeed() }
+                                                }
                                             )
                                         } else {
                                             FeedScreen(
                                                 uiState = feedUiState,
                                                 feedViewModel = feedViewModel,
-                                                onRefresh = { feedViewModel.refresh() },
-                                                onOpenLogin = { scheduleViewModel.showLoginSheet() }
+                                                onRefresh = { eiosHealthViewModel.requestRefresh { feedViewModel.refresh() } },
+                                                onOpenLogin = { scheduleViewModel.showLoginSheet() },
+                                                onRequestSync = {
+                                                    eiosHealthViewModel.requestRefresh { feedViewModel.requestSyncFeed() }
+                                                }
                                             )
                                         }
                                         2 -> if (isNycModern) {
                                             NycCurriculumScreen(
                                                 uiState = curriculumUiState,
                                                 onSelectTerm = { curriculumViewModel.selectTerm(it) },
-                                                onRefresh = { curriculumViewModel.refresh() },
+                                                onRefresh = { eiosHealthViewModel.requestRefresh { curriculumViewModel.refresh() } },
                                                 onOpenLogin = { scheduleViewModel.showLoginSheet() }
                                             )
                                         } else {
                                             CurriculumScreen(
                                                 uiState = curriculumUiState,
                                                 onSelectTerm = { curriculumViewModel.selectTerm(it) },
-                                                onRefresh = { curriculumViewModel.refresh() },
+                                                onRefresh = { eiosHealthViewModel.requestRefresh { curriculumViewModel.refresh() } },
                                                 onOpenLogin = { scheduleViewModel.showLoginSheet() }
                                             )
                                         }
@@ -894,6 +908,17 @@ class MainActivity : ComponentActivity() {
                                     .align(Alignment.BottomCenter)
                                     .padding(bottom = 8.dp)
                             )
+
+                            // EIOS health gate — themed warning when the monitor says the portal
+                            // is not in shape; the pending refresh waits for the user's decision.
+                            eiosHealthState.warning?.let { warning ->
+                                EiosHealthWarningDialog(
+                                    isNyc = isNycModern,
+                                    summary = warning,
+                                    onCancel = { eiosHealthViewModel.cancel() },
+                                    onProceed = { eiosHealthViewModel.proceed() }
+                                )
+                            }
 
                             // Fullscreen login gate — shown when user is not authenticated.
                             // Covers the entire content area (below TopAppBar, above BottomBar).

@@ -13,6 +13,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import ru.nya.nyeios.data.model.UpdateInfo
 import ru.nya.nyeios.data.net.EiosLastGetInfo
+import ru.nya.nyeios.data.net.EiosMonitorClient
+import ru.nya.nyeios.data.net.EiosMonitorSummary
 import ru.nya.nyeios.data.net.EndpointHealthItem
 import ru.nya.nyeios.data.net.EndpointStatus
 import ru.nya.nyeios.data.net.NetworkMetricsTracker
@@ -44,6 +46,13 @@ data class SettingsUiState(
     val isFetchingIp: Boolean = false,
     val isCheckingEndpoints: Boolean = false,
     val endpointsHealth: List<EndpointHealthItem> = emptyList(),
+    // Independent "check via server" probe of the LAN EIOS monitor. Deliberately separate
+    // from pingResult / endpointsHealth: it never runs the endpoint checks and never
+    // mutates their state.
+    val monitorSummary: EiosMonitorSummary? = null,
+    val isCheckingMonitor: Boolean = false,
+    val monitorChecked: Boolean = false,
+    val monitorEndpoint: String? = null,
     val currentVersion: String = "",
     val isCheckingUpdate: Boolean = false,
     val updateCheckStatus: String? = null,
@@ -274,6 +283,39 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             }
 
             _uiState.update { it.copy(isCheckingEndpoints = false) }
+        }
+    }
+
+    /**
+     * Отдельная проверка «ЧЕРЕЗ СЕРВЕР» — опрос ЛВС-монитора ЭИОС.
+     *
+     * Полностью независима от [checkEndpoints]: не вызывает его, не трогает [SettingsUiState.endpointsHealth]
+     * и не блокируется проверкой эндпоинтов (и наоборот). Пользователь может запустить её в любой момент.
+     *
+     * `fetch(force = true)` — ручная проверка всегда идёт в сеть, минуя 6-секундный кэш клиента.
+     * `null` — валидный результат «монитор не ответил ни по одному адресу» (fail-open, исключений нет),
+     * а не ошибка: UI покажет [R.string.eios_health_monitor_unreachable].
+     */
+    fun checkViaMonitor() {
+        if (_uiState.value.isCheckingMonitor) return
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isCheckingMonitor = true,
+                    monitorChecked = false,
+                    monitorSummary = null,
+                    monitorEndpoint = null
+                )
+            }
+            val fetch = EiosMonitorClient.getInstance(getApplication()).fetch(force = true)
+            _uiState.update {
+                it.copy(
+                    isCheckingMonitor = false,
+                    monitorChecked = true,
+                    monitorSummary = fetch?.summary,
+                    monitorEndpoint = fetch?.endpoint
+                )
+            }
         }
     }
 

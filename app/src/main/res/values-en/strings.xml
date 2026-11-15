@@ -49,7 +49,7 @@
     <string name="eios_health_field_age">MONITOR DATA</string>
     <string name="eios_health_field_uptime">UPTIME 24H</string>
     <string name="eios_health_value_ttfb_fmt">%1$d ms</string>
-    <string name="eios_health_value_workers_fmt">%1$d free</string>
+    <string name="eios_health_value_workers_fmt">%1$d</string>
     <string name="eios_health_value_queue_fmt">×%1$.2f</string>
     <string name="eios_health_value_rps_fmt">%1$.1f req/s</string>
     <string name="eios_health_value_age_fmt">%1$d s ago</string>

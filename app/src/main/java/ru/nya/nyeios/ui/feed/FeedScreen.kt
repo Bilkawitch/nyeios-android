@@ -110,6 +110,7 @@ fun FeedScreen(
     feedViewModel: FeedViewModel? = null,
     onRefresh: () -> Unit,
     onOpenLogin: () -> Unit,
+    onRequestSync: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -123,6 +124,10 @@ fun FeedScreen(
     val syncProgress by (feedViewModel?.feedSyncProgress ?: remember { MutableStateFlow(FeedSyncProgress()).asStateFlow() }).collectAsState()
     val showSyncDialog by (feedViewModel?.showSyncConfirmationDialog ?: remember { MutableStateFlow(false).asStateFlow() }).collectAsState()
     val isUserLoggedIn = feedViewModel?.isUserLoggedIn() ?: false
+
+    // Host routes this through the EIOS availability gate; the direct VM call is the
+    // fallback for standalone usage (previews/tests).
+    val requestSync: () -> Unit = onRequestSync ?: { feedViewModel?.requestSyncFeed() ?: onRefresh() }
 
     var localDownloadsSheetVisible by remember { mutableStateOf(false) }
     val isDownloadsSheetVisible = feedViewModel?.isDownloadsSheetVisible?.collectAsState()?.value
@@ -365,7 +370,7 @@ fun FeedScreen(
                                         .height(38.dp)
                                         .border(1.dp, ru.nya.nyeios.ui.theme.NierBorder)
                                         .background(ru.nya.nyeios.ui.theme.NierPanel)
-                                        .clickable { feedViewModel?.requestSyncFeed() ?: onRefresh() }
+                                        .clickable { requestSync() }
                                         .padding(horizontal = 14.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -520,7 +525,7 @@ fun FeedScreen(
                                             .height(38.dp)
                                             .border(1.dp, ru.nya.nyeios.ui.theme.NierBorder)
                                             .background(ru.nya.nyeios.ui.theme.NierPanel)
-                                            .clickable { feedViewModel?.requestSyncFeed() ?: onRefresh() }
+                                            .clickable { requestSync() }
                                             .padding(horizontal = 14.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -645,7 +650,7 @@ fun FeedScreen(
                                                 if (!isUserLoggedIn) {
                                                     onOpenLogin()
                                                 } else {
-                                                    feedViewModel?.requestSyncFeed() ?: onRefresh()
+                                                    requestSync()
                                                 }
                                             }
                                             .padding(horizontal = 10.dp, vertical = 6.dp),

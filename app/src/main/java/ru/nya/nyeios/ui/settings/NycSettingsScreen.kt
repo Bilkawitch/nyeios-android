@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -59,6 +60,7 @@ import androidx.compose.ui.res.stringResource
 import ru.nya.nyeios.R
 import ru.nya.nyeios.data.model.UpdateInfo
 import ru.nya.nyeios.data.net.EiosLastGetInfo
+import ru.nya.nyeios.data.net.EiosMonitorSummary
 import ru.nya.nyeios.data.net.EndpointHealthItem
 import ru.nya.nyeios.data.net.EndpointStatus
 import ru.nya.nyeios.data.net.PingResult
@@ -79,6 +81,7 @@ import ru.nya.nyeios.ui.update.UpdateViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import android.net.Uri
 
 // Parallel NyC-modern settings interface from mockup nyeios_redesign.html
 // (screen 6) and reference 6.png. Same ViewModel, same callbacks, same copy
@@ -117,7 +120,8 @@ fun NycSettingsScreen(
                         onMeasurePing = { viewModel.measurePing() },
                         onRefreshIp = { viewModel.fetchExternalIp() },
                         onRefreshAll = { viewModel.refreshDiagnostics() },
-                        onCheckEndpoints = { viewModel.checkEndpoints() }
+                        onCheckEndpoints = { viewModel.checkEndpoints() },
+                        onCheckViaServer = { viewModel.checkViaMonitor() }
                     )
                 }
                 SettingsSubtab.THEME -> {
@@ -251,7 +255,8 @@ private fun NycGeneralContent(
     onMeasurePing: () -> Unit,
     onRefreshIp: () -> Unit,
     onRefreshAll: () -> Unit,
-    onCheckEndpoints: () -> Unit
+    onCheckEndpoints: () -> Unit,
+    onCheckViaServer: () -> Unit
 ) {
     val scrollState = rememberScrollState()
 
@@ -464,6 +469,19 @@ private fun NycGeneralContent(
                 uiState.endpointsHealth.forEach { ep ->
                     NycEndpointHealthRow(item = ep)
                 }
+            }
+
+            // ── Отдельная проверка через сервер (ЛВС-монитор ЭИОС) ────
+            NycServerCheckRow(
+                isChecking = uiState.isCheckingMonitor,
+                onCheck = onCheckViaServer
+            )
+
+            if (uiState.monitorChecked) {
+                NycMonitorDigest(
+                    summary = uiState.monitorSummary,
+                    endpoint = uiState.monitorEndpoint
+                )
             }
         }
 
@@ -759,33 +777,44 @@ private fun NycMiniButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     enabled: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enlargedTouchTarget: Boolean = false
 ) {
-    Row(
+    // The visual stays a compact 28dp mini button; `enlargedTouchTarget` grows only the
+    // clickable layout box to the 44dp accessibility minimum and centers the pill inside it.
+    val touchModifier = if (enlargedTouchTarget) Modifier.heightIn(min = 44.dp) else Modifier
+    Box(
         modifier = modifier
-            .height(28.dp)
+            .then(touchModifier)
             .clip(RoundedCornerShape(9.dp))
-            .background(NycCyan.copy(alpha = if (enabled) 0.12f else 0.05f))
-            .border(1.dp, NycCyan.copy(alpha = if (enabled) 0.34f else 0.15f), RoundedCornerShape(9.dp))
-            .clickable(enabled = enabled) { onClick() }
-            .padding(horizontal = 9.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(5.dp)
+            .clickable(enabled = enabled) { onClick() },
+        contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = NycCyan,
-            modifier = Modifier.size(11.dp)
-        )
-        Text(
-            text = text,
-            fontFamily = NycMonoFamily,
-            fontWeight = FontWeight.Bold,
-            fontSize = 8.5.sp,
-            letterSpacing = 1.sp,
-            color = NycCyan
-        )
+        Row(
+            modifier = Modifier
+                .height(28.dp)
+                .clip(RoundedCornerShape(9.dp))
+                .background(NycCyan.copy(alpha = if (enabled) 0.12f else 0.05f))
+                .border(1.dp, NycCyan.copy(alpha = if (enabled) 0.34f else 0.15f), RoundedCornerShape(9.dp))
+                .padding(horizontal = 9.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = NycCyan,
+                modifier = Modifier.size(11.dp)
+            )
+            Text(
+                text = text,
+                fontFamily = NycMonoFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 8.5.sp,
+                letterSpacing = 1.sp,
+                color = NycCyan
+            )
+        }
     }
 }
 
@@ -1101,6 +1130,321 @@ private fun NycEndpointHealthRow(item: EndpointHealthItem) {
         }
     }
 }
+
+// ── «ЧЕРЕЗ СЕРВЕР»: отдельная проверка ЛВС-монитора ЭИОС ─────────────────────
+// Независима от checkEndpoints()/endpointsHealth: собственный опрос, собственный
+// результат, встроенный в карточку (без диалога).
+
+@Composable
+private fun NycServerCheckRow(
+    isChecking: Boolean,
+    onCheck: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(modifier = Modifier.weight(1f).padding(end = 10.dp)) {
+            Text(
+                text = stringResource(R.string.settings_server_check_title),
+                fontFamily = NycMonoFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 8.sp,
+                letterSpacing = 1.5.sp,
+                color = nycFaint
+            )
+            Text(
+                text = stringResource(R.string.settings_server_check_desc),
+                fontFamily = NycSansFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+                color = nycText,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+        }
+
+        NycMiniButton(
+            text = if (isChecking) {
+                stringResource(R.string.settings_server_check_running)
+            } else {
+                stringResource(R.string.settings_server_check_action)
+            },
+            icon = Icons.Default.Sync,
+            enabled = !isChecking,
+            onClick = onCheck,
+            enlargedTouchTarget = true
+        )
+    }
+}
+
+@Composable
+private fun NycMonitorDigest(
+    summary: EiosMonitorSummary?,
+    endpoint: String?
+) {
+    val tone = nycMonitorStatusTone(summary)
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 10.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(tone.copy(alpha = 0.06f))
+            .border(1.dp, tone.copy(alpha = 0.35f), RoundedCornerShape(10.dp))
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp)
+    ) {
+        if (summary == null) {
+            Text(
+                text = stringResource(R.string.eios_health_monitor_unreachable),
+                fontFamily = NycSansFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.5.sp,
+                lineHeight = 15.sp,
+                color = nycAmber
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(tone.copy(alpha = 0.12f))
+                    .border(1.dp, tone.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+                    .padding(horizontal = 7.dp, vertical = 3.dp)
+            ) {
+                Text(
+                    text = summary.label.ifBlank { summary.state }.ifBlank { summary.status },
+                    fontFamily = NycMonoFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 8.5.sp,
+                    letterSpacing = 0.8.sp,
+                    color = tone,
+                    maxLines = 1
+                )
+            }
+
+            if (summary.stale || !summary.confirmed) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (summary.stale) {
+                        NycMonitorBadge(
+                            text = stringResource(R.string.eios_health_badge_stale),
+                            color = nycAmber
+                        )
+                    }
+                    if (!summary.confirmed) {
+                        NycMonitorBadge(
+                            text = stringResource(R.string.eios_health_badge_unconfirmed),
+                            color = nycMuted
+                        )
+                    }
+                }
+            }
+
+            if (summary.reason.isNotBlank()) {
+                Text(
+                    text = summary.reason,
+                    fontFamily = NycSansFamily,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 10.5.sp,
+                    lineHeight = 14.sp,
+                    color = nycBody
+                )
+            }
+
+            NycMonitorMetricGrid(summary = summary)
+
+            summary.session?.let { session ->
+                val sessionLabel = when {
+                    !session.configured -> stringResource(R.string.settings_endpoint_auth_required)
+                    session.ok -> stringResource(R.string.login_active_session)
+                    else -> stringResource(R.string.login_auth_failed)
+                }
+                val sessionTone = when {
+                    !session.configured -> nycFaint
+                    session.ok -> nycGreen
+                    else -> nycAmber
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Icon(
+                        imageVector = if (session.configured && session.ok) Icons.Default.Check else Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = sessionTone,
+                        modifier = Modifier.size(12.dp)
+                    )
+                    Text(
+                        text = sessionLabel,
+                        fontFamily = NycMonoFamily,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 8.5.sp,
+                        letterSpacing = 0.8.sp,
+                        color = sessionTone
+                    )
+                }
+            }
+        }
+
+        if (!endpoint.isNullOrBlank()) {
+            Text(
+                text = stringResource(R.string.settings_server_source_fmt, nycMonitorEndpointHost(endpoint)),
+                fontFamily = NycMonoFamily,
+                fontWeight = FontWeight.Medium,
+                fontSize = 8.sp,
+                letterSpacing = 0.8.sp,
+                color = nycFaint,
+                maxLines = 1
+            )
+        }
+    }
+}
+
+@Composable
+private fun NycMonitorMetricGrid(summary: EiosMonitorSummary) {
+    val dash = stringResource(R.string.eios_health_value_dash)
+    val loading = summary.loading
+
+    val workers = loading.freeWorkers
+    val workersValue = if (workers != null) {
+        stringResource(R.string.eios_health_value_workers_fmt, workers)
+    } else {
+        dash
+    }
+    val queue = loading.queueRatio
+    val queueValue = if (queue != null) {
+        stringResource(R.string.eios_health_value_queue_fmt, queue)
+    } else {
+        dash
+    }
+    val rps = loading.rps
+    val rpsValue = if (rps != null) {
+        stringResource(R.string.eios_health_value_rps_fmt, rps)
+    } else {
+        dash
+    }
+    val uptime = summary.uptime
+    val uptimeValue = if (uptime != null) {
+        stringResource(R.string.eios_health_value_uptime_fmt, uptime.h24)
+    } else {
+        dash
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            NycMonitorMetricCell(
+                label = stringResource(R.string.eios_health_field_ttfb),
+                value = stringResource(R.string.eios_health_value_ttfb_fmt, loading.ttfbMs),
+                modifier = Modifier.weight(1f)
+            )
+            NycMonitorMetricCell(
+                label = stringResource(R.string.eios_health_field_workers),
+                value = workersValue,
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            NycMonitorMetricCell(
+                label = stringResource(R.string.eios_health_field_queue),
+                value = queueValue,
+                modifier = Modifier.weight(1f)
+            )
+            NycMonitorMetricCell(
+                label = stringResource(R.string.eios_health_field_rps),
+                value = rpsValue,
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            NycMonitorMetricCell(
+                label = stringResource(R.string.eios_health_field_age),
+                value = stringResource(R.string.eios_health_value_age_fmt, summary.ageSec),
+                modifier = Modifier.weight(1f)
+            )
+            NycMonitorMetricCell(
+                label = stringResource(R.string.eios_health_field_uptime),
+                value = uptimeValue,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun NycMonitorMetricCell(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .nycWell(8.dp)
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        Text(
+            text = label,
+            fontFamily = NycMonoFamily,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 7.5.sp,
+            letterSpacing = 1.sp,
+            color = nycMuted,
+            maxLines = 1
+        )
+        Text(
+            text = value,
+            fontFamily = NycMonoFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 10.5.sp,
+            color = nycText,
+            maxLines = 1
+        )
+    }
+}
+
+@Composable
+private fun NycMonitorBadge(text: String, color: Color) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(color.copy(alpha = 0.12f))
+            .border(1.dp, color.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+    ) {
+        Text(
+            text = text,
+            fontFamily = NycMonoFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 8.sp,
+            letterSpacing = 0.5.sp,
+            color = color,
+            maxLines = 1
+        )
+    }
+}
+
+private fun nycMonitorStatusTone(summary: EiosMonitorSummary?): Color = when {
+    summary == null -> nycAmber
+    summary.status == EiosMonitorSummary.STATUS_UP -> nycGreen
+    summary.status == EiosMonitorSummary.STATUS_DEGRADED -> nycAmber
+    summary.status == EiosMonitorSummary.STATUS_DOWN -> nycRed
+    else -> nycFaint
+}
+
+private fun nycMonitorEndpointHost(endpoint: String): String =
+    Uri.parse(endpoint).host ?: endpoint
 
 // ---------------------------------------------------------------------------
 // NyC THEME TAB

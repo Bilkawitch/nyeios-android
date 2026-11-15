@@ -101,6 +101,7 @@ fun NycFeedScreen(
     feedViewModel: FeedViewModel? = null,
     onRefresh: () -> Unit,
     onOpenLogin: () -> Unit,
+    onRequestSync: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -114,6 +115,10 @@ fun NycFeedScreen(
     val syncProgress by (feedViewModel?.feedSyncProgress ?: remember { MutableStateFlow(FeedSyncProgress()).asStateFlow() }).collectAsState()
     val showSyncDialog by (feedViewModel?.showSyncConfirmationDialog ?: remember { MutableStateFlow(false).asStateFlow() }).collectAsState()
     val isUserLoggedIn = feedViewModel?.isUserLoggedIn() ?: false
+
+    // Host routes this through the EIOS availability gate; the direct VM call is the
+    // fallback for standalone usage (previews/tests).
+    val requestSync: () -> Unit = onRequestSync ?: { feedViewModel?.requestSyncFeed() ?: onRefresh() }
 
     var localDownloadsSheetVisible by remember { mutableStateOf(false) }
     val isDownloadsSheetVisible = feedViewModel?.isDownloadsSheetVisible?.collectAsState()?.value
@@ -300,7 +305,7 @@ fun NycFeedScreen(
                                 if (!isUserLoggedIn) {
                                     onOpenLogin()
                                 } else {
-                                    feedViewModel?.requestSyncFeed() ?: onRefresh()
+                                    requestSync()
                                 }
                             }
                         )
