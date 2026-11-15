@@ -31,6 +31,34 @@
     <string name="settings_vpn_active">ACTIVE (VPN)</string>
     <string name="settings_vpn_disabled">DISABLED</string>
 
+    <!-- Settings: independent check via the EIOS monitor server -->
+    <string name="settings_server_check_title">CHECK VIA SERVER</string>
+    <string name="settings_server_check_desc">Separate check via the monitor; does not run the checks above</string>
+    <string name="settings_server_check_action">VIA SERVER</string>
+    <string name="settings_server_check_running">REQUESTING…</string>
+    <string name="settings_server_source_fmt">SOURCE: %1$s</string>
+
+    <!-- EIOS health monitor: refresh gate popup and digest -->
+    <string name="eios_health_dialog_title">EIOS is not in shape right now</string>
+    <string name="eios_health_dialog_message">According to our information, eios.gukolomna.ru is currently more dead than alive. Either overloaded or under maintenance. You can try refreshing, of course, but only if you have enough free time. Good luck</string>
+    <string name="eios_health_action_proceed">Try to refresh anyway</string>
+    <string name="eios_health_field_ttfb">DYNAMICS TTFB</string>
+    <string name="eios_health_field_workers">FREE WORKERS</string>
+    <string name="eios_health_field_queue">QUEUE</string>
+    <string name="eios_health_field_rps">THROUGHPUT</string>
+    <string name="eios_health_field_age">MONITOR DATA</string>
+    <string name="eios_health_field_uptime">UPTIME 24H</string>
+    <string name="eios_health_value_ttfb_fmt">%1$d ms</string>
+    <string name="eios_health_value_workers_fmt">%1$d free</string>
+    <string name="eios_health_value_queue_fmt">×%1$.2f</string>
+    <string name="eios_health_value_rps_fmt">%1$.1f req/s</string>
+    <string name="eios_health_value_age_fmt">%1$d s ago</string>
+    <string name="eios_health_value_uptime_fmt">%1$.0f%%</string>
+    <string name="eios_health_value_dash">—</string>
+    <string name="eios_health_badge_stale">STALE DATA</string>
+    <string name="eios_health_badge_unconfirmed">UNCONFIRMED</string>
+    <string name="eios_health_monitor_unreachable">Monitor unreachable: no response from either address</string>
+
     <!-- Settings: Themes -->
     <string name="theme_section_title">[ 01 · THEME SELECTION ]</string>
     <string name="theme_special_title">[ 02 · SPECIAL THEMES ]</string>

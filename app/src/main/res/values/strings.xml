@@ -31,6 +31,34 @@
     <string name="settings_vpn_active">АКТИВЕН (VPN)</string>
     <string name="settings_vpn_disabled">ОТКЛЮЧЕН</string>
 
+    <!-- Settings: independent check via the EIOS monitor server -->
+    <string name="settings_server_check_title">ПРОВЕРКА ЧЕРЕЗ СЕРВЕР</string>
+    <string name="settings_server_check_desc">Отдельная проверка по данным монитора, не запускает проверки выше</string>
+    <string name="settings_server_check_action">ЧЕРЕЗ СЕРВЕР</string>
+    <string name="settings_server_check_running">ЗАПРОС…</string>
+    <string name="settings_server_source_fmt">ИСТОЧНИК: %1$s</string>
+
+    <!-- EIOS health monitor: refresh gate popup and digest -->
+    <string name="eios_health_dialog_title">ЭИОС сейчас не в форме</string>
+    <string name="eios_health_dialog_message">По нашей информации eios.gukolomna.ru сейчас больше мертв, чем жив. Или загружен или техобслуживание. Попробовать обновиться конечно можно, но только если у вас есть достаточно свободного времени. Удачи</string>
+    <string name="eios_health_action_proceed">Попытаться обновиться</string>
+    <string name="eios_health_field_ttfb">ОТКЛИК ДИНАМИКИ</string>
+    <string name="eios_health_field_workers">СВОБОДНЫХ ВОРКЕРОВ</string>
+    <string name="eios_health_field_queue">ОЧЕРЕДЬ</string>
+    <string name="eios_health_field_rps">ПРОПУСКНАЯ СПОСОБНОСТЬ</string>
+    <string name="eios_health_field_age">ДАННЫЕ МОНИТОРА</string>
+    <string name="eios_health_field_uptime">АПТАЙМ 24Ч</string>
+    <string name="eios_health_value_ttfb_fmt">%1$d мс</string>
+    <string name="eios_health_value_workers_fmt">%1$d свободно</string>
+    <string name="eios_health_value_queue_fmt">×%1$.2f</string>
+    <string name="eios_health_value_rps_fmt">%1$.1f зап/с</string>
+    <string name="eios_health_value_age_fmt">%1$d с назад</string>
+    <string name="eios_health_value_uptime_fmt">%1$.0f%%</string>
+    <string name="eios_health_value_dash">—</string>
+    <string name="eios_health_badge_stale">ДАННЫЕ УСТАРЕЛИ</string>
+    <string name="eios_health_badge_unconfirmed">НЕ ПОДТВЕРЖДЕНО</string>
+    <string name="eios_health_monitor_unreachable">Монитор недоступен: нет ответа ни по одному адресу</string>
+
     <!-- Settings: Themes -->
     <string name="theme_section_title">[ 01 · ВЫБОР ТЕМЫ ОФОРМЛЕНИЯ ]</string>
     <string name="theme_special_title">[ 02 · ОСОБЫЕ ТЕМЫ ОФОРМЛЕНИЯ ]</string>

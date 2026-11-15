@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The EIOS availability monitor is a LAN service that speaks plain HTTP on port 7790
+    (see docs/API.md §13.9 in the nyan-ops repo). Since targetSdk >= 28 Android blocks
+    cleartext traffic by default, so the two documented monitor addresses are whitelisted
+    explicitly while every other host keeps the secure default.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">192.168.0.209</domain>
+        <domain includeSubdomains="false">192.168.89.99</domain>
+    </domain-config>
+</network-security-config>
