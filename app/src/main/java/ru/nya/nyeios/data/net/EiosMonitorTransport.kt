@@ -28,42 +28,58 @@ internal class EiosMonitorHttpTransport(
 
     private val clients = ConcurrentHashMap<Long, OkHttpClient>()
 
-    suspend fun fetchBody(url: String, timeoutMs: Long): String? = withContext(Dispatchers.IO) {
-        val client = clients.computeIfAbsent(timeoutMs) { timeout -> clientFactory(timeout) }
-        val request = Request.Builder()
-            .url(url)
-            .post(ByteArray(0).toRequestBody(null))
-            .header("Accept", "application/json")
-            .header("User-Agent", userAgent)
-            .build()
-        val startedAtNs = System.nanoTime()
-        try {
-            client.newCall(request).execute().use { response ->
-                if (response.code != 200) {
-                    logProbeFailure(
-                        url = url,
-                        timeoutMs = timeoutMs,
-                        summary = "HTTP ${response.code}",
-                        details = "elapsedMs=${(System.nanoTime() - startedAtNs) / 1_000_000L}"
-                    )
-                    null
-                } else {
-                    readCappedBody(response)
+    /** POST as required by the LAN monitor public API. */
+    suspend fun fetchBody(url: String, timeoutMs: Long): String? = fetch(url, timeoutMs, post = true)
+
+    /**
+     * GET for the public GitHub status feed: `raw.githubusercontent.com` answers 403 to POST,
+     * so the fallback must use the method documented by the feed contract.
+     */
+    suspend fun fetchGetBody(url: String, timeoutMs: Long): String? = fetch(url, timeoutMs, post = false)
+
+    private suspend fun fetch(url: String, timeoutMs: Long, post: Boolean): String? =
+        withContext(Dispatchers.IO) {
+            val client = clients.computeIfAbsent(timeoutMs) { timeout -> clientFactory(timeout) }
+            val request = Request.Builder()
+                .url(url)
+                .apply {
+                    if (post) {
+                        post(ByteArray(0).toRequestBody(null))
+                    } else {
+                        get()
+                    }
                 }
+                .header("Accept", "application/json")
+                .header("User-Agent", userAgent)
+                .build()
+            val startedAtNs = System.nanoTime()
+            try {
+                client.newCall(request).execute().use { response ->
+                    if (response.code != 200) {
+                        logProbeFailure(
+                            url = url,
+                            timeoutMs = timeoutMs,
+                            summary = "HTTP ${response.code}",
+                            details = "elapsedMs=${(System.nanoTime() - startedAtNs) / 1_000_000L}"
+                        )
+                        null
+                    } else {
+                        readCappedBody(response)
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logProbeFailure(
+                    url = url,
+                    timeoutMs = timeoutMs,
+                    summary = e.javaClass.simpleName,
+                    details = "elapsedMs=${(System.nanoTime() - startedAtNs) / 1_000_000L}; ${e.message}"
+                )
+                // Timeout, no route, cleartext policy, connection reset — the caller tries the next endpoint.
+                null
             }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            logProbeFailure(
-                url = url,
-                timeoutMs = timeoutMs,
-                summary = e.javaClass.simpleName,
-                details = "elapsedMs=${(System.nanoTime() - startedAtNs) / 1_000_000L}; ${e.message}"
-            )
-            // Timeout, no route, cleartext policy, connection reset — the caller tries the next endpoint.
-            null
         }
-    }
 
     /**
      * Failures are silent for the user (the gate fails open), so surface the reason in the

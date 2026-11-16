@@ -57,6 +57,18 @@ class EiosMonitorHttpTransportTest {
     }
 
     @Test
+    fun `lan endpoint is polled with post and public feed with get`() = runBlocking {
+        val transport = EiosMonitorHttpTransport(userAgent = "test")
+
+        transport.fetchBody("$baseUrl/ok", 1_000L)
+        assertEquals("POST", server.lastMethod("/ok"))
+
+        val getBody = transport.fetchGetBody("$baseUrl/ok", 1_000L)
+        assertEquals("GET", server.lastMethod("/ok"))
+        assertTrue(getBody!!.contains("\"status\":\"up\""))
+    }
+
+    @Test
     fun `maps non-200 to null`() = runBlocking {
         val transport = EiosMonitorHttpTransport(userAgent = "test")
 

@@ -49,7 +49,7 @@ class EiosMonitorClient internal constructor(
         }
 
         val fresh = try {
-            probe.probe()
+            probe.probe(force)
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
@@ -79,7 +79,17 @@ class EiosMonitorClient internal constructor(
             val transport = EiosMonitorHttpTransport(
                 userAgent = "NyEIOS/" + AppVersionProvider.getVersionName(context)
             )
-            return EiosMonitorClient(probe = EiosMonitorFailover(fetchBody = transport::fetchBody))
+            val lanFailover = EiosMonitorFailover(fetchBody = transport::fetchBody)
+            val statusFeed = EiosStatusFeed(
+                store = PrefsEiosStatusFeedStore(context),
+                fetchBody = transport::fetchGetBody,
+            )
+            return EiosMonitorClient(
+                probe = EiosMonitorStatusChain(
+                    primary = lanFailover,
+                    fallback = EiosMonitorProbe { force -> statusFeed.load(force) },
+                )
+            )
         }
     }
 }

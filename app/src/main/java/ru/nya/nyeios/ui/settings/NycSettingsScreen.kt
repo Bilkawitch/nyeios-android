@@ -77,6 +77,7 @@ import ru.nya.nyeios.ui.theme.applyThemeWithRestart
 import ru.nya.nyeios.ui.theme.nycCard
 import ru.nya.nyeios.ui.theme.nycRaised
 import ru.nya.nyeios.ui.theme.nycWell
+import ru.nya.nyeios.ui.eios.eiosHealthAgeValue
 import ru.nya.nyeios.ui.update.UpdateViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -1369,7 +1370,7 @@ private fun NycMonitorMetricGrid(summary: EiosMonitorSummary) {
         ) {
             NycMonitorMetricCell(
                 label = stringResource(R.string.eios_health_field_age),
-                value = stringResource(R.string.eios_health_value_age_fmt, summary.ageSec),
+                value = eiosHealthAgeValue(summary),
                 modifier = Modifier.weight(1f)
             )
             NycMonitorMetricCell(

@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,6 +41,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import ru.nya.nyeios.R
 import ru.nya.nyeios.data.net.EiosMonitorClient
 import ru.nya.nyeios.data.net.EiosMonitorSummary
@@ -143,6 +147,26 @@ fun EiosHealthWarningDialog(
 
 private data class EiosHealthMetric(val labelRes: Int, val value: String)
 
+/** Ages above this are shown as "at HH:MM" instead of a huge number of seconds. */
+internal const val EIOS_HEALTH_OLD_DATA_AGE_SEC = 15 * 60L
+
+/**
+ * Age of the monitor snapshot. Long-cached data (the public GitHub fallback may be minutes old)
+ * is displayed as publication time per the public feed documentation, not as a raw second count.
+ */
+@Composable
+internal fun eiosHealthAgeValue(summary: EiosMonitorSummary): String {
+    val oldEnough = summary.ageSec >= EIOS_HEALTH_OLD_DATA_AGE_SEC && summary.ts > 0L
+    return if (oldEnough) {
+        val time = remember(summary.ts) {
+            SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(summary.ts))
+        }
+        stringResource(R.string.eios_health_value_age_at_fmt, time)
+    } else {
+        stringResource(R.string.eios_health_value_age_fmt, summary.ageSec)
+    }
+}
+
 @Composable
 private fun eiosHealthMetrics(summary: EiosMonitorSummary): List<EiosHealthMetric> {
     val dash = stringResource(R.string.eios_health_value_dash)
@@ -166,7 +190,7 @@ private fun eiosHealthMetrics(summary: EiosMonitorSummary): List<EiosHealthMetri
         ),
         EiosHealthMetric(
             labelRes = R.string.eios_health_field_age,
-            value = stringResource(R.string.eios_health_value_age_fmt, summary.ageSec),
+            value = eiosHealthAgeValue(summary),
         ),
     )
 }

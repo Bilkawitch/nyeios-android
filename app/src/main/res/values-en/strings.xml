@@ -53,6 +53,7 @@
     <string name="eios_health_value_queue_fmt">×%1$.2f</string>
     <string name="eios_health_value_rps_fmt">%1$.1f req/s</string>
     <string name="eios_health_value_age_fmt">%1$d s ago</string>
+    <string name="eios_health_value_age_at_fmt">at %1$s</string>
     <string name="eios_health_value_uptime_fmt">%1$.0f%%</string>
     <string name="eios_health_value_dash">—</string>
     <string name="eios_health_badge_stale">STALE DATA</string>

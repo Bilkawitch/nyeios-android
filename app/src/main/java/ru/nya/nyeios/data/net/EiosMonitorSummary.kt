@@ -16,6 +16,12 @@ import com.google.gson.JsonParser
  * diagnostic strings and are rendered as data, not translated.
  */
 data class EiosMonitorSummary(
+    /** Schema version of the public GitHub status feed (`schema` field); null for LAN API. */
+    val schemaVersion: Int? = null,
+    /** When the monitor published the public status file, unix ms (GitHub feed only). */
+    val publishedAt: Long? = null,
+    /** Producer id, e.g. `nyan-ops` (GitHub feed only). */
+    val source: String? = null,
     /** Time of the last monitor cycle, unix ms. */
     val ts: Long = 0L,
     /** How many seconds ago the last cycle finished. */
@@ -62,6 +68,9 @@ data class EiosMonitorSummary(
                 } else {
                     val obj = root.asJsonObject
                     EiosMonitorSummary(
+                        schemaVersion = obj.intOrNull("schema"),
+                        publishedAt = obj.longOrNull("publishedAt"),
+                        source = obj.stringOrNull("source"),
                         ts = obj.longOr(0L, "ts"),
                         ageSec = obj.longOr(0L, "ageSec"),
                         stale = obj.boolOr("stale"),

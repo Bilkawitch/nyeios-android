@@ -139,6 +139,36 @@ class EiosMonitorSummaryTest {
     }
 
     @Test
+    fun `parses public github feed envelope fields`() {
+        val publicFeed = """
+            {"schema":1,"publishedAt":1794844764680,"source":"nyan-ops","ts":1794844744664,"ageSec":20,
+             "stale":false,"status":"up","alive":true,"state":"OK","label":"ШТАТНО",
+             "reason":"все слои в норме","confirmed":true,
+             "loading":{"ttfbMs":99,"freeWorkers":8},"uptime":{"h24":100,"d7":100,"d30":100},
+             "session":{"configured":true,"ok":true}}
+        """.trimIndent()
+
+        val summary = EiosMonitorSummary.parse(publicFeed)
+
+        assertNotNull(summary)
+        summary!!
+        assertEquals(1, summary.schemaVersion)
+        assertEquals(1794844764680L, summary.publishedAt)
+        assertEquals("nyan-ops", summary.source)
+        assertEquals(1794844744664L, summary.ts)
+    }
+
+    @Test
+    fun `lan payload has no public feed envelope fields`() {
+        val summary = EiosMonitorSummary.parse(fullPayload)
+
+        assertNotNull(summary)
+        assertNull(summary!!.schemaVersion)
+        assertNull(summary.publishedAt)
+        assertNull(summary.source)
+    }
+
+    @Test
     fun `healthy means up alive and fresh`() {
         assertTrue(summary(status = "up", alive = true, stale = false).isHealthy)
         assertFalse(summary(status = "up", alive = true, stale = true).isHealthy)

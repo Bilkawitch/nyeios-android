@@ -11,7 +11,11 @@ data class EiosMonitorFetch(
 
 /** Suspend transport of the monitor probe; [EiosMonitorFailover] is the production implementation. */
 fun interface EiosMonitorProbe {
-    suspend fun probe(): EiosMonitorFetch?
+    /**
+     * Returns a monitor verdict or null when no source could provide one.
+     * [force] is set for an explicit user-triggered check (bypasses caches/throttles where applicable).
+     */
+    suspend fun probe(force: Boolean): EiosMonitorFetch?
 }
 
 /**
@@ -41,7 +45,7 @@ class EiosMonitorFailover(
 
     data class Attempt(val url: String, val timeoutMs: Long)
 
-    override suspend fun probe(): EiosMonitorFetch? {
+    override suspend fun probe(force: Boolean): EiosMonitorFetch? {
         for (attempt in attempts) {
             val body = try {
                 fetchBody(attempt.url, attempt.timeoutMs)

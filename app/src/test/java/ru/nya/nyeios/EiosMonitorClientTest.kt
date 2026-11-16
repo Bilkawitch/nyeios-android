@@ -30,7 +30,7 @@ class EiosMonitorClientTest {
         var now = 1_000L
         var calls = 0
         val client = EiosMonitorClient(
-            probe = EiosMonitorProbe { calls++; fetch },
+            probe = EiosMonitorProbe { _ -> calls++; fetch },
             clock = { now },
             cacheTtlMs = 6_000L
         )
@@ -49,7 +49,7 @@ class EiosMonitorClientTest {
         var now = 1_000L
         var calls = 0
         val client = EiosMonitorClient(
-            probe = EiosMonitorProbe { calls++; fetch },
+            probe = EiosMonitorProbe { _ -> calls++; fetch },
             clock = { now },
             cacheTtlMs = 6_000L
         )
@@ -65,7 +65,7 @@ class EiosMonitorClientTest {
     fun `force bypasses the cache`() = runBlocking {
         var calls = 0
         val client = EiosMonitorClient(
-            probe = EiosMonitorProbe { calls++; fetch },
+            probe = EiosMonitorProbe { _ -> calls++; fetch },
             clock = { 1_000L },
             cacheTtlMs = 6_000L
         )
@@ -81,7 +81,7 @@ class EiosMonitorClientTest {
         var now = 1_000L
         var calls = 0
         val client = EiosMonitorClient(
-            probe = EiosMonitorProbe { calls++; null },
+            probe = EiosMonitorProbe { _ -> calls++; null },
             clock = { now },
             cacheTtlMs = 6_000L
         )
@@ -100,7 +100,7 @@ class EiosMonitorClientTest {
     fun `force bypasses the negative cache`() = runBlocking {
         var calls = 0
         val client = EiosMonitorClient(
-            probe = EiosMonitorProbe { calls++; null },
+            probe = EiosMonitorProbe { _ -> calls++; null },
             clock = { 1_000L },
             cacheTtlMs = 6_000L
         )
@@ -114,7 +114,7 @@ class EiosMonitorClientTest {
     @Test
     fun `returns null and does not throw when the probe throws`() = runBlocking {
         val client = EiosMonitorClient(
-            probe = EiosMonitorProbe { throw IllegalStateException("unexpected") },
+            probe = EiosMonitorProbe { _ -> throw IllegalStateException("unexpected") },
             clock = { 1_000L },
             cacheTtlMs = 6_000L
         )
@@ -127,7 +127,7 @@ class EiosMonitorClientTest {
         var now = 1_000L
         var attempt = 0
         val client = EiosMonitorClient(
-            probe = EiosMonitorProbe { attempt++; if (attempt == 1) null else fetch },
+            probe = EiosMonitorProbe { _ -> attempt++; if (attempt == 1) null else fetch },
             clock = { now },
             cacheTtlMs = 6_000L
         )

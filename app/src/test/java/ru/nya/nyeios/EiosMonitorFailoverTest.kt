@@ -25,7 +25,7 @@ class EiosMonitorFailoverTest {
             validJson
         })
 
-        val result = failover.probe()
+        val result = failover.probe(force = false)
 
         assertEquals(listOf(EiosMonitorFailover.DEFAULT_ATTEMPTS[0].url to 1_000L), calls)
         assertEquals(EiosMonitorFailover.DEFAULT_ATTEMPTS[0].url, result?.endpoint)
@@ -40,7 +40,7 @@ class EiosMonitorFailoverTest {
             if (url.contains("192.168.0.209")) null else validJson
         })
 
-        val result = failover.probe()
+        val result = failover.probe(force = false)
 
         assertEquals(
             listOf(
@@ -56,7 +56,7 @@ class EiosMonitorFailoverTest {
     fun `returns null after both endpoints fail`() = runBlocking {
         val failover = EiosMonitorFailover(fetchBody = { _, _ -> null })
 
-        assertNull(failover.probe())
+        assertNull(failover.probe(force = false))
     }
 
     @Test
@@ -65,7 +65,7 @@ class EiosMonitorFailoverTest {
             if (url.contains("192.168.0.209")) throw IOException("connect timed out") else validJson
         })
 
-        val result = failover.probe()
+        val result = failover.probe(force = false)
 
         assertEquals("http://192.168.89.99:7790/api/eios/summary", result?.endpoint)
     }
@@ -76,7 +76,7 @@ class EiosMonitorFailoverTest {
             if (url.contains("192.168.0.209")) "<html>502 Bad Gateway</html>" else validJson
         })
 
-        val result = failover.probe()
+        val result = failover.probe(force = false)
 
         assertEquals("http://192.168.89.99:7790/api/eios/summary", result?.endpoint)
     }
@@ -86,7 +86,7 @@ class EiosMonitorFailoverTest {
         val failover = EiosMonitorFailover(fetchBody = { _, _ -> throw IOException("boom") })
 
         try {
-            assertNull(failover.probe())
+            assertNull(failover.probe(force = false))
         } catch (t: Throwable) {
             fail("probe() must not throw, but threw $t")
         }
@@ -96,7 +96,7 @@ class EiosMonitorFailoverTest {
     fun `never throws when the second payload is malformed`() = runBlocking {
         val failover = EiosMonitorFailover(fetchBody = { _, _ -> "{" })
 
-        assertNull(failover.probe())
+        assertNull(failover.probe(force = false))
     }
 
     @Test
@@ -117,7 +117,7 @@ class EiosMonitorFailoverTest {
             fetchBody = { _, _ -> throw AssertionError("must not be called") }
         )
 
-        assertNull(failover.probe())
-        assertTrue(failover.probe() == null)
+        assertNull(failover.probe(force = false))
+        assertTrue(failover.probe(force = false) == null)
     }
 }

@@ -89,6 +89,7 @@ import java.util.Locale
 import ru.nya.nyeios.data.model.UpdateInfo
 import ru.nya.nyeios.data.net.EndpointHealthItem
 import ru.nya.nyeios.data.net.EndpointStatus
+import ru.nya.nyeios.ui.eios.eiosHealthAgeValue
 import ru.nya.nyeios.ui.update.UpdateViewModel
 import android.net.Uri
 
@@ -1515,7 +1516,7 @@ private fun MonitorMetricGrid(summary: EiosMonitorSummary) {
         ) {
             MonitorMetricCell(
                 label = stringResource(R.string.eios_health_field_age),
-                value = stringResource(R.string.eios_health_value_age_fmt, summary.ageSec),
+                value = eiosHealthAgeValue(summary),
                 modifier = Modifier.weight(1f)
             )
             MonitorMetricCell(

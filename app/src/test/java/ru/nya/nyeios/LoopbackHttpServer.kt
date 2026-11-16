@@ -22,6 +22,7 @@ internal class LoopbackHttpServer(
     private val running = AtomicBoolean(true)
     private val serverSocket = ServerSocket(0, 16, InetAddress.getByName("127.0.0.1"))
     private val worker: Thread
+    private val lastMethods = java.util.concurrent.ConcurrentHashMap<String, String>()
 
     init {
         worker = thread(isDaemon = true, name = "loopback-http") {
@@ -58,11 +59,17 @@ internal class LoopbackHttpServer(
         worker.join(1_000)
     }
 
+    /** HTTP method of the last request seen for [path]; lets tests prove GET vs POST. */
+    fun lastMethod(path: String): String? = lastMethods[path]
+
     private fun handle(socket: Socket) {
         socket.soTimeout = 5_000
         val input = BufferedInputStream(socket.getInputStream())
         val requestLine = readAsciiLine(input) ?: return
-        val path = requestLine.split(' ').getOrNull(1)?.substringBefore('?') ?: "/"
+        val parts = requestLine.split(' ')
+        val method = parts.getOrNull(0) ?: return
+        val path = parts.getOrNull(1)?.substringBefore('?') ?: "/"
+        lastMethods[path] = method
         while (true) {
             val line = readAsciiLine(input) ?: break
             if (line.isEmpty()) break
