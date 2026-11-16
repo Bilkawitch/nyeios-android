@@ -32,12 +32,12 @@ class ChangelogHistoryTest {
     }
 
     @Test
-    fun testLatestReleaseIs032() {
+    fun testLatestReleaseIs033() {
         val releases = ChangelogHistory.releases
         assertTrue("Changelog should contain releases", releases.isNotEmpty())
 
         val latest = releases.first()
-        assertEquals("Latest release must be 0.3.2", "0.3.2", latest.version)
+        assertEquals("Latest release must be 0.3.3", "0.3.3", latest.version)
         assertTrue("Latest release should have isLatest = true", latest.isLatest)
         assertTrue(
             "Only the newest release may be marked as latest",

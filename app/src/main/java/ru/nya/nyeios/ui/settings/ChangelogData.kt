@@ -18,9 +18,25 @@ object ChangelogHistory {
     val releases: List<ChangelogVersion>
         get() = listOf(
             ChangelogVersion(
+                version = "0.3.3",
+                releaseDate = "16.11.2026",
+                isLatest = true,
+                sections = listOf(
+                    ChangelogSection(
+                        title = AppLocale.pick("СОСТОЯНИЕ СЕРВИСА", "SERVICE STATUS"),
+                        items = listOf(
+                            AppLocale.pick(
+                                "Добавил бета фичу которая тыкает мой сервер и, если мой сервер ответит, сообщает нынешнее состояние \"сервиса\" (работает - загружен - не работает) без проверок на устройстве. Пока что работает только в рамках локальной сети, кто знает - тот знает.",
+                                "Added a beta feature that pings my server and, if my server responds, reports the current state of the \"service\" (working - overloaded - not working) without on-device checks. For now it works only within the local network; those who know, know."
+                            )
+                        )
+                    )
+                )
+            ),
+            ChangelogVersion(
                 version = "0.3.2",
                 releaseDate = "12.11.2026",
-                isLatest = true,
+                isLatest = false,
                 sections = listOf(
                     ChangelogSection(
                         title = AppLocale.pick("ЗАМЕТКИ И ДЗ", "NOTES & HOMEWORK"),
