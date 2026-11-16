@@ -18,9 +18,25 @@ object ChangelogHistory {
     val releases: List<ChangelogVersion>
         get() = listOf(
             ChangelogVersion(
-                version = "0.3.3",
+                version = "0.3.4",
                 releaseDate = "16.11.2026",
                 isLatest = true,
+                sections = listOf(
+                    ChangelogSection(
+                        title = AppLocale.pick("СОСТОЯНИЕ СЕРВИСА", "SERVICE STATUS"),
+                        items = listOf(
+                            AppLocale.pick(
+                                "Теперь есть проверка доступности через Github даже вне локалки",
+                                "Availability checks via GitHub now work even outside the local network"
+                            )
+                        )
+                    )
+                )
+            ),
+            ChangelogVersion(
+                version = "0.3.3",
+                releaseDate = "16.11.2026",
+                isLatest = false,
                 sections = listOf(
                     ChangelogSection(
                         title = AppLocale.pick("СОСТОЯНИЕ СЕРВИСА", "SERVICE STATUS"),
