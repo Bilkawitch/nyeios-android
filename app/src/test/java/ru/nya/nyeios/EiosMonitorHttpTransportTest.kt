@@ -90,9 +90,9 @@ class EiosMonitorHttpTransportTest {
     }
 
     @Test
-    fun `documented attempt budget is 50 ms then 200 ms`() {
-        assertEquals(50L, EiosMonitorFailover.DEFAULT_ATTEMPTS[0].timeoutMs)
-        assertEquals(200L, EiosMonitorFailover.DEFAULT_ATTEMPTS[1].timeoutMs)
+    fun `documented attempt budget is 1000 ms then 1500 ms`() {
+        assertEquals(1_000L, EiosMonitorFailover.DEFAULT_ATTEMPTS[0].timeoutMs)
+        assertEquals(1_500L, EiosMonitorFailover.DEFAULT_ATTEMPTS[1].timeoutMs)
     }
 
     companion object {

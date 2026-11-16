@@ -223,7 +223,7 @@ class MainActivity : ComponentActivity() {
                         updateViewModel.checkForUpdate()
                     }
 
-                    val isRefreshing = when (currentTab) {
+                    val isRefreshing = eiosHealthState.isProbing || when (currentTab) {
                         0 -> (scheduleUiState as? ScheduleUiState.Success)?.isRefreshing == true || scheduleUiState is ScheduleUiState.Loading
                         1 -> feedSyncProgress.isSyncing || (feedUiState as? FeedUiState.Success)?.isRefreshing == true || feedUiState is FeedUiState.Loading
                         2 -> (curriculumUiState as? CurriculumUiState.Success)?.isRefreshing == true || curriculumUiState is CurriculumUiState.Loading

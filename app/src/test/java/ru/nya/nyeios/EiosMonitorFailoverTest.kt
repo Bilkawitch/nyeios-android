@@ -10,7 +10,7 @@ import org.junit.Test
 import ru.nya.nyeios.data.net.EiosMonitorFailover
 
 /**
- * Failover contract: try 192.168.0.209 with 50 ms, then 192.168.89.99 with 200 ms,
+ * Failover contract: try 192.168.0.209 with 1000 ms, then 192.168.89.99 with 1500 ms,
  * then forget it. Errors, timeouts and malformed payloads never escape.
  */
 class EiosMonitorFailoverTest {
@@ -27,7 +27,7 @@ class EiosMonitorFailoverTest {
 
         val result = failover.probe()
 
-        assertEquals(listOf(EiosMonitorFailover.DEFAULT_ATTEMPTS[0].url to 50L), calls)
+        assertEquals(listOf(EiosMonitorFailover.DEFAULT_ATTEMPTS[0].url to 1_000L), calls)
         assertEquals(EiosMonitorFailover.DEFAULT_ATTEMPTS[0].url, result?.endpoint)
         assertEquals("up", result?.summary?.status)
     }
@@ -44,8 +44,8 @@ class EiosMonitorFailoverTest {
 
         assertEquals(
             listOf(
-                "http://192.168.0.209:7790/api/eios/summary" to 50L,
-                "http://192.168.89.99:7790/api/eios/summary" to 200L
+                "http://192.168.0.209:7790/api/eios/summary" to 1_000L,
+                "http://192.168.89.99:7790/api/eios/summary" to 1_500L
             ),
             calls
         )
@@ -105,9 +105,9 @@ class EiosMonitorFailoverTest {
 
         assertEquals(2, attempts.size)
         assertEquals("http://192.168.0.209:7790/api/eios/summary", attempts[0].url)
-        assertEquals(50L, attempts[0].timeoutMs)
+        assertEquals(1_000L, attempts[0].timeoutMs)
         assertEquals("http://192.168.89.99:7790/api/eios/summary", attempts[1].url)
-        assertEquals(200L, attempts[1].timeoutMs)
+        assertEquals(1_500L, attempts[1].timeoutMs)
     }
 
     @Test

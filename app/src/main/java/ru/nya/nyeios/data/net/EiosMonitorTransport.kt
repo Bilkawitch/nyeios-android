@@ -10,6 +10,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
+import ru.nya.nyeios.data.AppLocale
 
 /**
  * Plain-HTTP transport for the monitor probe. Kept separate from [EiosMonitorFailover] so the
@@ -35,16 +36,52 @@ internal class EiosMonitorHttpTransport(
             .header("Accept", "application/json")
             .header("User-Agent", userAgent)
             .build()
+        val startedAtNs = System.nanoTime()
         try {
             client.newCall(request).execute().use { response ->
-                if (response.code != 200) null else readCappedBody(response)
+                if (response.code != 200) {
+                    logProbeFailure(
+                        url = url,
+                        timeoutMs = timeoutMs,
+                        summary = "HTTP ${response.code}",
+                        details = "elapsedMs=${(System.nanoTime() - startedAtNs) / 1_000_000L}"
+                    )
+                    null
+                } else {
+                    readCappedBody(response)
+                }
             }
         } catch (e: CancellationException) {
             throw e
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            logProbeFailure(
+                url = url,
+                timeoutMs = timeoutMs,
+                summary = e.javaClass.simpleName,
+                details = "elapsedMs=${(System.nanoTime() - startedAtNs) / 1_000_000L}; ${e.message}"
+            )
             // Timeout, no route, cleartext policy, connection reset — the caller tries the next endpoint.
             null
         }
+    }
+
+    /**
+     * Failures are silent for the user (the gate fails open), so surface the reason in the
+     * in-app network journal: without it "Монитор недоступен" is impossible to diagnose in
+     * the field. Successes are not logged to keep the journal readable.
+     */
+    private fun logProbeFailure(url: String, timeoutMs: Long, summary: String, details: String?) {
+        val host = url.removePrefix("http://").removePrefix("https://").substringBefore('/')
+        NetworkLogger.log(
+            level = NetworkLogLevel.WARNING,
+            tag = "EIOS MONITOR",
+            message = AppLocale.pick(
+                "Монитор: $host не ответил — $summary (лимит $timeoutMs мс)",
+                "Monitor: $host did not answer — $summary (limit $timeoutMs ms)"
+            ),
+            details = details,
+            isDegraded = true
+        )
     }
 
     private fun readCappedBody(response: Response): String? {
