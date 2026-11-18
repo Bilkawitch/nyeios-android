@@ -18,9 +18,34 @@ object ChangelogHistory {
     val releases: List<ChangelogVersion>
         get() = listOf(
             ChangelogVersion(
+                version = "0.3.5",
+                releaseDate = "18.11.2026",
+                isLatest = true,
+                sections = listOf(
+                    ChangelogSection(
+                        title = AppLocale.pick("НАПОМИНАНИЯ", "REMINDERS"),
+                        items = listOf(
+                            AppLocale.pick(
+                                "Добавил «Напоминалки»: можно ставить себе напоминание на определённую дату и время по домашнему заданию. Ставится в заметках конкретной пары. Все напоминалки теперь видны на месте, где было воскресенье.",
+                                "Added reminders: set a reminder for a specific date and time for homework. Created from the notes of a particular lesson. All reminders are now shown where Sunday used to be."
+                            )
+                        )
+                    ),
+                    ChangelogSection(
+                        title = AppLocale.pick("РАСПИСАНИЕ", "SCHEDULE"),
+                        items = listOf(
+                            AppLocale.pick(
+                                "Теперь можно переключать дни недели свайпами влево и вправо.",
+                                "Days can now be switched with left and right swipes."
+                            )
+                        )
+                    )
+                )
+            ),
+            ChangelogVersion(
                 version = "0.3.4",
                 releaseDate = "16.11.2026",
-                isLatest = true,
+                isLatest = false,
                 sections = listOf(
                     ChangelogSection(
                         title = AppLocale.pick("СОСТОЯНИЕ СЕРВИСА", "SERVICE STATUS"),
