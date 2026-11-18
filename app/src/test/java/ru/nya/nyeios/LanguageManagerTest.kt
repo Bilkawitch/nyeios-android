@@ -125,4 +125,13 @@ class LanguageManagerTest {
         assertEquals(ru.nya.nyeios.ui.language.TypewriterPhase.IDLE, ru.nya.nyeios.ui.language.LanguageTypewriterManager.phase)
         assertEquals("NyEIOS", ru.nya.nyeios.ui.language.LanguageTypewriterManager.getDisplayText("NyEIOS", 0.5f))
     }
+
+    @Test
+    fun resolveSavedLanguageCodeFallsBackToSystem() {
+        assertEquals(AppLanguage.RU, LanguageManager.resolvedLanguage("ru"))
+        assertEquals(AppLanguage.EN, LanguageManager.resolvedLanguage("en"))
+        assertEquals(AppLanguage.SYSTEM, LanguageManager.resolvedLanguage("system"))
+        assertEquals(AppLanguage.SYSTEM, LanguageManager.resolvedLanguage(null))
+        assertEquals(AppLanguage.SYSTEM, LanguageManager.resolvedLanguage("de"))
+    }
 }

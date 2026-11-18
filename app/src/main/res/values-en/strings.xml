@@ -581,4 +581,51 @@
         <item quantity="other">%1$d notes</item>
     </plurals>
     <string name="action_back">Back</string>
+
+    <!-- Homework reminders -->
+    <string name="reminders_btn_set">Set a reminder</string>
+    <string name="reminders_btn_set_content_desc">Set a reminder for this note</string>
+    <string name="reminders_dialog_title">REMINDER</string>
+    <string name="reminders_dialog_edit_title">EDIT REMINDER</string>
+    <string name="reminders_date_label">DATE</string>
+    <string name="reminders_time_label">TIME</string>
+    <string name="reminders_content_label">CONTENT</string>
+    <string name="reminders_content_placeholder">What to remind about...</string>
+    <string name="reminders_dialog_confirm">SET</string>
+    <string name="reminders_dialog_save">SAVE</string>
+    <string name="reminders_dialog_cancel">CANCEL</string>
+    <string name="reminders_trigger_fmt">%1$s · %2$s</string>
+    <string name="reminders_error_past">That time has already passed. Pick a later one.</string>
+    <string name="reminders_error_too_soon">Too soon: at least a minute from now.</string>
+    <string name="reminders_created_fmt">Reminder set for %1$s</string>
+    <string name="reminders_updated_fmt">Reminder updated: %1$s</string>
+    <string name="reminders_deleted">Reminder deleted</string>
+    <string name="reminders_scheduled_failed">Could not schedule the reminder. Choose another time.</string>
+    <string name="reminders_scheduled_inexact">Exact alarms are off, so delivery may be delayed.</string>
+    <string name="reminders_list_title">REMINDERS</string>
+    <string name="reminders_list_empty_title">No reminders yet</string>
+    <string name="reminders_list_empty_hint">Open a lesson note and tap “Set a reminder”.</string>
+    <string name="reminders_remaining_fmt">in %1$s</string>
+    <string name="reminders_overdue">overdue</string>
+    <string name="reminders_action_edit">EDIT</string>
+    <string name="reminders_action_delete">DELETE</string>
+    <string name="reminders_delete_confirm_title">Delete this reminder?</string>
+    <string name="reminders_delete_confirm_message">It will not fire again.</string>
+    <string name="reminders_day_cell_content_desc">Reminders</string>
+    <string name="reminders_day_cell_content_desc_count">Reminders: %1$d</string>
+    <string name="reminders_channel_name">Homework reminders</string>
+    <string name="reminders_channel_desc">Reminders about homework for lessons</string>
+    <string name="reminders_perm_notifications_title">Allow notifications</string>
+    <string name="reminders_perm_notifications_message">Without notification permission the reminder cannot be shown.</string>
+    <string name="reminders_perm_notifications_action">ALLOW</string>
+    <string name="reminders_perm_exact_title">Exact alarms</string>
+    <string name="reminders_perm_exact_message">Allow “Alarms &amp; reminders” so the reminder fires exactly at the selected time.</string>
+    <string name="reminders_perm_exact_action">OPEN SETTINGS</string>
+    <string name="reminders_perm_battery_title">Battery optimization</string>
+    <string name="reminders_perm_battery_message">The system may unload the app from memory and the reminder will not fire. Disable battery optimization for NyEIOS.</string>
+    <string name="reminders_perm_battery_action">DISABLE</string>
+    <string name="reminders_perm_battery_later">LATER</string>
+    <string name="reminders_perm_battery_done">Battery optimization is already disabled for NyEIOS.</string>
+    <string name="reminders_perm_close">GOT IT</string>
+    <string name="reminders_time_picker_hint">Pick a time</string>
 </resources>

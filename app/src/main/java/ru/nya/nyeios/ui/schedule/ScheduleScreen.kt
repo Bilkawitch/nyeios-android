@@ -34,11 +34,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -58,6 +61,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterCenterFocus
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Route
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Warning
 import ru.nya.nyeios.data.floormap.FloorMapRepository
 import ru.nya.nyeios.ui.common.isAuthRelatedMessage
@@ -84,6 +88,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -105,6 +110,8 @@ import ru.nya.nyeios.data.model.FlowWeekState
 import ru.nya.nyeios.data.model.LessonItem
 import ru.nya.nyeios.data.model.LessonType
 import ru.nya.nyeios.data.model.ScheduleUiState
+import ru.nya.nyeios.data.reminders.ReminderSchedulePolicy
+import ru.nya.nyeios.data.reminders.RemindersRepository
 import ru.nya.nyeios.ui.theme.ExamRed
 import ru.nya.nyeios.ui.theme.ExamRedBg
 import ru.nya.nyeios.ui.theme.LabAmber
@@ -131,6 +138,7 @@ import ru.nya.nyeios.data.notes.LessonNotesRepository
 import ru.nya.nyeios.data.notes.hasVisibleContent
 import ru.nya.nyeios.ui.notes.LessonNoteIconButton
 import ru.nya.nyeios.ui.notes.editor.LessonNoteEditorScreen
+import ru.nya.nyeios.ui.notes.reminder.RemindersListSheet
 import ru.nya.nyeios.ui.notes.weekly.HomeworkPullUpHandle
 import ru.nya.nyeios.ui.notes.weekly.WeeklyHomeworkSheet
 import ru.nya.nyeios.ui.notes.preview.LessonNotePreviewSheet
@@ -177,6 +185,19 @@ fun ScheduleScreen(
     val notesRepo = remember { LessonNotesRepository.getInstance(context) }
     val notesMap by notesRepo.notesFlow.collectAsState()
 
+    // Напоминания: ячейка-таймер на месте воскресенья открывает список.
+    var isRemindersSheetVisible by remember { mutableStateOf(false) }
+    val remindersRepo = remember { RemindersRepository.getInstance(context) }
+    val reminders by remindersRepo.remindersFlow.collectAsState()
+    val activeRemindersCount by produceState(initialValue = 0, key1 = reminders) {
+        while (true) {
+            value = ReminderSchedulePolicy
+                .futureReminders(reminders, System.currentTimeMillis())
+                .size
+            delay(30_000L)
+        }
+    }
+
     Column(
         modifier = modifier.fillMaxSize()
     ) {
@@ -191,18 +212,31 @@ fun ScheduleScreen(
 
             // Day Selector Tabs
             val daysList = (uiState as? ScheduleUiState.Success)?.schedule?.days ?: emptyList()
-            val selectableDayIndexes = remember(daysList) { daysList.indices.toList() }
+            val selectableDayIndexes = remember(daysList) {
+                DayRowCells.build(daysList)
+                    .filterIsInstance<DayRowCell.Day>()
+                    .map { it.originalIndex }
+            }
             if (daysList.isNotEmpty()) {
                 DaySelectorRow(
                     days = daysList,
                     selectedIndex = selectedDayIndex.coerceIn(0, (daysList.size - 1).coerceAtLeast(0)),
-                    onSelectDay = onSelectDay
+                    remindersCount = activeRemindersCount,
+                    onOpenReminders = {
+                        isHomeworkSheetVisible = false
+                        isRemindersSheetVisible = true
+                    },
+                    onSelectDay = { index ->
+                        isRemindersSheetVisible = false
+                        onSelectDay(index)
+                    }
                 )
             }
 
             // Верхний отступ живёт только вместе с расписанием: при открытой
-            // шторке ДЗ контент начинается сразу под рядом дней недели.
-            if (!isHomeworkSheetVisible) {
+            // шторке ДЗ или списке напоминаний контент начинается сразу под
+            // рядом дней недели.
+            if (!isHomeworkSheetVisible && !isRemindersSheetVisible) {
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
@@ -218,6 +252,12 @@ fun ScheduleScreen(
                     WeeklyHomeworkSheet(
                         currentSchedule = (uiState as? ScheduleUiState.Success)?.schedule,
                         onDismiss = { isHomeworkSheetVisible = false },
+                        applyWindowInsets = false
+                    )
+                } else if (isRemindersSheetVisible) {
+                    // Список напоминаний занимает ту же область, что и шторка ДЗ.
+                    RemindersListSheet(
+                        onDismiss = { isRemindersSheetVisible = false },
                         applyWindowInsets = false
                     )
                 } else when (uiState) {
@@ -486,7 +526,14 @@ fun ScheduleScreen(
                                 LazyColumn(
                                     state = dayListState,
                                     modifier = Modifier.fillMaxSize(),
-                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = UiPreferencesManager.listSpace(8.dp)),
+                                    contentPadding = PaddingValues(
+                                        start = 16.dp,
+                                        top = UiPreferencesManager.listSpace(8.dp),
+                                        end = 16.dp,
+                                        // +44dp: последняя карточка должна уезжать из-под
+                                        // плавающей плашки «Потяните…», а не обрезаться ею.
+                                        bottom = UiPreferencesManager.listSpace(8.dp) + 44.dp
+                                    ),
                                     verticalArrangement = Arrangement.spacedBy(UiPreferencesManager.listSpace(8.dp))
                                 ) {
                                     // Day summary header
@@ -598,15 +645,19 @@ fun ScheduleScreen(
                         }
                     }
                 }
-            }
 
-        // Нижний триггер открытия ДЗ на неделю (Скриншот 2). Пока шторка открыта,
-        // плашка не композируется вовсе: ни узла разметки, ни узла доступности.
-        if (!isHomeworkSheetVisible) {
-            HomeworkPullUpHandle(
-                onSwipeUp = { isHomeworkSheetVisible = true }
-            )
-        }
+                // Нижний триггер открытия ДЗ на неделю (Скриншот 2). Плашка с
+                // прозрачным фоном плавает ПОВЕРХ контента и не отнимает у списка
+                // высоту, из-за которой обрезалась последняя карточка. Пока открыта
+                // шторка ДЗ или список напоминаний, узел не композируется вовсе:
+                // ни узла разметки, ни узла доступности.
+                if (!isHomeworkSheetVisible && !isRemindersSheetVisible) {
+                    HomeworkPullUpHandle(
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                        onSwipeUp = { isHomeworkSheetVisible = true }
+                    )
+                }
+            }
 
         if (floorMapTargetRoom != null) {
             FloorMapBottomSheet(
@@ -759,12 +810,18 @@ fun localizedDayName(name: String): String {
 fun DaySelectorRow(
     days: List<DaySchedule>,
     selectedIndex: Int,
+    remindersCount: Int = 0,
+    onOpenReminders: () -> Unit = {},
     onSelectDay: (Int) -> Unit
 ) {
     if (days.isEmpty()) return
 
-    val dayCount = days.size
-    val safeSelectedIndex = selectedIndex.coerceIn(0, dayCount - 1)
+    // Воскресенье не содержит пар: его ячейка заменяется действием напоминаний
+    // в той же позиции (1/7 ширины ряда). Индексы остальных дней сохраняются,
+    // чтобы onSelectDay продолжал получать исходные индексы списка дней.
+    val cells = remember(days) { DayRowCells.build(days) }
+    if (cells.isEmpty()) return
+    val safeSelectedIndex = selectedIndex.coerceIn(0, days.size - 1)
 
     Row(
         modifier = Modifier
@@ -772,66 +829,153 @@ fun DaySelectorRow(
             .background(ru.nya.nyeios.ui.theme.NierPanel)
             .border(width = 1.dp, color = ru.nya.nyeios.ui.theme.NierDark)
     ) {
-        days.forEachIndexed { index, day ->
-            val isSelected = index == safeSelectedIndex
-            val cleanDayDate = Regex("""(\d{1,2}\.\d{1,2})""").find(day.dateString.ifEmpty { day.dayTitle })?.value
-                ?: day.dateString.take(5)
+        cells.forEachIndexed { cellIndex, cell ->
+            val showSeparator = cellIndex < cells.size - 1
+            when (cell) {
+                is DayRowCell.Day -> DayTab(
+                    day = cell.day,
+                    isSelected = cell.originalIndex == safeSelectedIndex,
+                    showSeparator = showSeparator,
+                    onClick = { onSelectDay(cell.originalIndex) }
+                )
 
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable { onSelectDay(index) }
-                    .padding(vertical = 6.dp, horizontal = 2.dp)
-                    .drawBehind {
-                        // Vertical separator between tabs
-                        if (index < dayCount - 1) {
-                            drawLine(
-                                color = ru.nya.nyeios.ui.theme.NierBorderLight,
-                                start = Offset(size.width, 4f),
-                                end = Offset(size.width, size.height - 4f),
-                                strokeWidth = 1.dp.toPx()
-                            )
-                        }
-                        // Active bottom indicator bar
-                        if (isSelected) {
-                            drawRect(
-                                color = ru.nya.nyeios.ui.theme.selectionAccent(),
-                                topLeft = Offset(0f, size.height - 2.5.dp.toPx()),
-                                size = androidx.compose.ui.geometry.Size(size.width, 2.5.dp.toPx())
-                            )
-                        }
-                        // Today top indicator bar
-                        if (day.isToday) {
-                            drawRect(
-                                color = ru.nya.nyeios.ui.theme.selectionAccent(),
-                                topLeft = Offset(0f, 0f),
-                                size = androidx.compose.ui.geometry.Size(size.width, 2.5.dp.toPx())
-                            )
-                        }
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(1.dp)
-                ) {
-                    Text(
-                        text = localizedDayName(day.dayName),
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-                        fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
-                        fontSize = 11.sp,
-                        letterSpacing = 0.5.sp,
-                        color = if (isSelected) ru.nya.nyeios.ui.theme.NierDark else ru.nya.nyeios.ui.theme.NierDim
+                DayRowCell.RemindersAction -> RemindersActionTab(
+                    remindersCount = remindersCount,
+                    showSeparator = showSeparator,
+                    onClick = onOpenReminders
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.DayTab(
+    day: DaySchedule,
+    isSelected: Boolean,
+    showSeparator: Boolean,
+    onClick: () -> Unit
+) {
+    val cleanDayDate = Regex("""(\d{1,2}\.\d{1,2})""").find(day.dateString.ifEmpty { day.dayTitle })?.value
+        ?: day.dateString.take(5)
+
+    Box(
+        modifier = Modifier
+            .weight(1f)
+            .heightIn(min = 48.dp)
+            .clickable(onClick = onClick)
+            .padding(vertical = 6.dp, horizontal = 2.dp)
+            .drawBehind {
+                // Vertical separator between tabs
+                if (showSeparator) {
+                    drawLine(
+                        color = ru.nya.nyeios.ui.theme.NierBorderLight,
+                        start = Offset(size.width, 4f),
+                        end = Offset(size.width, size.height - 4f),
+                        strokeWidth = 1.dp.toPx()
                     )
-                    if (cleanDayDate.isNotEmpty()) {
-                        Text(
-                            text = cleanDayDate,
-                            fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
-                            fontSize = 9.sp,
-                            color = if (isSelected) ru.nya.nyeios.ui.theme.NierBlue else ru.nya.nyeios.ui.theme.NierDim
-                        )
-                    }
                 }
+                // Active bottom indicator bar
+                if (isSelected) {
+                    drawRect(
+                        color = ru.nya.nyeios.ui.theme.selectionAccent(),
+                        topLeft = Offset(0f, size.height - 2.5.dp.toPx()),
+                        size = androidx.compose.ui.geometry.Size(size.width, 2.5.dp.toPx())
+                    )
+                }
+                // Today top indicator bar
+                if (day.isToday) {
+                    drawRect(
+                        color = ru.nya.nyeios.ui.theme.selectionAccent(),
+                        topLeft = Offset(0f, 0f),
+                        size = androidx.compose.ui.geometry.Size(size.width, 2.5.dp.toPx())
+                    )
+                }
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(1.dp)
+        ) {
+            Text(
+                text = localizedDayName(day.dayName),
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                fontSize = 11.sp,
+                letterSpacing = 0.5.sp,
+                color = if (isSelected) ru.nya.nyeios.ui.theme.NierDark else ru.nya.nyeios.ui.theme.NierDim
+            )
+            if (cleanDayDate.isNotEmpty()) {
+                Text(
+                    text = cleanDayDate,
+                    fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                    fontSize = 9.sp,
+                    color = if (isSelected) ru.nya.nyeios.ui.theme.NierBlue else ru.nya.nyeios.ui.theme.NierDim
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Ячейка-таймер на месте воскресенья: открывает список напоминаний.
+ * Бейдж показывает число будущих (ещё не сработавших) напоминаний.
+ */
+@Composable
+private fun RowScope.RemindersActionTab(
+    remindersCount: Int,
+    showSeparator: Boolean,
+    onClick: () -> Unit
+) {
+    val accent = ru.nya.nyeios.ui.theme.selectionAccent()
+    val description = if (remindersCount > 0) {
+        stringResource(R.string.reminders_day_cell_content_desc_count, remindersCount)
+    } else {
+        stringResource(R.string.reminders_day_cell_content_desc)
+    }
+
+    Box(
+        modifier = Modifier
+            .weight(1f)
+            .heightIn(min = 48.dp)
+            .clickable(onClick = onClick)
+            .padding(vertical = 6.dp, horizontal = 2.dp)
+            .drawBehind {
+                if (showSeparator) {
+                    drawLine(
+                        color = ru.nya.nyeios.ui.theme.NierBorderLight,
+                        start = Offset(size.width, 4f),
+                        end = Offset(size.width, size.height - 4f),
+                        strokeWidth = 1.dp.toPx()
+                    )
+                }
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        // Иконка и счётчик стоят друг под другом, как «ПН / 16.11» в соседних
+        // ячейках: бейдж поверх иконки перекрывал её и вылезал к краю ряда.
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(1.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Timer,
+                contentDescription = description,
+                tint = accent,
+                modifier = Modifier.size(20.dp)
+            )
+            if (remindersCount > 0) {
+                Text(
+                    text = remindersCount.toString(),
+                    fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 9.sp,
+                    color = accent,
+                    // Счётчик уже озвучен в contentDescription ячейки: не дублируем
+                    // его в семантике отдельного текстового узла.
+                    modifier = Modifier.clearAndSetSemantics { }
+                )
             }
         }
     }

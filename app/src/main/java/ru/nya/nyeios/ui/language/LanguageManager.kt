@@ -29,8 +29,15 @@ object LanguageManager {
     fun init(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val saved = prefs.getString(KEY_LANGUAGE, AppLanguage.SYSTEM.code)
-        currentLanguage = AppLanguage.entries.firstOrNull { it.code == saved } ?: AppLanguage.SYSTEM
+        currentLanguage = resolvedLanguage(saved)
     }
+
+    /**
+     * Отображение сохранённого кода языка в [AppLanguage]. Вынесено в чистую функцию,
+     * чтобы правила разбора настройки покрывались JVM-тестом, а не только UI.
+     */
+    fun resolvedLanguage(savedCode: String?): AppLanguage =
+        AppLanguage.entries.firstOrNull { it.code == savedCode } ?: AppLanguage.SYSTEM
 
     fun setLanguage(context: Context, language: AppLanguage) {
         currentLanguage = language

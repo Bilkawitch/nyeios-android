@@ -589,4 +589,51 @@
         <item quantity="other">%1$d записи</item>
     </plurals>
     <string name="action_back">Назад</string>
+
+    <!-- Homework reminders -->
+    <string name="reminders_btn_set">Поставить напоминалку</string>
+    <string name="reminders_btn_set_content_desc">Поставить напоминалку к этой заметке</string>
+    <string name="reminders_dialog_title">НАПОМИНАЛКА</string>
+    <string name="reminders_dialog_edit_title">ИЗМЕНИТЬ НАПОМИНАЛКУ</string>
+    <string name="reminders_date_label">ДАТА</string>
+    <string name="reminders_time_label">ВРЕМЯ</string>
+    <string name="reminders_content_label">СОДЕРЖАНИЕ</string>
+    <string name="reminders_content_placeholder">Что напомнить...</string>
+    <string name="reminders_dialog_confirm">ПОСТАВИТЬ</string>
+    <string name="reminders_dialog_save">СОХРАНИТЬ</string>
+    <string name="reminders_dialog_cancel">ОТМЕНА</string>
+    <string name="reminders_trigger_fmt">%1$s · %2$s</string>
+    <string name="reminders_error_past">Это время уже прошло. Выберите более позднее.</string>
+    <string name="reminders_error_too_soon">Слишком близко: минимум через минуту.</string>
+    <string name="reminders_created_fmt">Напоминание на %1$s</string>
+    <string name="reminders_updated_fmt">Напоминание обновлено: %1$s</string>
+    <string name="reminders_deleted">Напоминание удалено</string>
+    <string name="reminders_scheduled_failed">Не удалось поставить напоминание. Выберите другое время.</string>
+    <string name="reminders_scheduled_inexact">Точные будильники выключены — время срабатывания может сдвинуться.</string>
+    <string name="reminders_list_title">НАПОМИНАЛКИ</string>
+    <string name="reminders_list_empty_title">Напоминаний пока нет</string>
+    <string name="reminders_list_empty_hint">Откройте заметку к паре и нажмите «Поставить напоминалку».</string>
+    <string name="reminders_remaining_fmt">через %1$s</string>
+    <string name="reminders_overdue">время истекло</string>
+    <string name="reminders_action_edit">ИЗМЕНИТЬ</string>
+    <string name="reminders_action_delete">УДАЛИТЬ</string>
+    <string name="reminders_delete_confirm_title">Удалить напоминание?</string>
+    <string name="reminders_delete_confirm_message">Оно больше не сработает.</string>
+    <string name="reminders_day_cell_content_desc">Напоминания</string>
+    <string name="reminders_day_cell_content_desc_count">Напоминания: %1$d</string>
+    <string name="reminders_channel_name">Напоминания о ДЗ</string>
+    <string name="reminders_channel_desc">Напоминания о домашних заданиях к парам</string>
+    <string name="reminders_perm_notifications_title">Разрешить уведомления</string>
+    <string name="reminders_perm_notifications_message">Без разрешения на уведомления напоминание не получится показать.</string>
+    <string name="reminders_perm_notifications_action">РАЗРЕШИТЬ</string>
+    <string name="reminders_perm_exact_title">Точные будильники</string>
+    <string name="reminders_perm_exact_message">Разрешите «Будильники и напоминания», чтобы напоминание сработало ровно в выбранное время.</string>
+    <string name="reminders_perm_exact_action">ОТКРЫТЬ НАСТРОЙКИ</string>
+    <string name="reminders_perm_battery_title">Режим энергосбережения</string>
+    <string name="reminders_perm_battery_message">Система может выгрузить приложение из памяти, и напоминание не сработает. Отключите оптимизацию батареи для NyEIOS.</string>
+    <string name="reminders_perm_battery_action">ОТКЛЮЧИТЬ</string>
+    <string name="reminders_perm_battery_later">ПОЗЖЕ</string>
+    <string name="reminders_perm_battery_done">Оптимизация батареи уже отключена для NyEIOS.</string>
+    <string name="reminders_perm_close">ПОНЯТНО</string>
+    <string name="reminders_time_picker_hint">Выберите время</string>
 </resources>

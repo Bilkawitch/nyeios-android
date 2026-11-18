@@ -1,6 +1,8 @@
 package ru.nya.nyeios.ui.notes.editor
 
+import android.Manifest
 import android.net.Uri
+import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -40,6 +42,7 @@ import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.AlarmAdd
 import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -58,6 +61,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -76,6 +80,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -83,6 +88,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import kotlinx.coroutines.Dispatchers
@@ -95,9 +103,19 @@ import ru.nya.nyeios.data.notes.LessonNotesRepository
 import ru.nya.nyeios.data.notes.NotePhotoAttachment
 import ru.nya.nyeios.data.notes.NotePhotoStore
 import ru.nya.nyeios.data.notes.hasVisibleContent
+import ru.nya.nyeios.data.reminders.Reminder
+import ru.nya.nyeios.data.reminders.ReminderFormatter
+import ru.nya.nyeios.data.reminders.ReminderPermissions
+import ru.nya.nyeios.data.reminders.ReminderScheduleNotice
+import ru.nya.nyeios.data.reminders.RemindersRepository
 import ru.nya.nyeios.ui.notes.common.LessonTagText
 import ru.nya.nyeios.ui.notes.common.NotePhotoViewer
 import ru.nya.nyeios.ui.notes.common.ThemedDropdownMenu
+import ru.nya.nyeios.ui.notes.reminder.ReminderDraftDialog
+import ru.nya.nyeios.ui.notes.reminder.ReminderDraftModel
+import ru.nya.nyeios.ui.notes.reminder.ReminderSetupDialog
+import ru.nya.nyeios.ui.notes.reminder.ReminderSetupIssues
+import ru.nya.nyeios.ui.schedule.LessonTimeUtils
 import ru.nya.nyeios.ui.theme.NierBg
 import ru.nya.nyeios.ui.theme.NierBorderLight
 import ru.nya.nyeios.ui.theme.NierDark
@@ -145,6 +163,12 @@ fun LessonNoteEditorScreen(
     var attachMenuOpen by remember { mutableStateOf(false) }
     var pendingCameraFile by remember { mutableStateOf<java.io.File?>(null) }
     var saved by remember(noteKey) { mutableStateOf(false) }
+
+    // Напоминание: черновик диалога и рекомендации по разрешениям/энергосбережению.
+    var reminderDraftOpen by remember { mutableStateOf(false) }
+    var reminderInitialTriggerMs by remember { mutableLongStateOf(0L) }
+    var reminderInitialContent by remember { mutableStateOf("") }
+    var reminderSetupIssues by remember { mutableStateOf<ReminderSetupIssues?>(null) }
 
     val editorHighlightColor = if (isNycModern) NycCyan.copy(alpha = 0.35f) else Color(0xFFEAB308).copy(alpha = 0.35f)
     val editorState = rememberRichTextEditorState(
@@ -235,6 +259,31 @@ fun LessonNoteEditorScreen(
         }
     }
 
+    /** Текущие проблемы доставки напоминаний или null, если всё настроено. */
+    fun currentReminderSetupIssues(): ReminderSetupIssues? {
+        val status = ReminderPermissions.setupStatus(context)
+        return ReminderDraftModel.setupIssues(status).takeIf { it.hasIssues }
+    }
+
+    /** Готовит черновик: время пары (если ещё в будущем) и текст заметки/предмет. */
+    fun openReminderDraft() {
+        reminderInitialTriggerMs = ReminderDraftModel.defaultTriggerAtUtcMs(
+            dateString = dateString,
+            lessonTime = time,
+            nowUtcMs = System.currentTimeMillis(),
+            zone = LessonTimeUtils.moscowZone
+        )
+        reminderInitialContent = ReminderDraftModel.initialContent(
+            editorPlainText = editorState.toPlainSnippet(),
+            subject = subject
+        )
+        reminderDraftOpen = true
+    }
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { reminderSetupIssues = currentReminderSetupIssues() }
+
     fun launchCamera() {        if (photoAttachments.size >= NotePhotoStore.MAX_PHOTOS_PER_NOTE) {
             scope.launch {
                 snackbarHostState.showSnackbar(
@@ -268,6 +317,20 @@ fun LessonNoteEditorScreen(
             saveCurrent()
             onDismiss()
         }
+    }
+
+    // После возврата из системных настроек будильников/батареи перечитываем статус,
+    // чтобы диалог рекомендаций сразу убрал уже исправленные пункты.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val reminderSetupVisible = rememberUpdatedState(reminderSetupIssues != null)
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME && reminderSetupVisible.value) {
+                reminderSetupIssues = currentReminderSetupIssues()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     val isModern = isNycModern
@@ -488,6 +551,35 @@ fun LessonNoteEditorScreen(
                         }
                     }
 
+                    item(key = "reminder") {
+                        val actionShape = if (isModern) RoundedCornerShape(11.dp) else RoundedCornerShape(0.dp)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 44.dp)
+                                .clip(actionShape)
+                                .border(1.dp, accentColor.copy(alpha = 0.45f), actionShape)
+                                .clickable(role = Role.Button) { openReminderDraft() }
+                                .padding(horizontal = 14.dp, vertical = 11.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AlarmAdd,
+                                contentDescription = stringResource(R.string.reminders_btn_set_content_desc),
+                                tint = accentColor,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text = stringResource(R.string.reminders_btn_set),
+                                color = accentColor,
+                                fontFamily = titleFont,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+
                     item(key = "attach") {
                         Box {
                             Row(
@@ -584,6 +676,72 @@ fun LessonNoteEditorScreen(
                     store = photoStore,
                     tag = tag,
                     onDismiss = { viewerAttachment = null }
+                )
+            }
+
+            if (reminderDraftOpen) {
+                ReminderDraftDialog(
+                    title = stringResource(R.string.reminders_dialog_title),
+                    confirmLabel = stringResource(R.string.reminders_dialog_confirm),
+                    initialTriggerAtUtcMs = reminderInitialTriggerMs,
+                    initialContent = reminderInitialContent,
+                    onDismiss = { reminderDraftOpen = false },
+                    onConfirm = { draft ->
+                        reminderDraftOpen = false
+                        scope.launch {
+                            val reminder = Reminder(
+                                noteKey = noteKey,
+                                subject = subject,
+                                lessonDate = dateString,
+                                lessonTime = time,
+                                lessonNumber = lessonNumber,
+                                noteText = ReminderFormatter.normalizeNoteText(draft.content),
+                                triggerAtUtcMs = draft.triggerAtUtcMs
+                            )
+                            withContext(Dispatchers.IO) {
+                                RemindersRepository.getInstance(context).upsert(reminder)
+                            }.let { saveResult ->
+                                val triggerLabel = ReminderFormatter.formatTrigger(
+                                    draft.triggerAtUtcMs,
+                                    LessonTimeUtils.moscowZone
+                                )
+                                // Диалог рекомендаций показываем сразу: шоу-снекбар
+                                // приостанавливает корутину до своего закрытия.
+                                reminderSetupIssues = currentReminderSetupIssues()
+                                val message = when (saveResult.notice) {
+                                    ReminderScheduleNotice.EXACT ->
+                                        context.getString(R.string.reminders_created_fmt, triggerLabel)
+
+                                    ReminderScheduleNotice.INEXACT ->
+                                        context.getString(R.string.reminders_scheduled_inexact)
+
+                                    ReminderScheduleNotice.FAILED ->
+                                        context.getString(R.string.reminders_scheduled_failed)
+                                }
+                                snackbarHostState.showSnackbar(message)
+                            }
+                        }
+                    }
+                )
+            }
+
+            reminderSetupIssues?.let { issues ->
+                ReminderSetupDialog(
+                    issues = issues,
+                    onDismiss = { reminderSetupIssues = null },
+                    onFixNotifications = {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        } else {
+                            ReminderPermissions.openAppNotificationSettings(context)
+                        }
+                    },
+                    onFixExactAlarms = {
+                        ReminderPermissions.openExactAlarmSettings(context)
+                    },
+                    onFixBattery = {
+                        ReminderPermissions.requestBatteryOptimizationExemption(context)
+                    }
                 )
             }
         }

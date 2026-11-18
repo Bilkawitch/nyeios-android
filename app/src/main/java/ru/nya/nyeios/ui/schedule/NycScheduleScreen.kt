@@ -24,7 +24,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -37,6 +39,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -48,6 +51,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import ru.nya.nyeios.R
 import ru.nya.nyeios.ui.common.isAuthRelatedMessage
 import ru.nya.nyeios.ui.common.localizeErrorMessage
@@ -78,6 +82,8 @@ import ru.nya.nyeios.data.model.LessonScopeResolver
 import ru.nya.nyeios.data.model.LessonType
 import ru.nya.nyeios.data.model.ScheduleUiState
 import ru.nya.nyeios.data.model.WeekSchedule
+import ru.nya.nyeios.data.reminders.ReminderSchedulePolicy
+import ru.nya.nyeios.data.reminders.RemindersRepository
 import ru.nya.nyeios.ui.floormap.FloorMapBottomSheet
 import ru.nya.nyeios.ui.floormap.NycMapSheet
 import ru.nya.nyeios.ui.theme.isNycModern
@@ -110,6 +116,7 @@ import ru.nya.nyeios.data.notes.hasVisibleContent
 import ru.nya.nyeios.ui.notes.LessonNoteIconButton
 import ru.nya.nyeios.ui.notes.editor.LessonNoteEditorScreen
 import ru.nya.nyeios.ui.notes.preview.LessonNotePreviewSheet
+import ru.nya.nyeios.ui.notes.reminder.RemindersListSheet
 import ru.nya.nyeios.ui.notes.weekly.HomeworkPullUpHandle
 import ru.nya.nyeios.ui.notes.weekly.WeeklyHomeworkSheet
 
@@ -151,6 +158,19 @@ fun NycScheduleScreen(
     val notesRepo = remember { LessonNotesRepository.getInstance(context) }
     val notesMap by notesRepo.notesFlow.collectAsState()
 
+    // Напоминания: ячейка-таймер на месте воскресенья открывает список.
+    var isRemindersSheetVisible by remember { mutableStateOf(false) }
+    val remindersRepo = remember { RemindersRepository.getInstance(context) }
+    val reminders by remindersRepo.remindersFlow.collectAsState()
+    val activeRemindersCount by produceState(initialValue = 0, key1 = reminders) {
+        while (true) {
+            value = ReminderSchedulePolicy
+                .futureReminders(reminders, System.currentTimeMillis())
+                .size
+            delay(30_000L)
+        }
+    }
+
     Column(modifier = modifier.fillMaxSize()) {
         val schedule = (uiState as? ScheduleUiState.Success)?.schedule
 
@@ -163,12 +183,24 @@ fun NycScheduleScreen(
         )
 
         val daysList = schedule?.days ?: emptyList()
-        val selectableDayIndexes = remember(daysList) { daysList.indices.toList() }
+        val selectableDayIndexes = remember(daysList) {
+            DayRowCells.build(daysList)
+                .filterIsInstance<DayRowCell.Day>()
+                .map { it.originalIndex }
+        }
         if (daysList.isNotEmpty()) {
             NycDayRow(
                 days = daysList,
                 selectedIndex = selectedDayIndex.coerceIn(0, (daysList.size - 1).coerceAtLeast(0)),
-                onSelectDay = onSelectDay
+                remindersCount = activeRemindersCount,
+                onOpenReminders = {
+                    isHomeworkSheetVisible = false
+                    isRemindersSheetVisible = true
+                },
+                onSelectDay = { index ->
+                    isRemindersSheetVisible = false
+                    onSelectDay(index)
+                }
             )
         }
 
@@ -183,6 +215,12 @@ fun NycScheduleScreen(
                 WeeklyHomeworkSheet(
                     currentSchedule = schedule,
                     onDismiss = { isHomeworkSheetVisible = false },
+                    applyWindowInsets = false
+                )
+            } else if (isRemindersSheetVisible) {
+                // Список напоминаний занимает ту же область, что и шторка ДЗ.
+                RemindersListSheet(
+                    onDismiss = { isRemindersSheetVisible = false },
                     applyWindowInsets = false
                 )
             } else when (uiState) {
@@ -333,7 +371,14 @@ fun NycScheduleScreen(
                             LazyColumn(
                                 state = dayListState,
                                 modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = UiPreferencesManager.listSpace(10.dp)),
+                                contentPadding = PaddingValues(
+                                    start = 14.dp,
+                                    top = UiPreferencesManager.listSpace(10.dp),
+                                    end = 14.dp,
+                                    // +44dp: последняя карточка должна уезжать из-под
+                                    // плавающей плашки «Потяните…», а не обрезаться ею.
+                                    bottom = UiPreferencesManager.listSpace(10.dp) + 44.dp
+                                ),
                                 verticalArrangement = Arrangement.spacedBy(UiPreferencesManager.listSpace(10.dp))
                             ) {
                                 // Slim day summary (app-only element, kept minimal per Operate).
@@ -422,14 +467,18 @@ fun NycScheduleScreen(
                     }
                 }
             }
-        }
 
-        // Нижний триггер открытия ДЗ на неделю (Скриншот 2). Пока шторка открыта,
-        // плашка не композируется вовсе: ни узла разметки, ни узла доступности.
-        if (!isHomeworkSheetVisible) {
-            HomeworkPullUpHandle(
-                onSwipeUp = { isHomeworkSheetVisible = true }
-            )
+            // Нижний триггер открытия ДЗ на неделю (Скриншот 2). Плашка с
+            // прозрачным фоном плавает ПОВЕРХ контента и не отнимает у списка
+            // высоту, из-за которой обрезалась последняя карточка. Пока открыта
+            // шторка ДЗ или список напоминаний, узел не композируется вовсе:
+            // ни узла разметки, ни узла доступности.
+            if (!isHomeworkSheetVisible && !isRemindersSheetVisible) {
+                HomeworkPullUpHandle(
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                    onSwipeUp = { isHomeworkSheetVisible = true }
+                )
+            }
         }
 
         if (floorMapTargetRoom != null) {
@@ -681,9 +730,17 @@ private fun NycWeekRow(
 private fun NycDayRow(
     days: List<DaySchedule>,
     selectedIndex: Int,
+    remindersCount: Int = 0,
+    onOpenReminders: () -> Unit = {},
     onSelectDay: (Int) -> Unit
 ) {
     if (days.isEmpty()) return
+
+    // Воскресенье не содержит пар: его ячейка заменяется действием напоминаний
+    // в той же позиции (1/7 ширины ряда). Индексы остальных дней сохраняются,
+    // чтобы onSelectDay продолжал получать исходные индексы списка дней.
+    val cells = remember(days) { DayRowCells.build(days) }
+    if (cells.isEmpty()) return
     val safeSelectedIndex = selectedIndex.coerceIn(0, days.size - 1)
 
     Row(
@@ -692,69 +749,147 @@ private fun NycDayRow(
             .padding(start = 14.dp, end = 14.dp, top = 4.dp, bottom = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        days.forEachIndexed { index, day ->
-            val isSelected = index == safeSelectedIndex
-            val cleanDayDate =
-                Regex("""(\d{1,2}\.\d{1,2})""").find(day.dateString.ifEmpty { day.dayTitle })?.value
-                    ?: day.dateString.take(5)
+        cells.forEach { cell ->
+            when (cell) {
+                is DayRowCell.Day -> NycDayCell(
+                    day = cell.day,
+                    isSelected = cell.originalIndex == safeSelectedIndex,
+                    onClick = { onSelectDay(cell.originalIndex) }
+                )
 
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(56.dp)
-                    .then(if (isSelected) Modifier.nycWell(12.dp) else Modifier)
-                    .then(
-                        if (isSelected) Modifier.border(
-                            1.dp,
-                            NycCyan.copy(alpha = 0.22f),
-                            RoundedCornerShape(12.dp)
-                        ) else Modifier
+                DayRowCell.RemindersAction -> NycRemindersActionCell(
+                    remindersCount = remindersCount,
+                    onClick = onOpenReminders
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.NycDayCell(
+    day: DaySchedule,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val cleanDayDate =
+        Regex("""(\d{1,2}\.\d{1,2})""").find(day.dateString.ifEmpty { day.dayTitle })?.value
+            ?: day.dateString.take(5)
+
+    Box(
+        modifier = Modifier
+            .weight(1f)
+            .height(56.dp)
+            .then(if (isSelected) Modifier.nycWell(12.dp) else Modifier)
+            .then(
+                if (isSelected) Modifier.border(
+                    1.dp,
+                    NycCyan.copy(alpha = 0.22f),
+                    RoundedCornerShape(12.dp)
+                ) else Modifier
+            )
+            // Clip before clickable so the press ripple matches the 12dp chip corners
+            // instead of spilling out as a sharp-edged rectangle.
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .drawBehind {
+                if (day.isToday) {
+                    drawRect(
+                        color = NycCyanDk,
+                        topLeft = Offset((size.width - 22.dp.toPx()) / 2f, 3.dp.toPx()),
+                        size = Size(22.dp.toPx(), 2.dp.toPx())
                     )
-                    // Clip before clickable so the press ripple matches the 12dp chip corners
-                    // instead of spilling out as a sharp-edged rectangle.
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable { onSelectDay(index) }
-                    .drawBehind {
-                        if (day.isToday) {
-                            drawRect(
-                                color = NycCyanDk,
-                                topLeft = Offset((size.width - 22.dp.toPx()) / 2f, 3.dp.toPx()),
-                                size = Size(22.dp.toPx(), 2.dp.toPx())
-                            )
-                        }
-                        if (isSelected) {
-                            drawRect(
-                                color = NycCyan,
-                                topLeft = Offset(
-                                    (size.width - 22.dp.toPx()) / 2f,
-                                    size.height - 5.dp.toPx()
-                                ),
-                                size = Size(22.dp.toPx(), 2.dp.toPx())
-                            )
-                        }
-                    },
-                contentAlignment = Alignment.Center
+                }
+                if (isSelected) {
+                    drawRect(
+                        color = NycCyan,
+                        topLeft = Offset(
+                            (size.width - 22.dp.toPx()) / 2f,
+                            size.height - 5.dp.toPx()
+                        ),
+                        size = Size(22.dp.toPx(), 2.dp.toPx())
+                    )
+                }
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = localizedDayName(day.dayName),
+                fontFamily = NycMonoFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 8.sp,
+                letterSpacing = 1.sp,
+                color = when {
+                    isSelected -> NycCyan
+                    day.isToday -> nycMuted
+                    else -> nycFaint
+                }
+            )
+            Spacer(modifier = Modifier.height(3.dp))
+            Text(
+                text = cleanDayDate,
+                fontFamily = NycMonoFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 10.5.sp,
+                color = if (isSelected) nycText else nycMuted
+            )
+        }
+    }
+}
+
+/**
+ * Ячейка-таймер на месте воскресенья: открывает список напоминаний.
+ * Бейдж показывает число будущих (ещё не сработавших) напоминаний.
+ */
+@Composable
+private fun RowScope.NycRemindersActionCell(
+    remindersCount: Int,
+    onClick: () -> Unit
+) {
+    val description = if (remindersCount > 0) {
+        stringResource(R.string.reminders_day_cell_content_desc_count, remindersCount)
+    } else {
+        stringResource(R.string.reminders_day_cell_content_desc)
+    }
+
+    Box(
+        modifier = Modifier
+            .weight(1f)
+            .height(56.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .nycWell(11.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            // Иконка и счётчик — столбиком внутри «колодца», как «СР / 18.11»
+            // в соседних ячейках: бейдж поверх иконки перекрывал её и вылезал
+            // за границы ячейки.
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(1.dp)
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    imageVector = Icons.Default.Timer,
+                    contentDescription = description,
+                    tint = NycCyan,
+                    modifier = Modifier.size(18.dp)
+                )
+                if (remindersCount > 0) {
                     Text(
-                        text = localizedDayName(day.dayName),
+                        text = remindersCount.toString(),
                         fontFamily = NycMonoFamily,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 8.sp,
-                        letterSpacing = 1.sp,
-                        color = when {
-                            isSelected -> NycCyan
-                            day.isToday -> nycMuted
-                            else -> nycFaint
-                        }
-                    )
-                    Spacer(modifier = Modifier.height(3.dp))
-                    Text(
-                        text = cleanDayDate,
-                        fontFamily = NycMonoFamily,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 10.5.sp,
-                        color = if (isSelected) nycText else nycMuted
+                        fontSize = 8.5.sp,
+                        color = NycCyan,
+                        // Счётчик уже озвучен в contentDescription ячейки: не дублируем
+                        // его в семантике отдельного текстового узла.
+                        modifier = Modifier.clearAndSetSemantics { }
                     )
                 }
             }
