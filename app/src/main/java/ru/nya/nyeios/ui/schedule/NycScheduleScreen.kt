@@ -163,6 +163,7 @@ fun NycScheduleScreen(
         )
 
         val daysList = schedule?.days ?: emptyList()
+        val selectableDayIndexes = remember(daysList) { daysList.indices.toList() }
         if (daysList.isNotEmpty()) {
             NycDayRow(
                 days = daysList,
@@ -270,7 +271,13 @@ fun NycScheduleScreen(
                             }.using(SizeTransform(clip = false))
                         },
                         label = "nyc_day_schedule_transition",
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .daySwipeGesture(
+                                selectableIndexes = selectableDayIndexes,
+                                currentIndex = selectedDayIndex,
+                                onSelectDay = onSelectDay
+                            )
                     ) { (week, dayIdx) ->
                         val currentDay = uiState.schedule.days.getOrNull(dayIdx)
 

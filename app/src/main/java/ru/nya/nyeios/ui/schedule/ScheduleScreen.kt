@@ -191,6 +191,7 @@ fun ScheduleScreen(
 
             // Day Selector Tabs
             val daysList = (uiState as? ScheduleUiState.Success)?.schedule?.days ?: emptyList()
+            val selectableDayIndexes = remember(daysList) { daysList.indices.toList() }
             if (daysList.isNotEmpty()) {
                 DaySelectorRow(
                     days = daysList,
@@ -412,7 +413,13 @@ fun ScheduleScreen(
                                 }.using(SizeTransform(clip = false))
                             },
                             label = "day_schedule_transition",
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .daySwipeGesture(
+                                    selectableIndexes = selectableDayIndexes,
+                                    currentIndex = selectedDayIndex,
+                                    onSelectDay = onSelectDay
+                                )
                         ) { (week, dayIdx) ->
                             val currentDay = uiState.schedule.days.getOrNull(dayIdx)
 
