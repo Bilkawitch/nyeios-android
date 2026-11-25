@@ -12,9 +12,10 @@ import ru.nya.nyeios.data.floormap.RoomType
 class FloorMapRepositoryTest {
 
     @Test
-    fun `floor 4 has exactly 42 rooms mapped`() {
+    fun `floor 4 has exactly 41 rooms mapped`() {
         val rooms = FloorMapRepository.getRoomsForFloor(4)
-        assertEquals(42, rooms.size)
+        assertEquals(41, rooms.size)
+        assertNull(FloorMapRepository.findRoom("434"))
     }
 
     @Test
@@ -132,8 +133,8 @@ class FloorMapRepositoryTest {
         assertEquals(24f, route.points.first().x, 1f)
         assertEquals(551f, route.points.first().y, 1f)
 
-        // Finishes at 436 door (205, 552)
-        assertEquals(205f, route.points.last().x, 1f)
+        // Finishes at 436 door (244, 552)
+        assertEquals(244f, route.points.last().x, 1f)
         assertEquals(552f, route.points.last().y, 1f)
 
         // Enters main corridor and travels along y = 535.4
@@ -152,8 +153,8 @@ class FloorMapRepositoryTest {
         assertEquals(82f, route!!.points.first().x, 1f)
         assertEquals(408f, route.points.first().y, 1f)
 
-        // Finishes at 436 door (205, 552)
-        assertEquals(205f, route.points.last().x, 1f)
+        // Finishes at 436 door (244, 552)
+        assertEquals(244f, route.points.last().x, 1f)
         assertEquals(552f, route.points.last().y, 1f)
 
         // Passes through hallway waypoint (104.9, 408)
@@ -187,11 +188,16 @@ class FloorMapRepositoryTest {
     }
 
     @Test
-    fun `room 438 routes from door at 163 550 into corridor`() {
-        val route = FloorMapRepository.buildRoute("438", "421")
-        assertNotNull(route)
-        assertEquals(163f, route!!.points.first().x, 1f)
-        assertEquals(550f, route.points.first().y, 1f)
+    fun `room 438 and 440 route from shifted doors into corridor`() {
+        val route438 = FloorMapRepository.buildRoute("438", "421")
+        assertNotNull(route438)
+        assertEquals(205f, route438!!.points.first().x, 1f)
+        assertEquals(552f, route438.points.first().y, 1f)
+
+        val route440 = FloorMapRepository.buildRoute("440", "421")
+        assertNotNull(route440)
+        assertEquals(163f, route440!!.points.first().x, 1f)
+        assertEquals(550f, route440.points.first().y, 1f)
     }
 
     @Test
@@ -224,7 +230,7 @@ class FloorMapRepositoryTest {
 
         // Reset back to defaults for subsequent tests
         FloorMapRepository.resetToDefaults()
-        assertEquals(42, FloorMapRepository.getRoomsForFloor(4).size)
+        assertEquals(41, FloorMapRepository.getRoomsForFloor(4).size)
     }
 
     @Test

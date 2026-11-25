@@ -128,6 +128,8 @@ import ru.nya.nyeios.ui.theme.TextMuted
 import ru.nya.nyeios.ui.theme.ExamRed
 import ru.nya.nyeios.ui.theme.TextPrimary
 import ru.nya.nyeios.ui.theme.TextSecondary
+import ru.nya.nyeios.ui.update.AnnouncementBanner
+import ru.nya.nyeios.ui.update.AnnouncementViewModel
 import ru.nya.nyeios.ui.update.UpdateBanner
 import ru.nya.nyeios.ui.update.UpdateViewModel
 import ru.nya.nyeios.data.model.UpdateUiState
@@ -185,6 +187,7 @@ class MainActivity : ComponentActivity() {
                     val feedViewModel: FeedViewModel = viewModel()
                     val curriculumViewModel: CurriculumViewModel = viewModel()
                     val updateViewModel: UpdateViewModel = viewModel()
+                    val announcementViewModel: AnnouncementViewModel = viewModel()
                     val settingsViewModel: SettingsViewModel = viewModel()
                     val eiosHealthViewModel: EiosHealthViewModel = viewModel()
 
@@ -215,6 +218,7 @@ class MainActivity : ComponentActivity() {
                     var isNetworkLogsSheetVisible by rememberSaveable { mutableStateOf(false) }
 
                     val updateUiState by updateViewModel.uiState.collectAsState()
+                    val isAnnouncementVisible by announcementViewModel.isVisible.collectAsState()
                     val hasPendingUpdate = updateUiState is UpdateUiState.Dismissed
                     val isNycModern = ru.nya.nyeios.ui.theme.ThemeManager.currentTheme ==
                         ru.nya.nyeios.ui.theme.NierThemeMode.NYC_MODERN
@@ -900,14 +904,23 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
 
-                            // Update banner — floating above content, pinned to bottom
-                            UpdateBanner(
-                                state = updateUiState,
-                                viewModel = updateViewModel,
+                            // Floating bottom banners (independent announcement & update banners)
+                            Column(
                                 modifier = Modifier
                                     .align(Alignment.BottomCenter)
                                     .padding(bottom = 8.dp)
-                            )
+                            ) {
+                                AnnouncementBanner(
+                                    visible = isAnnouncementVisible,
+                                    onRemindLater = { announcementViewModel.remindLater() },
+                                    onDismissForever = { announcementViewModel.dismissForever() }
+                                )
+
+                                UpdateBanner(
+                                    state = updateUiState,
+                                    viewModel = updateViewModel
+                                )
+                            }
 
                             // EIOS health gate — themed warning when the monitor says the portal
                             // is not in shape; the pending refresh waits for the user's decision.

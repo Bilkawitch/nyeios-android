@@ -301,6 +301,12 @@
     <string name="update_banner_action_install">УСТАНОВИТЬ</string>
     <string name="update_banner_error">ОШИБКА ОБНОВЛЕНИЯ</string>
 
+    <!-- Announcement Banner -->
+    <string name="announcement_title">Объявление!</string>
+    <string name="announcement_floor_maps_body">Дорогие пользователи NyEIOS, особенно те из вас, кто постоянно-периодически посещает 1, 2 этажи и новый корпус (или даже технарьский, но я не знаю нужно ли это). Нам требуется ваша поддержка! Нет не деньги. Проект был, есть и будет абсолютно бесплатным. Все что нужно - схема расположения кабинетов на вашем этаже в порядке кабинетов, чтобы можно было сделать такие же удобные схемо-карты как для 3 и 4 этажей. За объяснениями что к чему обращайтесь к людям которые прислали вам это приложение, они отправят куда надо и что надо. Заранее спасибо!</string>
+    <string name="announcement_action_remind_later">Напомнить позже</string>
+    <string name="announcement_action_never">Нет, не буду</string>
+
     <!-- Curriculum (BRS) -->
     <string name="curriculum_loading">Загрузка успеваемости (БРС)...</string>
     <string name="curriculum_empty_title">Данные об успеваемости отсутствуют</string>

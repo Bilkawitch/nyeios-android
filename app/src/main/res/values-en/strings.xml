@@ -301,6 +301,12 @@
     <string name="update_banner_action_install">INSTALL</string>
     <string name="update_banner_error">UPDATE ERROR</string>
 
+    <!-- Announcement Banner -->
+    <string name="announcement_title">Announcement!</string>
+    <string name="announcement_floor_maps_body">Dear NyEIOS users, especially those of you who regularly or occasionally visit floors 1, 2, and the new building (or even the technical building, though I am not sure if that is needed). We need your support! No, not money. The project has been, is, and will always remain completely free. All we need is a layout scheme of the rooms on your floor in room order, so we can build the same convenient floor maps as for floors 3 and 4. For details on what is needed, reach out to the people who sent you this app — they will forward everything where needed. Thank you in advance!</string>
+    <string name="announcement_action_remind_later">Remind later</string>
+    <string name="announcement_action_never">No, I won\'t</string>
+
     <!-- Curriculum (BRS) -->
     <string name="curriculum_loading">Loading grades (BRS)...</string>
     <string name="curriculum_empty_title">No grade data available</string>

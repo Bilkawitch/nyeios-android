@@ -18,9 +18,34 @@ object ChangelogHistory {
     val releases: List<ChangelogVersion>
         get() = listOf(
             ChangelogVersion(
+                version = "0.3.6",
+                releaseDate = "25.11.2026",
+                isLatest = true,
+                sections = listOf(
+                    ChangelogSection(
+                        title = AppLocale.pick("КАРТА КОРПУСА", "FLOOR MAP"),
+                        items = listOf(
+                            AppLocale.pick(
+                                "Исправлена карта 4 этажа: убран несуществующий кабинет 434, кабинеты 436, 438 и 440 смещены на правильные места.",
+                                "Fixed the 4th floor map: removed non-existent room 434 and shifted rooms 436, 438, and 440 to their correct positions."
+                            )
+                        )
+                    ),
+                    ChangelogSection(
+                        title = AppLocale.pick("ОБЪЯВЛЕНИЕ", "ANNOUNCEMENT"),
+                        items = listOf(
+                            AppLocale.pick(
+                                "Добавлена плашка с просьбой о помощи со схемами кабинетов для 1, 2 этажей и других корпусов.",
+                                "Added a banner asking users for help with room layout schemes for floors 1, 2, and other buildings."
+                            )
+                        )
+                    )
+                )
+            ),
+            ChangelogVersion(
                 version = "0.3.5",
                 releaseDate = "18.11.2026",
-                isLatest = true,
+                isLatest = false,
                 sections = listOf(
                     ChangelogSection(
                         title = AppLocale.pick("НАПОМИНАНИЯ", "REMINDERS"),

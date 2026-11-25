@@ -883,8 +883,8 @@ object FloorMapRepository {
       "stairs": "Западная лестница"
     },
     {
-      "room": "434",
-      "name": "434",
+      "room": "436",
+      "name": "436",
       "x": 222,
       "y": 552,
       "w": 40,
@@ -899,8 +899,8 @@ object FloorMapRepository {
       "stairs": "Западная лестница"
     },
     {
-      "room": "436",
-      "name": "436",
+      "room": "438",
+      "name": "438",
       "x": 185,
       "y": 552,
       "w": 36,
@@ -915,8 +915,8 @@ object FloorMapRepository {
       "stairs": "Западная лестница"
     },
     {
-      "room": "438",
-      "name": "438",
+      "room": "440",
+      "name": "440",
       "x": 150,
       "y": 550,
       "w": 34,
@@ -926,22 +926,6 @@ object FloorMapRepository {
       "door": {
         "x": 163,
         "y": 550
-      },
-      "waypoints": [],
-      "stairs": "Западная лестница"
-    },
-    {
-      "room": "440",
-      "name": "440",
-      "x": 115,
-      "y": 551,
-      "w": 34,
-      "h": 72,
-      "wing": "BOTTOM",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 134,
-        "y": 551
       },
       "waypoints": [],
       "stairs": "Западная лестница"
