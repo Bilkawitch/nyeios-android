@@ -142,6 +142,8 @@ import ru.nya.nyeios.ui.notes.reminder.RemindersListSheet
 import ru.nya.nyeios.ui.notes.weekly.HomeworkPullUpHandle
 import ru.nya.nyeios.ui.notes.weekly.WeeklyHomeworkSheet
 import ru.nya.nyeios.ui.notes.preview.LessonNotePreviewSheet
+import ru.nya.nyeios.ui.onboarding.OnboardingTargetId
+import ru.nya.nyeios.ui.onboarding.onboardingTarget
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.LocalContext
 import java.time.LocalTime
@@ -201,7 +203,19 @@ fun ScheduleScreen(
     Column(
         modifier = modifier.fillMaxSize()
     ) {
-        // Week Navigator Bar
+        val daysList = (uiState as? ScheduleUiState.Success)?.schedule?.days ?: emptyList()
+        val selectableDayIndexes = remember(daysList) {
+            DayRowCells.build(daysList)
+                .filterIsInstance<DayRowCell.Day>()
+                .map { it.originalIndex }
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .onboardingTarget(OnboardingTargetId.WEEK_AND_DAY)
+        ) {
+            // Week Navigator Bar
             WeekNavigator(
                 weekOffset = weekOffset,
                 uiState = uiState,
@@ -211,12 +225,6 @@ fun ScheduleScreen(
             )
 
             // Day Selector Tabs
-            val daysList = (uiState as? ScheduleUiState.Success)?.schedule?.days ?: emptyList()
-            val selectableDayIndexes = remember(daysList) {
-                DayRowCells.build(daysList)
-                    .filterIsInstance<DayRowCell.Day>()
-                    .map { it.originalIndex }
-            }
             if (daysList.isNotEmpty()) {
                 DaySelectorRow(
                     days = daysList,
@@ -232,20 +240,22 @@ fun ScheduleScreen(
                     }
                 )
             }
+        }
 
-            // Верхний отступ живёт только вместе с расписанием: при открытой
-            // шторке ДЗ или списке напоминаний контент начинается сразу под
-            // рядом дней недели.
-            if (!isHomeworkSheetVisible && !isRemindersSheetVisible) {
-                Spacer(modifier = Modifier.height(8.dp))
-            }
+        // Верхний отступ живёт только вместе с расписанием: при открытой
+        // шторке ДЗ или списке напоминаний контент начинается сразу под
+        // рядом дней недели.
+        if (!isHomeworkSheetVisible && !isRemindersSheetVisible) {
+            Spacer(modifier = Modifier.height(8.dp))
+        }
 
-            // Main Content Area
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-            ) {
+        // Main Content Area
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .onboardingTarget(OnboardingTargetId.SCHEDULE_AREA)
+        ) {
                 if (isHomeworkSheetVisible) {
                     // Шторка ДЗ на неделю полностью заменяет содержимое области:
                     // от ряда дней недели до нижней навигации.
@@ -519,6 +529,9 @@ fun ScheduleScreen(
                                 )
 
                                 val lessons = currentDay.lessons
+                                val firstRoomIndex = remember(lessons) {
+                                    lessons.indexOfFirst { it.room.isNotEmpty() }
+                                }
                                 val dayScrollKey = week to dayIdx
                                 val dayListState = remember(dayScrollKey) {
                                     dayListScrollStates.getOrPut(dayScrollKey) { LazyListState() }
@@ -613,6 +626,9 @@ fun ScheduleScreen(
                                             ),
                                             isToday = isDayToday,
                                             hasNote = hasNote,
+                                            cardModifier = Modifier.onboardingTarget(OnboardingTargetId.LESSON_CARD, enabled = index == 0),
+                                            noteButtonModifier = Modifier.onboardingTarget(OnboardingTargetId.LESSON_NOTE_BUTTON, enabled = index == 0),
+                                            roomButtonModifier = Modifier.onboardingTarget(OnboardingTargetId.LESSON_ROOM_BUTTON, enabled = index == firstRoomIndex),
                                             onNoteClick = {
                                                 activeNoteLesson = ScheduleActiveNoteLesson(
                                                     dateString = cleanDate,
@@ -939,6 +955,7 @@ private fun RowScope.RemindersActionTab(
         modifier = Modifier
             .weight(1f)
             .heightIn(min = 48.dp)
+            .onboardingTarget(OnboardingTargetId.REMINDERS_CLOCK)
             .clickable(onClick = onClick)
             .padding(vertical = 6.dp, horizontal = 2.dp)
             .drawBehind {
@@ -1069,6 +1086,9 @@ fun LessonCard(
     isToday: Boolean,
     scopeLabel: String? = null,
     hasNote: Boolean = false,
+    cardModifier: Modifier = Modifier,
+    noteButtonModifier: Modifier = Modifier,
+    roomButtonModifier: Modifier = Modifier,
     onNoteClick: () -> Unit = {},
     onNoteLongClick: () -> Unit = {},
     onRoomClick: (String) -> Unit = {}
@@ -1110,7 +1130,7 @@ fun LessonCard(
     val endTime = timeParts.getOrNull(1) ?: ""
 
     Box(
-        modifier = Modifier
+        modifier = cardModifier
             .fillMaxWidth()
             .background(ru.nya.nyeios.ui.theme.NierPanelAlt)
             .border(
@@ -1263,6 +1283,7 @@ fun LessonCard(
                             // Кнопка заметки к паре (Скриншот 1)
                             LessonNoteIconButton(
                                 hasNote = hasNote,
+                                modifier = noteButtonModifier,
                                 onClick = onNoteClick,
                                 onLongClick = onNoteLongClick
                             )
@@ -1308,7 +1329,7 @@ fun LessonCard(
                             }
 
                             Box(
-                                modifier = Modifier
+                                modifier = roomButtonModifier
                                     .background(if (isDotRoom) ru.nya.nyeios.ui.theme.NierHighlight else ru.nya.nyeios.ui.theme.NierDark)
                                     .clickable { onRoomClick(lesson.room) }
                                     .padding(horizontal = 7.dp, vertical = 2.dp)

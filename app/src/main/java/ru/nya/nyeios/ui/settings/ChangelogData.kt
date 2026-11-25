@@ -18,9 +18,25 @@ object ChangelogHistory {
     val releases: List<ChangelogVersion>
         get() = listOf(
             ChangelogVersion(
-                version = "0.3.6",
+                version = "0.4.0",
                 releaseDate = "25.11.2026",
                 isLatest = true,
+                sections = listOf(
+                    ChangelogSection(
+                        title = AppLocale.pick("ОБУЧЕНИЕ", "ONBOARDING"),
+                        items = listOf(
+                            AppLocale.pick(
+                                "Добавлено пошаговое знакомство с приложением при первом запуске (14 шагов по всем вкладкам с подсветкой элементов, стрелками и кнопкой пропуска), а также кнопка повтора обучения в Настройках.",
+                                "Added a 14-step first-run walkthrough across all tabs with spotlight cutouts, arrows, and skip support, plus a replay option in Settings."
+                            )
+                        )
+                    )
+                )
+            ),
+            ChangelogVersion(
+                version = "0.3.6",
+                releaseDate = "25.11.2026",
+                isLatest = false,
                 sections = listOf(
                     ChangelogSection(
                         title = AppLocale.pick("КАРТА КОРПУСА", "FLOOR MAP"),

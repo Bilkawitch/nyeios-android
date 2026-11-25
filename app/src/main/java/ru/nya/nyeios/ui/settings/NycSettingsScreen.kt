@@ -103,6 +103,7 @@ private val nycRed = Color(0xFFF26D6D)
 fun NycSettingsScreen(
     viewModel: SettingsViewModel,
     updateViewModel: UpdateViewModel? = null,
+    onReplayOnboarding: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -122,7 +123,8 @@ fun NycSettingsScreen(
                         onRefreshIp = { viewModel.fetchExternalIp() },
                         onRefreshAll = { viewModel.refreshDiagnostics() },
                         onCheckEndpoints = { viewModel.checkEndpoints() },
-                        onCheckViaServer = { viewModel.checkViaMonitor() }
+                        onCheckViaServer = { viewModel.checkViaMonitor() },
+                        onReplayOnboarding = onReplayOnboarding
                     )
                 }
                 SettingsSubtab.THEME -> {
@@ -257,7 +259,8 @@ private fun NycGeneralContent(
     onRefreshIp: () -> Unit,
     onRefreshAll: () -> Unit,
     onCheckEndpoints: () -> Unit,
-    onCheckViaServer: () -> Unit
+    onCheckViaServer: () -> Unit,
+    onReplayOnboarding: (() -> Unit)? = null
 ) {
     val scrollState = rememberScrollState()
 
@@ -728,6 +731,28 @@ private fun NycGeneralContent(
                 letterSpacing = 1.sp,
                 color = nycText
             )
+        }
+
+        if (onReplayOnboarding != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 9.dp)
+                    .nycWell(15.dp)
+                    .border(1.dp, NycCyan.copy(alpha = 0.3f), RoundedCornerShape(15.dp))
+                    .clickable { onReplayOnboarding() }
+                    .padding(vertical = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = stringResource(R.string.onboarding_replay_btn),
+                    fontFamily = NycSansFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp,
+                    letterSpacing = 1.sp,
+                    color = NycCyan
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))

@@ -89,6 +89,8 @@ import ru.nya.nyeios.data.model.FeedAttachment
 import ru.nya.nyeios.data.model.FeedPost
 import ru.nya.nyeios.data.model.FeedUiState
 import ru.nya.nyeios.ui.download.DownloadsBottomSheet
+import ru.nya.nyeios.ui.onboarding.OnboardingTargetId
+import ru.nya.nyeios.ui.onboarding.onboardingTarget
 import ru.nya.nyeios.ui.theme.LabAmber
 import ru.nya.nyeios.ui.theme.LectureBlue
 import ru.nya.nyeios.ui.theme.LectureBlueBg
@@ -523,6 +525,7 @@ fun FeedScreen(
                                     Box(
                                         modifier = Modifier
                                             .height(38.dp)
+                                            .onboardingTarget(OnboardingTargetId.FEED_FETCH_BUTTON)
                                             .border(1.dp, ru.nya.nyeios.ui.theme.NierBorder)
                                             .background(ru.nya.nyeios.ui.theme.NierPanel)
                                             .clickable { requestSync() }
@@ -644,6 +647,7 @@ fun FeedScreen(
 
                                     Box(
                                         modifier = Modifier
+                                            .onboardingTarget(OnboardingTargetId.FEED_FETCH_BUTTON)
                                             .border(1.dp, ru.nya.nyeios.ui.theme.NierBlue)
                                             .background(Color.Transparent)
                                             .clickable {

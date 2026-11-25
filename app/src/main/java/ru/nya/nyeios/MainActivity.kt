@@ -128,6 +128,13 @@ import ru.nya.nyeios.ui.theme.TextMuted
 import ru.nya.nyeios.ui.theme.ExamRed
 import ru.nya.nyeios.ui.theme.TextPrimary
 import ru.nya.nyeios.ui.theme.TextSecondary
+import ru.nya.nyeios.ui.onboarding.LocalOnboardingRegistry
+import ru.nya.nyeios.ui.onboarding.OnboardingOverlay
+import ru.nya.nyeios.ui.onboarding.OnboardingSteps
+import ru.nya.nyeios.ui.onboarding.OnboardingTargetId
+import ru.nya.nyeios.ui.onboarding.OnboardingTargetRegistry
+import ru.nya.nyeios.ui.onboarding.OnboardingViewModel
+import ru.nya.nyeios.ui.onboarding.onboardingTarget
 import ru.nya.nyeios.ui.update.AnnouncementBanner
 import ru.nya.nyeios.ui.update.AnnouncementViewModel
 import ru.nya.nyeios.ui.update.UpdateBanner
@@ -173,10 +180,13 @@ class MainActivity : ComponentActivity() {
                 baseContext.createConfigurationContext(localizedConfig)
             }
 
+            val onboardingRegistry = remember { OnboardingTargetRegistry() }
+
             androidx.compose.runtime.CompositionLocalProvider(
                 androidx.activity.compose.LocalActivityResultRegistryOwner provides this@MainActivity,
                 LocalConfiguration provides localizedConfig,
-                LocalContext provides localizedContext
+                LocalContext provides localizedContext,
+                LocalOnboardingRegistry provides onboardingRegistry
             ) {
                 NyEIOSTheme {
                     Surface(
@@ -188,6 +198,7 @@ class MainActivity : ComponentActivity() {
                     val curriculumViewModel: CurriculumViewModel = viewModel()
                     val updateViewModel: UpdateViewModel = viewModel()
                     val announcementViewModel: AnnouncementViewModel = viewModel()
+                    val onboardingViewModel: OnboardingViewModel = viewModel()
                     val settingsViewModel: SettingsViewModel = viewModel()
                     val eiosHealthViewModel: EiosHealthViewModel = viewModel()
 
@@ -219,12 +230,38 @@ class MainActivity : ComponentActivity() {
 
                     val updateUiState by updateViewModel.uiState.collectAsState()
                     val isAnnouncementVisible by announcementViewModel.isVisible.collectAsState()
+                    val isOnboardingActive by onboardingViewModel.isActive.collectAsState()
+                    val onboardingStepIndex by onboardingViewModel.currentStepIndex.collectAsState()
                     val hasPendingUpdate = updateUiState is UpdateUiState.Dismissed
                     val isNycModern = ru.nya.nyeios.ui.theme.ThemeManager.currentTheme ==
                         ru.nya.nyeios.ui.theme.NierThemeMode.NYC_MODERN
 
                     LaunchedEffect(Unit) {
                         updateViewModel.checkForUpdate()
+                    }
+
+                    LaunchedEffect(authSession.isLoggedIn, scheduleUiState) {
+                        if (authSession.isLoggedIn && scheduleUiState !is ScheduleUiState.Loading) {
+                            onboardingViewModel.startIfFirstLaunch()
+                        }
+                    }
+
+                    LaunchedEffect(isOnboardingActive, onboardingStepIndex) {
+                        if (!isOnboardingActive) return@LaunchedEffect
+                        val step = OnboardingSteps.getOrNull(onboardingStepIndex) ?: return@LaunchedEffect
+                        if (currentTab != step.requiredTab) {
+                            currentTab = step.requiredTab
+                        }
+                        if (step.stepNumber in 1..3) {
+                            val days = (scheduleUiState as? ScheduleUiState.Success)?.schedule?.days.orEmpty()
+                            val currentDay = days.getOrNull(selectedDayIndex)
+                            if (currentDay == null || currentDay.lessons.isEmpty()) {
+                                val firstNonEmpty = days.indexOfFirst { it.lessons.isNotEmpty() }
+                                if (firstNonEmpty >= 0) {
+                                    scheduleViewModel.selectDay(firstNonEmpty)
+                                }
+                            }
+                        }
                     }
 
                     val isRefreshing = eiosHealthState.isProbing || when (currentTab) {
@@ -252,6 +289,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
+                    Box(modifier = Modifier.fillMaxSize()) {
                     Scaffold(
                         modifier = Modifier
                             .fillMaxSize()
@@ -574,6 +612,7 @@ class MainActivity : ComponentActivity() {
                                         if (currentTab != 3) {
                                         val syncBusyToast = stringResource(R.string.sync_feed_in_progress_toast)
                                         IconButton(
+                                            modifier = Modifier.onboardingTarget(OnboardingTargetId.REFRESH_BUTTON),
                                             onClick = {
                                                 if (feedSyncProgress.isSyncing) {
                                                     android.widget.Toast.makeText(
@@ -751,10 +790,20 @@ class MainActivity : ComponentActivity() {
                                         } else {
                                             ru.nya.nyeios.ui.theme.NierDim
                                         }
+                                        val tabTargetId = when (index) {
+                                            1 -> OnboardingTargetId.TAB_FEED
+                                            2 -> OnboardingTargetId.TAB_CURRICULUM
+                                            3 -> OnboardingTargetId.TAB_SETTINGS
+                                            else -> null
+                                        }
                                         Column(
                                             modifier = Modifier
                                                 .weight(1f)
                                                 .height(62.dp)
+                                                .then(
+                                                    if (tabTargetId != null) Modifier.onboardingTarget(tabTargetId)
+                                                    else Modifier
+                                                )
                                                 .selectable(
                                                     selected = isSelected,
                                                     onClick = { currentTab = index },
@@ -892,12 +941,20 @@ class MainActivity : ComponentActivity() {
                                         3 -> if (isNycModern) {
                                             NycSettingsScreen(
                                                 viewModel = settingsViewModel,
-                                                updateViewModel = updateViewModel
+                                                updateViewModel = updateViewModel,
+                                                onReplayOnboarding = {
+                                                    currentTab = 0
+                                                    onboardingViewModel.replay()
+                                                }
                                             )
                                         } else {
                                             SettingsScreen(
                                                 viewModel = settingsViewModel,
-                                                updateViewModel = updateViewModel
+                                                updateViewModel = updateViewModel,
+                                                onReplayOnboarding = {
+                                                    currentTab = 0
+                                                    onboardingViewModel.replay()
+                                                }
                                             )
                                         }
                                     }
@@ -911,7 +968,7 @@ class MainActivity : ComponentActivity() {
                                     .padding(bottom = 8.dp)
                             ) {
                                 AnnouncementBanner(
-                                    visible = isAnnouncementVisible,
+                                    visible = isAnnouncementVisible && !isOnboardingActive,
                                     onRemindLater = { announcementViewModel.remindLater() },
                                     onDismissForever = { announcementViewModel.dismissForever() }
                                 )
@@ -1010,6 +1067,25 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
+                    }
+
+                    OnboardingOverlay(
+                        isActive = isOnboardingActive,
+                        stepIndex = onboardingStepIndex,
+                        registry = onboardingRegistry,
+                        onNext = {
+                            val isLast = onboardingStepIndex >= OnboardingSteps.lastIndex
+                            onboardingViewModel.nextStep()
+                            if (isLast) {
+                                currentTab = 0
+                            }
+                        },
+                        onPrev = { onboardingViewModel.prevStep() },
+                        onSkip = {
+                            onboardingViewModel.skip()
+                            currentTab = 0
+                        }
+                    )
                     }
                 }
             }

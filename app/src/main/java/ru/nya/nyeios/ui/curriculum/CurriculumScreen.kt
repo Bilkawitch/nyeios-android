@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
@@ -40,6 +41,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import ru.nya.nyeios.R
 import ru.nya.nyeios.ui.common.localizeErrorMessage
+import ru.nya.nyeios.ui.onboarding.OnboardingTargetId
+import ru.nya.nyeios.ui.onboarding.onboardingTarget
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ru.nya.nyeios.data.model.CurriculumControlType
@@ -71,7 +74,11 @@ fun CurriculumScreen(
     onOpenLogin: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .onboardingTarget(OnboardingTargetId.CURRICULUM_AREA)
+    ) {
         when (uiState) {
             is CurriculumUiState.Loading -> {
                 Box(
@@ -276,8 +283,14 @@ fun CurriculumScreen(
                                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = UiPreferencesManager.listSpace(8.dp)),
                                 verticalArrangement = Arrangement.spacedBy(UiPreferencesManager.listSpace(10.dp))
                             ) {
-                                items(activeTerm.subjects) { subject ->
-                                    CurriculumSubjectCard(subject = subject)
+                                itemsIndexed(activeTerm.subjects) { index, subject ->
+                                    CurriculumSubjectCard(
+                                        subject = subject,
+                                        modifier = Modifier.onboardingTarget(
+                                            OnboardingTargetId.CURRICULUM_GRADES,
+                                            enabled = index == 0
+                                        )
+                                    )
                                 }
                                 item {
                                     Spacer(modifier = Modifier.height(24.dp))
@@ -401,7 +414,10 @@ fun StatCard(
 }
 
 @Composable
-fun CurriculumSubjectCard(subject: CurriculumSubject) {
+fun CurriculumSubjectCard(
+    subject: CurriculumSubject,
+    modifier: Modifier = Modifier
+) {
     var isExpanded by remember { mutableStateOf(false) }
 
     val (ctrlColor, ctrlBg) = when (subject.controlCategory) {
@@ -415,7 +431,7 @@ fun CurriculumSubjectCard(subject: CurriculumSubject) {
     val gradeText = subject.grade.trim()
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(ru.nya.nyeios.ui.theme.NierPanelAlt)
             .border(1.dp, ru.nya.nyeios.ui.theme.NierBorderLight)

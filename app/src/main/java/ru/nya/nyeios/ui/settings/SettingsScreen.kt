@@ -97,6 +97,7 @@ import android.net.Uri
 fun SettingsScreen(
     viewModel: SettingsViewModel,
     updateViewModel: UpdateViewModel? = null,
+    onReplayOnboarding: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -128,7 +129,8 @@ fun SettingsScreen(
                         onRefreshIp = { viewModel.fetchExternalIp() },
                         onRefreshAll = { viewModel.refreshDiagnostics() },
                         onCheckEndpoints = { viewModel.checkEndpoints() },
-                        onCheckViaServer = { viewModel.checkViaMonitor() }
+                        onCheckViaServer = { viewModel.checkViaMonitor() },
+                        onReplayOnboarding = onReplayOnboarding
                     )
                 }
                 SettingsSubtab.THEME -> {
@@ -217,7 +219,8 @@ private fun GeneralSettingsContent(
     onRefreshIp: () -> Unit,
     onRefreshAll: () -> Unit,
     onCheckEndpoints: () -> Unit,
-    onCheckViaServer: () -> Unit
+    onCheckViaServer: () -> Unit,
+    onReplayOnboarding: (() -> Unit)? = null
 ) {
     val scrollState = rememberScrollState()
 
@@ -580,6 +583,27 @@ private fun GeneralSettingsContent(
                 Text(
                     text = stringResource(R.string.settings_action_repeat_diag),
                     color = NierDark,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = RajdhaniFamily,
+                    letterSpacing = 0.5.sp
+                )
+            }
+        }
+
+        if (onReplayOnboarding != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(NierPanelAlt)
+                    .border(1.dp, NierBlue, appRectShape())
+                    .clickable { onReplayOnboarding() }
+                    .padding(vertical = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = stringResource(R.string.onboarding_replay_btn),
+                    color = NierBlue,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = RajdhaniFamily,

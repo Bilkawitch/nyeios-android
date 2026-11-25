@@ -119,6 +119,8 @@ import ru.nya.nyeios.ui.notes.preview.LessonNotePreviewSheet
 import ru.nya.nyeios.ui.notes.reminder.RemindersListSheet
 import ru.nya.nyeios.ui.notes.weekly.HomeworkPullUpHandle
 import ru.nya.nyeios.ui.notes.weekly.WeeklyHomeworkSheet
+import ru.nya.nyeios.ui.onboarding.OnboardingTargetId
+import ru.nya.nyeios.ui.onboarding.onboardingTarget
 
 // Parallel NyC-modern schedule interface from mockup nyeios_redesign.html (screen 2).
 // Same state, same callbacks, same business rules as ScheduleScreen; only rendering
@@ -174,13 +176,36 @@ fun NycScheduleScreen(
     Column(modifier = modifier.fillMaxSize()) {
         val schedule = (uiState as? ScheduleUiState.Success)?.schedule
 
-        NycWeekRow(
-            weekOffset = weekOffset,
-            schedule = schedule,
-            onPrev = onPrevWeek,
-            onNext = onNextWeek,
-            onToday = onCurrentWeek
-        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .onboardingTarget(OnboardingTargetId.WEEK_AND_DAY)
+        ) {
+            NycWeekRow(
+                weekOffset = weekOffset,
+                schedule = schedule,
+                onPrev = onPrevWeek,
+                onNext = onNextWeek,
+                onToday = onCurrentWeek
+            )
+
+            val daysList = schedule?.days ?: emptyList()
+            if (daysList.isNotEmpty()) {
+                NycDayRow(
+                    days = daysList,
+                    selectedIndex = selectedDayIndex.coerceIn(0, (daysList.size - 1).coerceAtLeast(0)),
+                    remindersCount = activeRemindersCount,
+                    onOpenReminders = {
+                        isHomeworkSheetVisible = false
+                        isRemindersSheetVisible = true
+                    },
+                    onSelectDay = { index ->
+                        isRemindersSheetVisible = false
+                        onSelectDay(index)
+                    }
+                )
+            }
+        }
 
         val daysList = schedule?.days ?: emptyList()
         val selectableDayIndexes = remember(daysList) {
@@ -188,26 +213,12 @@ fun NycScheduleScreen(
                 .filterIsInstance<DayRowCell.Day>()
                 .map { it.originalIndex }
         }
-        if (daysList.isNotEmpty()) {
-            NycDayRow(
-                days = daysList,
-                selectedIndex = selectedDayIndex.coerceIn(0, (daysList.size - 1).coerceAtLeast(0)),
-                remindersCount = activeRemindersCount,
-                onOpenReminders = {
-                    isHomeworkSheetVisible = false
-                    isRemindersSheetVisible = true
-                },
-                onSelectDay = { index ->
-                    isRemindersSheetVisible = false
-                    onSelectDay(index)
-                }
-            )
-        }
 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
+                .onboardingTarget(OnboardingTargetId.SCHEDULE_AREA)
         ) {
             if (isHomeworkSheetVisible) {
                 // Шторка ДЗ на неделю полностью заменяет содержимое области:
@@ -364,6 +375,9 @@ fun NycScheduleScreen(
                                 )
 
                             val lessons = currentDay.lessons
+                            val firstRoomIndex = remember(lessons) {
+                                lessons.indexOfFirst { it.room.isNotEmpty() }
+                            }
                             val dayScrollKey = week to dayIdx
                             val dayListState = remember(dayScrollKey) {
                                 dayListScrollStates.getOrPut(dayScrollKey) { LazyListState() }
@@ -435,6 +449,9 @@ fun NycScheduleScreen(
                                         ) == LessonScope.STREAM,
                                         isToday = isDayToday,
                                         hasNote = hasNote,
+                                        cardModifier = Modifier.onboardingTarget(OnboardingTargetId.LESSON_CARD, enabled = index == 0),
+                                        noteButtonModifier = Modifier.onboardingTarget(OnboardingTargetId.LESSON_NOTE_BUTTON, enabled = index == 0),
+                                        roomButtonModifier = Modifier.onboardingTarget(OnboardingTargetId.LESSON_ROOM_BUTTON, enabled = index == firstRoomIndex),
                                         onNoteClick = {
                                             activeNoteLesson = ScheduleActiveNoteLesson(
                                                 dateString = cleanDate,
@@ -857,6 +874,7 @@ private fun RowScope.NycRemindersActionCell(
         modifier = Modifier
             .weight(1f)
             .height(56.dp)
+            .onboardingTarget(OnboardingTargetId.REMINDERS_CLOCK)
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
@@ -907,6 +925,9 @@ private fun NycLessonCard(
     scopeLabel: String? = null,
     scopeIsStream: Boolean = false,
     hasNote: Boolean = false,
+    cardModifier: Modifier = Modifier,
+    noteButtonModifier: Modifier = Modifier,
+    roomButtonModifier: Modifier = Modifier,
     onNoteClick: () -> Unit = {},
     onNoteLongClick: () -> Unit = {},
     onRoomClick: (String) -> Unit = {}
@@ -959,7 +980,7 @@ private fun NycLessonCard(
     )?.value ?: 1f
 
     Box(
-        modifier = Modifier
+        modifier = cardModifier
             .fillMaxWidth()
             .alpha(if (isFinished && !isOngoing) 0.48f else 1f)
             .then(
@@ -1085,6 +1106,7 @@ private fun NycLessonCard(
 
                     LessonNoteIconButton(
                         hasNote = hasNote,
+                        modifier = noteButtonModifier,
                         accentColor = NycCyan,
                         onClick = onNoteClick,
                         onLongClick = onNoteLongClick
@@ -1131,7 +1153,7 @@ private fun NycLessonCard(
                         }
                         val chipActive = isOngoing && !isDotRoom
                         Box(
-                            modifier = Modifier
+                            modifier = roomButtonModifier
                                 .height(30.dp)
                                 .clip(RoundedCornerShape(10.dp))
                                 .then(

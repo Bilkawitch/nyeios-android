@@ -69,6 +69,8 @@ import ru.nya.nyeios.data.model.FeedPost
 import ru.nya.nyeios.data.model.FeedSyncProgress
 import ru.nya.nyeios.data.model.FeedUiState
 import ru.nya.nyeios.ui.download.DownloadsBottomSheet
+import ru.nya.nyeios.ui.onboarding.OnboardingTargetId
+import ru.nya.nyeios.ui.onboarding.onboardingTarget
 import ru.nya.nyeios.ui.theme.NycCyan
 import ru.nya.nyeios.ui.theme.NycMonoFamily
 import ru.nya.nyeios.ui.theme.UiPreferencesManager
@@ -301,6 +303,7 @@ fun NycFeedScreen(
                             dimAction = false,
                             syncDate = syncDateString,
                             syncTime = syncTimeString,
+                            actionModifier = Modifier.onboardingTarget(OnboardingTargetId.FEED_FETCH_BUTTON),
                             onAction = {
                                 if (!isUserLoggedIn) {
                                     onOpenLogin()
@@ -419,6 +422,7 @@ private fun NycStatusCard(
     dimAction: Boolean,
     syncDate: String? = null,
     syncTime: String? = null,
+    actionModifier: Modifier = Modifier,
     onAction: () -> Unit
 ) {
     Row(
@@ -502,7 +506,7 @@ private fun NycStatusCard(
         }
 
         Row(
-            modifier = Modifier
+            modifier = actionModifier
                 .height(34.dp)
                 .clip(RoundedCornerShape(11.dp))
                 .then(

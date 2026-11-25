@@ -52,6 +52,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ru.nya.nyeios.ui.onboarding.OnboardingTargetId
+import ru.nya.nyeios.ui.onboarding.onboardingTarget
 import ru.nya.nyeios.ui.theme.NycCyan
 import ru.nya.nyeios.ui.theme.NycMonoFamily
 import ru.nya.nyeios.ui.theme.NycSansFamily
@@ -273,6 +275,7 @@ fun NycTopBar(
             Box(
                 modifier = Modifier
                     .size(42.dp)
+                    .onboardingTarget(OnboardingTargetId.REFRESH_BUTTON)
                     .nycRaised(13.dp)
                     .then(
                         if (blinking) {
@@ -408,10 +411,20 @@ fun NycBottomNav(
                 animationSpec = UiPreferencesManager.gated(tween(durationMillis = 220)),
                 label = "nyc_nav_tint"
             )
+            val tabTargetId = when (tab.index) {
+                1 -> OnboardingTargetId.TAB_FEED
+                2 -> OnboardingTargetId.TAB_CURRICULUM
+                3 -> OnboardingTargetId.TAB_SETTINGS
+                else -> null
+            }
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .height(66.dp)
+                    .then(
+                        if (tabTargetId != null) Modifier.onboardingTarget(tabTargetId)
+                        else Modifier
+                    )
                     .clip(RoundedCornerShape(8.dp))
                     .clickable { onSelect(tab.index) }
                     .padding(top = 6.dp, bottom = 4.dp),

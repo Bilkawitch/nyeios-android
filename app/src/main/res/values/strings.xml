@@ -307,6 +307,28 @@
     <string name="announcement_action_remind_later">Напомнить позже</string>
     <string name="announcement_action_never">Нет, не буду</string>
 
+    <!-- Onboarding Tour -->
+    <string name="onboarding_skip">Пропустить</string>
+    <string name="onboarding_back">Назад</string>
+    <string name="onboarding_next">Далее</string>
+    <string name="onboarding_done">Готово</string>
+    <string name="onboarding_step_fmt">%1$d / %2$d</string>
+    <string name="onboarding_replay_btn">ПОВТОРИТЬ ОБУЧЕНИЕ</string>
+    <string name="onboarding_step_1">Тут у нас сами занятия</string>
+    <string name="onboarding_step_2">Тут можно посмотреть карту расположения кабинета</string>
+    <string name="onboarding_step_3">Тут можно записать ДЗ</string>
+    <string name="onboarding_step_4">Тут можно выбрать неделю и день недели</string>
+    <string name="onboarding_step_5">Тут можно обновить занятия с сайта</string>
+    <string name="onboarding_step_6">Тут можно поставить напоминание на время с ДЗ</string>
+    <string name="onboarding_step_7">Тут можно посмотреть все записанные ДЗ</string>
+    <string name="onboarding_step_8">Перейди во вкладку «Лента»</string>
+    <string name="onboarding_step_9">Тут можно подгрузить ленту с сайта, но это занимает время, имейте ввиду</string>
+    <string name="onboarding_step_10">Перейди во вкладку «БРС»</string>
+    <string name="onboarding_step_11">Тут — ваши баллы по предметам</string>
+    <string name="onboarding_step_12">Перейди во вкладку «Настройки»</string>
+    <string name="onboarding_step_13">В «Общем» можно проверить, работает ли сайт. Также у нас есть разные «Темы» и поддержка английского и русского языков!</string>
+    <string name="onboarding_step_14">Удачи в учебе!</string>
+
     <!-- Curriculum (BRS) -->
     <string name="curriculum_loading">Загрузка успеваемости (БРС)...</string>
     <string name="curriculum_empty_title">Данные об успеваемости отсутствуют</string>

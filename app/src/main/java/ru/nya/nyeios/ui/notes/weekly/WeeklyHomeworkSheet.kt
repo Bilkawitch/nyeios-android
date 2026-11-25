@@ -102,6 +102,8 @@ import ru.nya.nyeios.ui.theme.NycCyanDk
 import ru.nya.nyeios.ui.theme.NycMonoFamily
 import ru.nya.nyeios.ui.theme.NycSansFamily
 import ru.nya.nyeios.ui.theme.NycShapes
+import ru.nya.nyeios.ui.onboarding.OnboardingTargetId
+import ru.nya.nyeios.ui.onboarding.onboardingTarget
 import ru.nya.nyeios.ui.theme.RajdhaniFamily
 import ru.nya.nyeios.ui.theme.ShareTechMonoFamily
 import ru.nya.nyeios.ui.theme.isNycModern
@@ -126,6 +128,7 @@ fun HomeworkPullUpHandle(
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .onboardingTarget(OnboardingTargetId.HOMEWORK_PULL_HANDLE)
             .pointerInput(Unit) {
                 detectVerticalDragGestures(
                     onDragStart = { accumulatedDrag = 0f },
