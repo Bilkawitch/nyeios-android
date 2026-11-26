@@ -6,23 +6,40 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import ru.nya.nyeios.ui.onboarding.OnboardingSessionState
 import ru.nya.nyeios.ui.onboarding.OnboardingSteps
+import ru.nya.nyeios.ui.onboarding.OnboardingTargetId
 
 class OnboardingSessionStateTest {
 
     @Test
-    fun `onboarding spec has 14 sequential steps covering all 4 tabs`() {
-        assertEquals(14, OnboardingSteps.size)
-        assertEquals((1..14).toList(), OnboardingSteps.map { it.stepNumber })
+    fun `onboarding spec has 15 sequential steps covering all 4 tabs`() {
+        assertEquals(15, OnboardingSteps.size)
+        assertEquals((1..15).toList(), OnboardingSteps.map { it.stepNumber })
         assertEquals(0, OnboardingSteps[0].requiredTab)
         assertEquals(0, OnboardingSteps[7].requiredTab)
-        assertEquals(1, OnboardingSteps[8].requiredTab)
+        assertEquals(0, OnboardingSteps[8].requiredTab)
         assertEquals(1, OnboardingSteps[9].requiredTab)
-        assertEquals(2, OnboardingSteps[10].requiredTab)
+        assertEquals(1, OnboardingSteps[10].requiredTab)
         assertEquals(2, OnboardingSteps[11].requiredTab)
-        assertEquals(3, OnboardingSteps[12].requiredTab)
+        assertEquals(2, OnboardingSteps[12].requiredTab)
         assertEquals(3, OnboardingSteps[13].requiredTab)
+        assertEquals(3, OnboardingSteps[14].requiredTab)
         assertTrue(OnboardingSteps.last().isFinal)
         assertTrue(OnboardingSteps.dropLast(1).none { it.isFinal })
+    }
+
+    @Test
+    fun `auto-update step follows schedule steps and precedes feed transition`() {
+        val autoUpdate = OnboardingSteps.first { it.textRes == R.string.onboarding_step_8 }
+        assertEquals(8, autoUpdate.stepNumber)
+        assertEquals(0, autoUpdate.requiredTab)
+        assertEquals(OnboardingTargetId.REFRESH_BUTTON, autoUpdate.targetId)
+
+        // Шаги расписания заканчиваются записанными ДЗ, дальше — автообновление,
+        // и только потом начинается переход к вкладке «Лента».
+        assertEquals(OnboardingTargetId.HOMEWORK_PULL_HANDLE, OnboardingSteps[6].targetId)
+        assertEquals(OnboardingTargetId.TAB_FEED, OnboardingSteps[8].targetId)
+        assertTrue(OnboardingSteps.take(8).all { it.requiredTab == 0 })
+        assertTrue(OnboardingSteps.drop(9).none { it.requiredTab == 0 })
     }
 
     @Test
@@ -56,7 +73,7 @@ class OnboardingSessionStateTest {
     }
 
     @Test
-    fun `nextStep and prevStep navigate across all 14 steps and complete on last`() {
+    fun `nextStep and prevStep navigate across all 15 steps and complete on last`() {
         var completed = false
         val state = OnboardingSessionState(
             totalSteps = OnboardingSteps.size,
@@ -68,17 +85,17 @@ class OnboardingSessionStateTest {
         state.prevStep()
         assertEquals(0, state.currentStepIndex.value)
 
-        repeat(13) { idx ->
+        repeat(14) { idx ->
             assertEquals(idx, state.currentStepIndex.value)
             state.nextStep()
         }
-        assertEquals(13, state.currentStepIndex.value)
+        assertEquals(14, state.currentStepIndex.value)
         assertTrue(state.isActive.value)
 
         state.prevStep()
-        assertEquals(12, state.currentStepIndex.value)
-        state.nextStep()
         assertEquals(13, state.currentStepIndex.value)
+        state.nextStep()
+        assertEquals(14, state.currentStepIndex.value)
 
         state.nextStep()
         assertFalse(state.isActive.value)

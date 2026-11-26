@@ -321,13 +321,14 @@
     <string name="onboarding_step_5">Tap here to refresh classes from the portal</string>
     <string name="onboarding_step_6">Here you can set a timed homework reminder</string>
     <string name="onboarding_step_7">Pull up here to view all saved homework</string>
-    <string name="onboarding_step_8">Switch to the Feed tab</string>
-    <string name="onboarding_step_9">Here you can load the feed from the portal, though keep in mind it takes some time</string>
-    <string name="onboarding_step_10">Switch to the Grades tab</string>
-    <string name="onboarding_step_11">Here are your scores by subject</string>
-    <string name="onboarding_step_12">Switch to the Settings tab</string>
-    <string name="onboarding_step_13">In General you can check if the portal is online. We also have different Themes and support for English and Russian!</string>
-    <string name="onboarding_step_14">Good luck with your studies!</string>
+    <string name="onboarding_step_8">Long-press the refresh button to set up auto-update: interval, network and change notifications</string>
+    <string name="onboarding_step_9">Switch to the Feed tab</string>
+    <string name="onboarding_step_10">Here you can load the feed from the portal, though keep in mind it takes some time</string>
+    <string name="onboarding_step_11">Switch to the Grades tab</string>
+    <string name="onboarding_step_12">Here are your scores by subject</string>
+    <string name="onboarding_step_13">Switch to the Settings tab</string>
+    <string name="onboarding_step_14">In General you can check if the portal is online. We also have different Themes and support for English and Russian!</string>
+    <string name="onboarding_step_15">Good luck with your studies!</string>
 
     <!-- Curriculum (BRS) -->
     <string name="curriculum_loading">Loading grades (BRS)...</string>

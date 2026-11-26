@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Pure state machine for the 14-step first-run onboarding tour.
+ * Pure state machine for the 15-step first-run onboarding tour.
  */
 class OnboardingSessionState(
     private val totalSteps: Int,

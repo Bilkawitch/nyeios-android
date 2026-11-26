@@ -321,13 +321,14 @@
     <string name="onboarding_step_5">Тут можно обновить занятия с сайта</string>
     <string name="onboarding_step_6">Тут можно поставить напоминание на время с ДЗ</string>
     <string name="onboarding_step_7">Тут можно посмотреть все записанные ДЗ</string>
-    <string name="onboarding_step_8">Перейди во вкладку «Лента»</string>
-    <string name="onboarding_step_9">Тут можно подгрузить ленту с сайта, но это занимает время, имейте ввиду</string>
-    <string name="onboarding_step_10">Перейди во вкладку «БРС»</string>
-    <string name="onboarding_step_11">Тут — ваши баллы по предметам</string>
-    <string name="onboarding_step_12">Перейди во вкладку «Настройки»</string>
-    <string name="onboarding_step_13">В «Общем» можно проверить, работает ли сайт. Также у нас есть разные «Темы» и поддержка английского и русского языков!</string>
-    <string name="onboarding_step_14">Удачи в учебе!</string>
+    <string name="onboarding_step_8">Долгое нажатие по кнопке обновления открывает автообновление: интервал, сеть и уведомления об изменениях</string>
+    <string name="onboarding_step_9">Перейди во вкладку «Лента»</string>
+    <string name="onboarding_step_10">Тут можно подгрузить ленту с сайта, но это занимает время, имейте ввиду</string>
+    <string name="onboarding_step_11">Перейди во вкладку «БРС»</string>
+    <string name="onboarding_step_12">Тут — ваши баллы по предметам</string>
+    <string name="onboarding_step_13">Перейди во вкладку «Настройки»</string>
+    <string name="onboarding_step_14">В «Общем» можно проверить, работает ли сайт. Также у нас есть разные «Темы» и поддержка английского и русского языков!</string>
+    <string name="onboarding_step_15">Удачи в учебе!</string>
 
     <!-- Curriculum (BRS) -->
     <string name="curriculum_loading">Загрузка успеваемости (БРС)...</string>
