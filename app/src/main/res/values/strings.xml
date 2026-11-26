@@ -664,4 +664,54 @@
     <string name="reminders_perm_battery_done">Оптимизация батареи уже отключена для NyEIOS.</string>
     <string name="reminders_perm_close">ПОНЯТНО</string>
     <string name="reminders_time_picker_hint">Выберите время</string>
+
+    <!-- Changes: unseen schedule & score marks -->
+    <string name="changes_new_lesson_badge">НОВОЕ</string>
+    <string name="changes_day_cd">Есть изменения в этот день</string>
+    <string name="changes_lesson_cd">Пара изменилась</string>
+    <string name="changes_score_delta_cd">Баллы изменились: %1$s → %2$s</string>
+    <string name="changes_bottom_nav_schedule_cd">Расписание: есть изменения</string>
+    <string name="changes_bottom_nav_curriculum_cd">БРС: есть изменения</string>
+    <string name="changes_week_badge_cd">Есть изменения в расписании</string>
+
+    <!-- Auto-update popup -->
+    <string name="autoupdate_title">АВТООБНОВЛЕНИЕ</string>
+    <string name="autoupdate_enable_title">Автообновление</string>
+    <string name="autoupdate_enable_desc">Расписание и БРС обновляются в фоне</string>
+    <string name="autoupdate_interval_title">ИНТЕРВАЛ</string>
+    <string name="autoupdate_interval_hours_fmt">%1$d ч</string>
+    <string name="autoupdate_network_title">СЕТЬ</string>
+    <string name="autoupdate_network_wifi">Wi-Fi</string>
+    <string name="autoupdate_network_mobile">Мобильная</string>
+    <string name="autoupdate_network_any">Любая</string>
+    <string name="autoupdate_notifications_title">Уведомления</string>
+    <string name="autoupdate_notifications_desc">Прогресс обновления и список изменений</string>
+    <string name="autoupdate_notifications_need_enable">Сначала включите автообновление</string>
+    <string name="autoupdate_notifications_need_permission">Нужно разрешение на уведомления</string>
+    <string name="autoupdate_battery_title">ОТКЛЮЧИТЕ ОПТИМИЗАЦИЮ БАТАРЕИ</string>
+    <string name="autoupdate_battery_message">Иначе система выгрузит NyEIOS, и автообновления не будут работать.</string>
+    <string name="autoupdate_battery_action">ОТКРЫТЬ НАСТРОЙКИ</string>
+    <string name="autoupdate_battery_ok">Оптимизация батареи отключена</string>
+    <string name="autoupdate_close">ЗАКРЫТЬ</string>
+    <string name="autoupdate_permission_denied">Без разрешения уведомления не придут</string>
+
+    <!-- Auto-update notifications -->
+    <string name="notif_channel_name">Автообновление</string>
+    <string name="notif_channel_desc">Прогресс и изменения при автообновлении</string>
+    <string name="notif_progress_title">Обновление NyEIOS</string>
+    <string name="notif_progress_start">Подготовка… %1$d%%</string>
+    <string name="notif_progress_schedule">Расписание… %1$d%%</string>
+    <string name="notif_progress_next_week">Следующая неделя… %1$d%%</string>
+    <string name="notif_progress_curriculum">Успеваемость… %1$d%%</string>
+    <string name="notif_progress_compare">Сравнение изменений… %1$d%%</string>
+    <string name="notif_changes_title">NyEIOS: есть изменения</string>
+    <string name="notif_no_changes_title">NyEIOS обновлён</string>
+    <string name="notif_section_schedule">Изменения расписания:</string>
+    <string name="notif_section_scores">Изменения БРС:</string>
+    <string name="notif_line_more_fmt">+%1$d ещё</string>
+    <string name="notif_line_added_fmt">%1$s %2$s добавлена: %3$s</string>
+    <string name="notif_line_removed_fmt">%1$s %2$s удален(а): %3$s</string>
+    <string name="notif_line_modified_fmt">%1$s %2$s изменена: %3$s</string>
+    <string name="notif_line_score_fmt">%1$s: %2$s → %3$s</string>
+    <string name="notif_action_open">Открыть</string>
 </resources>

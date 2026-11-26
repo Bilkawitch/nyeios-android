@@ -10,9 +10,11 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +27,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -49,6 +52,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -66,8 +71,12 @@ import ru.nya.nyeios.ui.theme.rememberUiInfiniteTransition
 // Render-only: all state and callbacks are computed by MainActivity exactly as for
 // the legacy chrome, so business logic is shared and untouched.
 
+// "Что нового": единый зелёный маркер изменений NyC-семейства (контракт UI §4).
+private val nycChangeGreen = Color(0xFF46E08C)
+
 // ---------- Top app bar ----------
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun NycTopBar(
     title: String,
@@ -86,6 +95,7 @@ fun NycTopBar(
     isRefreshing: Boolean,
     isStale: Boolean,
     onRefresh: () -> Unit,
+    onRefreshLongPress: () -> Unit = {},
     hasPendingUpdate: Boolean,
     onLogoClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -286,7 +296,12 @@ fun NycTopBar(
                             )
                         } else Modifier
                     )
-                    .clickable { onRefresh() },
+                    // Long press opens the auto-update settings popup; short tap keeps
+                    // the regular health-guarded refresh.
+                    .combinedClickable(
+                        onClick = onRefresh,
+                        onLongClick = onRefreshLongPress
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -347,9 +362,17 @@ private data class NycTab(val index: Int, val icon: ImageVector, val title: Stri
 fun NycBottomNav(
     currentTab: Int,
     onSelect: (Int) -> Unit,
+    scheduleBadge: Boolean = false,
+    curriculumBadge: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val faint = Color(0xFF5B6A7E)
+    // "Что нового": точки на табах «Расписание» (0) и «БРС» (2). Локализуются один раз
+    // на всю панель, чтобы не дёргать ресурсы внутри цикла вкладок.
+    val scheduleBadgeCd =
+        androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.changes_bottom_nav_schedule_cd)
+    val curriculumBadgeCd =
+        androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.changes_bottom_nav_curriculum_cd)
     val tabs = listOf(
         NycTab(0, Icons.Default.CalendarToday, androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.tab_schedule)),
         NycTab(1, Icons.Default.DynamicFeed, androidx.compose.ui.res.stringResource(ru.nya.nyeios.R.string.tab_feed)),
@@ -406,6 +429,12 @@ fun NycBottomNav(
     ) {
         tabs.forEach { tab ->
             val selected = tab.index == currentTab
+            val badge = when (tab.index) {
+                0 -> scheduleBadge
+                2 -> curriculumBadge
+                else -> false
+            }
+            val badgeCd = if (tab.index == 0) scheduleBadgeCd else curriculumBadgeCd
             val tint by animateColorAsState(
                 targetValue = if (selected) NycCyan else faint,
                 animationSpec = UiPreferencesManager.gated(tween(durationMillis = 220)),
@@ -447,6 +476,24 @@ fun NycBottomNav(
                         tint = tint,
                         modifier = Modifier.size(21.dp)
                     )
+                    // Green change dot: overlay in the free top-end corner of the 46x34dp
+                    // icon plate, so the marker/tint animation and plate size stay as-is.
+                    if (badge) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(top = 5.dp, end = 8.dp)
+                                .size(6.dp)
+                                .shadow(
+                                    4.dp,
+                                    CircleShape,
+                                    ambientColor = nycChangeGreen.copy(alpha = 0.85f),
+                                    spotColor = nycChangeGreen.copy(alpha = 0.85f)
+                                )
+                                .background(nycChangeGreen, CircleShape)
+                                .semantics { contentDescription = badgeCd }
+                        )
+                    }
                 }
                 val animTitle = ru.nya.nyeios.ui.language.typewriterText(
                     text = tab.title.uppercase(),

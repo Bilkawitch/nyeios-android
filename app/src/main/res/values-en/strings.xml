@@ -656,4 +656,54 @@
     <string name="reminders_perm_battery_done">Battery optimization is already disabled for NyEIOS.</string>
     <string name="reminders_perm_close">GOT IT</string>
     <string name="reminders_time_picker_hint">Pick a time</string>
+
+    <!-- Changes: unseen schedule & score marks -->
+    <string name="changes_new_lesson_badge">NEW</string>
+    <string name="changes_day_cd">Changes on this day</string>
+    <string name="changes_lesson_cd">Lesson changed</string>
+    <string name="changes_score_delta_cd">Scores changed: %1$s → %2$s</string>
+    <string name="changes_bottom_nav_schedule_cd">Schedule: new changes</string>
+    <string name="changes_bottom_nav_curriculum_cd">Grades: new changes</string>
+    <string name="changes_week_badge_cd">Schedule has changes</string>
+
+    <!-- Auto-update popup -->
+    <string name="autoupdate_title">AUTO-UPDATE</string>
+    <string name="autoupdate_enable_title">Auto-update</string>
+    <string name="autoupdate_enable_desc">Schedule and grades refresh in the background</string>
+    <string name="autoupdate_interval_title">INTERVAL</string>
+    <string name="autoupdate_interval_hours_fmt">%1$d h</string>
+    <string name="autoupdate_network_title">NETWORK</string>
+    <string name="autoupdate_network_wifi">Wi-Fi</string>
+    <string name="autoupdate_network_mobile">Mobile</string>
+    <string name="autoupdate_network_any">Any</string>
+    <string name="autoupdate_notifications_title">Notifications</string>
+    <string name="autoupdate_notifications_desc">Update progress and the list of changes</string>
+    <string name="autoupdate_notifications_need_enable">Enable auto-update first</string>
+    <string name="autoupdate_notifications_need_permission">Notification permission is required</string>
+    <string name="autoupdate_battery_title">DISABLE BATTERY OPTIMIZATION</string>
+    <string name="autoupdate_battery_message">Otherwise the system will kill NyEIOS and auto-updates will not run.</string>
+    <string name="autoupdate_battery_action">OPEN SETTINGS</string>
+    <string name="autoupdate_battery_ok">Battery optimization is already disabled</string>
+    <string name="autoupdate_close">CLOSE</string>
+    <string name="autoupdate_permission_denied">Notifications will not arrive without permission</string>
+
+    <!-- Auto-update notifications -->
+    <string name="notif_channel_name">Auto-update</string>
+    <string name="notif_channel_desc">Progress and changes during auto-update</string>
+    <string name="notif_progress_title">NyEIOS update</string>
+    <string name="notif_progress_start">Preparing… %1$d%%</string>
+    <string name="notif_progress_schedule">Schedule… %1$d%%</string>
+    <string name="notif_progress_next_week">Next week… %1$d%%</string>
+    <string name="notif_progress_curriculum">Grades… %1$d%%</string>
+    <string name="notif_progress_compare">Comparing changes… %1$d%%</string>
+    <string name="notif_changes_title">NyEIOS: new changes</string>
+    <string name="notif_no_changes_title">NyEIOS updated</string>
+    <string name="notif_section_schedule">Schedule changes:</string>
+    <string name="notif_section_scores">Grade changes:</string>
+    <string name="notif_line_more_fmt">+%1$d more</string>
+    <string name="notif_line_added_fmt">%1$s %2$s added: %3$s</string>
+    <string name="notif_line_removed_fmt">%1$s %2$s removed: %3$s</string>
+    <string name="notif_line_modified_fmt">%1$s %2$s changed: %3$s</string>
+    <string name="notif_line_score_fmt">%1$s: %2$s → %3$s</string>
+    <string name="notif_action_open">Open</string>
 </resources>

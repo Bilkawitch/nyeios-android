@@ -1,6 +1,7 @@
 package ru.nya.nyeios
 
 import android.content.Context
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -16,10 +17,12 @@ import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -91,7 +94,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import ru.nya.nyeios.data.changes.ChangesRepository
+import ru.nya.nyeios.data.autoupdate.AutoUpdateRunner
 import ru.nya.nyeios.data.update.AppVersionProvider
 import ru.nya.nyeios.data.model.CurriculumUiState
 import ru.nya.nyeios.data.model.FeedUiState
@@ -100,6 +110,8 @@ import ru.nya.nyeios.ui.auth.LoginBottomSheet
 import ru.nya.nyeios.ui.auth.NycLoginBottomSheet
 import ru.nya.nyeios.ui.auth.NycLoginGate
 import ru.nya.nyeios.ui.auth.LoginFullscreenGate
+import ru.nya.nyeios.ui.autoupdate.AutoUpdateSheet
+import ru.nya.nyeios.ui.autoupdate.NycAutoUpdateSheet
 import ru.nya.nyeios.ui.debug.NetworkLogsBottomSheet
 import ru.nya.nyeios.ui.debug.NycLogsSheet
 import ru.nya.nyeios.ui.eios.EiosHealthViewModel
@@ -157,12 +169,13 @@ class MainActivity : ComponentActivity() {
         super.attachBaseContext(localized)
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ru.nya.nyeios.ui.theme.ThemeManager.init(this)
         LanguageManager.init(this)
         enableEdgeToEdge()
+        maybeRunDebugAutoUpdate(intent)
 
         setContent {
             val currentLanguage = LanguageManager.currentLanguage
@@ -203,6 +216,12 @@ class MainActivity : ComponentActivity() {
                     val eiosHealthViewModel: EiosHealthViewModel = viewModel()
 
                     val context = LocalContext.current
+
+                    // «Что нового»: единый репозиторий изменений расписания/БРС.
+                    val changesRepository = remember(context) { ChangesRepository.getInstance(context) }
+                    val scheduleChanges by changesRepository.scheduleChanges.collectAsState()
+                    val curriculumChanges by changesRepository.curriculumChanges.collectAsState()
+
                     val currentAppVersion = remember(context) { AppVersionProvider.getVersionName(context) }
 
                     var currentTab by rememberSaveable { mutableIntStateOf(0) }
@@ -227,6 +246,9 @@ class MainActivity : ComponentActivity() {
                     val loginError by scheduleViewModel.loginError.collectAsState()
                     val lastSyncTime by scheduleViewModel.lastSyncTime.collectAsState()
                     var isNetworkLogsSheetVisible by rememberSaveable { mutableStateOf(false) }
+                    var showAutoUpdateSheet by rememberSaveable { mutableStateOf(false) }
+                    // Предыдущий таб: «увидено» помечается при уходе С таба, не при входе.
+                    var previousTab by remember { mutableIntStateOf(currentTab) }
 
                     val updateUiState by updateViewModel.uiState.collectAsState()
                     val isAnnouncementVisible by announcementViewModel.isVisible.collectAsState()
@@ -235,6 +257,13 @@ class MainActivity : ComponentActivity() {
                     val hasPendingUpdate = updateUiState is UpdateUiState.Dismissed
                     val isNycModern = ru.nya.nyeios.ui.theme.ThemeManager.currentTheme ==
                         ru.nya.nyeios.ui.theme.NierThemeMode.NYC_MODERN
+
+                    // Точки на табах нижней навигации: «Расписание» — изменения текущей
+                    // отображаемой недели, «БРС» — любые непросмотренные изменения баллов.
+                    val scheduleBadge = (scheduleUiState as? ScheduleUiState.Success)
+                        ?.schedule
+                        ?.let { scheduleChanges.isWeekMarked(it.startDate, it.endDate) } == true
+                    val curriculumBadge = curriculumChanges.hasChanges
 
                     LaunchedEffect(Unit) {
                         updateViewModel.checkForUpdate()
@@ -286,6 +315,35 @@ class MainActivity : ComponentActivity() {
                         when (currentTab) {
                             1 -> if (feedUiState !is FeedUiState.Success) feedViewModel.loadFeed(forceNetwork = false)
                             2 -> if (curriculumUiState !is CurriculumUiState.Success) curriculumViewModel.loadCurriculum(forceNetwork = false)
+                        }
+                    }
+
+                    // Пометка «увидено» при уходе С таба: расписание — отображаемая неделя,
+                    // БРС — выбранный семестр. При первом входе на таб ничего не помечается.
+                    LaunchedEffect(currentTab) {
+                        val previous = previousTab
+                        previousTab = currentTab
+                        if (previous == currentTab) return@LaunchedEffect
+                        when (previous) {
+                            0 -> (scheduleUiState as? ScheduleUiState.Success)?.schedule?.let {
+                                changesRepository.markWeekSeen(it.startDate, it.endDate)
+                            }
+                            2 -> (curriculumUiState as? CurriculumUiState.Success)?.let {
+                                changesRepository.markTermSeen(it.selectedTermNum)
+                            }
+                        }
+                    }
+
+                    // Уход приложения в фон: помечаем то, что пользователь сейчас видит,
+                    // чтобы бейджи не «залипали» навсегда.
+                    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+                        when (currentTab) {
+                            0 -> (scheduleUiState as? ScheduleUiState.Success)?.schedule?.let {
+                                changesRepository.markWeekSeen(it.startDate, it.endDate)
+                            }
+                            2 -> (curriculumUiState as? CurriculumUiState.Success)?.let {
+                                changesRepository.markTermSeen(it.selectedTermNum)
+                            }
                         }
                     }
 
@@ -374,6 +432,7 @@ class MainActivity : ComponentActivity() {
                                             }
                                         }
                                     },
+                                    onRefreshLongPress = { showAutoUpdateSheet = true },
                                     hasPendingUpdate = hasPendingUpdate,
                                     onLogoClick = {
                                         if (hasPendingUpdate) {
@@ -611,25 +670,31 @@ class MainActivity : ComponentActivity() {
                                         // Refresh button — hidden on the settings tab
                                         if (currentTab != 3) {
                                         val syncBusyToast = stringResource(R.string.sync_feed_in_progress_toast)
-                                        IconButton(
-                                            modifier = Modifier.onboardingTarget(OnboardingTargetId.REFRESH_BUTTON),
-                                            onClick = {
-                                                if (feedSyncProgress.isSyncing) {
-                                                    android.widget.Toast.makeText(
-                                                        this@MainActivity,
-                                                        syncBusyToast,
-                                                        android.widget.Toast.LENGTH_SHORT
-                                                    ).show()
-                                                    return@IconButton
-                                                }
-                                                eiosHealthViewModel.requestRefresh {
-                                                    when (currentTab) {
-                                                        0 -> scheduleViewModel.refresh()
-                                                        1 -> feedViewModel.requestSyncFeed()
-                                                        2 -> curriculumViewModel.refresh()
-                                                    }
-                                                }
-                                            }
+                                        Box(
+                                            modifier = Modifier
+                                                .size(40.dp)
+                                                .onboardingTarget(OnboardingTargetId.REFRESH_BUTTON)
+                                                .combinedClickable(
+                                                    onClick = {
+                                                        if (feedSyncProgress.isSyncing) {
+                                                            android.widget.Toast.makeText(
+                                                                this@MainActivity,
+                                                                syncBusyToast,
+                                                                android.widget.Toast.LENGTH_SHORT
+                                                            ).show()
+                                                        } else {
+                                                            eiosHealthViewModel.requestRefresh {
+                                                                when (currentTab) {
+                                                                    0 -> scheduleViewModel.refresh()
+                                                                    1 -> feedViewModel.requestSyncFeed()
+                                                                    2 -> curriculumViewModel.refresh()
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    onLongClick = { showAutoUpdateSheet = true }
+                                                ),
+                                            contentAlignment = Alignment.Center
                                         ) {
                                             val rotation = if (isRefreshing) {
                                                 val infiniteTransition = rememberUiInfiniteTransition("spin")
@@ -727,7 +792,9 @@ class MainActivity : ComponentActivity() {
                             if (isNycModern) {
                                 NycBottomNav(
                                     currentTab = currentTab,
-                                    onSelect = { currentTab = it }
+                                    onSelect = { currentTab = it },
+                                    scheduleBadge = scheduleBadge,
+                                    curriculumBadge = curriculumBadge
                                 )
                             } else {
                             val tabs = listOf(
@@ -827,12 +894,32 @@ class MainActivity : ComponentActivity() {
                                                         modifier = Modifier.clearAndSetSemantics { }
                                                     )
                                                 }
-                                                Icon(
-                                                    imageVector = icon,
-                                                    contentDescription = null,
-                                                    tint = itemTint,
-                                                    modifier = Modifier.size(24.dp)
-                                                )
+                                                // «Что нового»: квадратная зелёная точка в правом
+                                                // верхнем углу иконки таба (без скруглений, YoRHa).
+                                                val tabHasBadge = when (index) {
+                                                    0 -> scheduleBadge
+                                                    2 -> curriculumBadge
+                                                    else -> false
+                                                }
+                                                val tabBadgeCd = when (index) {
+                                                    0 -> stringResource(R.string.changes_bottom_nav_schedule_cd)
+                                                    else -> stringResource(R.string.changes_bottom_nav_curriculum_cd)
+                                                }
+                                                Box(contentAlignment = Alignment.TopEnd) {
+                                                    Icon(
+                                                        imageVector = icon,
+                                                        contentDescription = if (tabHasBadge) tabBadgeCd else null,
+                                                        tint = itemTint,
+                                                        modifier = Modifier.size(24.dp)
+                                                    )
+                                                    if (tabHasBadge) {
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .size(6.dp)
+                                                                .background(ru.nya.nyeios.ui.theme.NierGreen)
+                                                        )
+                                                    }
+                                                }
                                                 if (isSelected) {
                                                     Text(
                                                         text = "<",
@@ -886,6 +973,7 @@ class MainActivity : ComponentActivity() {
                                                 onSelectDay = { scheduleViewModel.selectDay(it) },
                                                 onRefresh = { eiosHealthViewModel.requestRefresh { scheduleViewModel.refresh() } },
                                                 onOpenLogin = { scheduleViewModel.showLoginSheet() },
+                                                changes = scheduleChanges,
                                                 flowState = currentFlowState
                                             )
                                         } else {
@@ -899,6 +987,7 @@ class MainActivity : ComponentActivity() {
                                                 onSelectDay = { scheduleViewModel.selectDay(it) },
                                                 onRefresh = { eiosHealthViewModel.requestRefresh { scheduleViewModel.refresh() } },
                                                 onOpenLogin = { scheduleViewModel.showLoginSheet() },
+                                                changes = scheduleChanges,
                                                 flowState = currentFlowState
                                             )
                                         }
@@ -928,14 +1017,16 @@ class MainActivity : ComponentActivity() {
                                                 uiState = curriculumUiState,
                                                 onSelectTerm = { curriculumViewModel.selectTerm(it) },
                                                 onRefresh = { eiosHealthViewModel.requestRefresh { curriculumViewModel.refresh() } },
-                                                onOpenLogin = { scheduleViewModel.showLoginSheet() }
+                                                onOpenLogin = { scheduleViewModel.showLoginSheet() },
+                                                changes = curriculumChanges
                                             )
                                         } else {
                                             CurriculumScreen(
                                                 uiState = curriculumUiState,
                                                 onSelectTerm = { curriculumViewModel.selectTerm(it) },
                                                 onRefresh = { eiosHealthViewModel.requestRefresh { curriculumViewModel.refresh() } },
-                                                onOpenLogin = { scheduleViewModel.showLoginSheet() }
+                                                onOpenLogin = { scheduleViewModel.showLoginSheet() },
+                                                changes = curriculumChanges
                                             )
                                         }
                                         3 -> if (isNycModern) {
@@ -1066,6 +1157,15 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
                             }
+
+                            // Попап автообновления — открывается долгим нажатием на refresh.
+                            if (showAutoUpdateSheet) {
+                                if (isNycModern) {
+                                    NycAutoUpdateSheet(onDismiss = { showAutoUpdateSheet = false })
+                                } else {
+                                    AutoUpdateSheet(onDismiss = { showAutoUpdateSheet = false })
+                                }
+                            }
                         }
                     }
 
@@ -1092,6 +1192,31 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        maybeRunDebugAutoUpdate(intent)
+    }
+
+    /**
+     * Debug-хук для проверки автообновления на устройстве без ожидания WorkManager:
+     * `adb shell am start -n ru.nya.nyeios/.MainActivity --ez nyeios_debug_autoupdate true`.
+     * В release-сборке полностью выключен (BuildConfig.DEBUG).
+     */
+    private fun maybeRunDebugAutoUpdate(intent: Intent?) {
+        if (!BuildConfig.DEBUG) return
+        if (intent?.getBooleanExtra("nyeios_debug_autoupdate", false) != true) return
+        lifecycleScope.launch(Dispatchers.IO) {
+            val result = AutoUpdateRunner.run(applicationContext, withNotifications = true)
+            android.util.Log.i(
+                "NyEIOS-AutoUpdate",
+                "debug manual run: ran=${result.ran} skip=${result.skippedReason} " +
+                    "schedule=${result.scheduleChanges.totalChanges} scores=${result.curriculumChanges.totalChanges} " +
+                    "error=${result.errorMessage}"
+            )
+        }
+    }
 }
 
 private fun formatSyncTime(timestamp: Long): String {

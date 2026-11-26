@@ -63,6 +63,9 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Warning
+import ru.nya.nyeios.data.changes.ChangesDiff
+import ru.nya.nyeios.data.changes.ScheduleChanges
+import ru.nya.nyeios.data.changes.WeekChanges
 import ru.nya.nyeios.data.floormap.FloorMapRepository
 import ru.nya.nyeios.ui.common.isAuthRelatedMessage
 import ru.nya.nyeios.ui.common.localizeErrorMessage
@@ -89,6 +92,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -170,6 +174,7 @@ fun ScheduleScreen(
     onRefresh: () -> Unit,
     onOpenLogin: () -> Unit,
     flowState: FlowWeekState? = null,
+    changes: ScheduleChanges = ScheduleChanges(),
     modifier: Modifier = Modifier
 ) {
     var floorMapTargetRoom by rememberSaveable { mutableStateOf<String?>(null) }
@@ -203,7 +208,12 @@ fun ScheduleScreen(
     Column(
         modifier = modifier.fillMaxSize()
     ) {
-        val daysList = (uiState as? ScheduleUiState.Success)?.schedule?.days ?: emptyList()
+        val activeSchedule = (uiState as? ScheduleUiState.Success)?.schedule
+        val daysList = activeSchedule?.days ?: emptyList()
+        // Непрочитанные изменения именно той недели, что показана на экране.
+        val weekChanges = remember(changes, activeSchedule?.startDate, activeSchedule?.endDate) {
+            activeSchedule?.let { changes.forWeek(it.startDate, it.endDate) }
+        }
         val selectableDayIndexes = remember(daysList) {
             DayRowCells.build(daysList)
                 .filterIsInstance<DayRowCell.Day>()
@@ -230,6 +240,7 @@ fun ScheduleScreen(
                     days = daysList,
                     selectedIndex = selectedDayIndex.coerceIn(0, (daysList.size - 1).coerceAtLeast(0)),
                     remindersCount = activeRemindersCount,
+                    weekChanges = weekChanges,
                     onOpenReminders = {
                         isHomeworkSheetVisible = false
                         isRemindersSheetVisible = true
@@ -626,6 +637,14 @@ fun ScheduleScreen(
                                             ),
                                             isToday = isDayToday,
                                             hasNote = hasNote,
+                                            isNew = weekChanges?.isLessonMarked(
+                                                dateString = currentDay.dateString,
+                                                lessonNumber = ChangesDiff.normalizedLessonNumber(
+                                                    lesson.lessonNumber,
+                                                    lesson.time
+                                                ),
+                                                subgroup = lesson.subgroup
+                                            ) == true,
                                             cardModifier = Modifier.onboardingTarget(OnboardingTargetId.LESSON_CARD, enabled = index == 0),
                                             noteButtonModifier = Modifier.onboardingTarget(OnboardingTargetId.LESSON_NOTE_BUTTON, enabled = index == 0),
                                             roomButtonModifier = Modifier.onboardingTarget(OnboardingTargetId.LESSON_ROOM_BUTTON, enabled = index == firstRoomIndex),
@@ -827,6 +846,7 @@ fun DaySelectorRow(
     days: List<DaySchedule>,
     selectedIndex: Int,
     remindersCount: Int = 0,
+    weekChanges: WeekChanges? = null,
     onOpenReminders: () -> Unit = {},
     onSelectDay: (Int) -> Unit
 ) {
@@ -851,6 +871,7 @@ fun DaySelectorRow(
                 is DayRowCell.Day -> DayTab(
                     day = cell.day,
                     isSelected = cell.originalIndex == safeSelectedIndex,
+                    isChanged = weekChanges?.isDayMarked(cell.day.dateString) == true,
                     showSeparator = showSeparator,
                     onClick = { onSelectDay(cell.originalIndex) }
                 )
@@ -869,11 +890,13 @@ fun DaySelectorRow(
 private fun RowScope.DayTab(
     day: DaySchedule,
     isSelected: Boolean,
+    isChanged: Boolean,
     showSeparator: Boolean,
     onClick: () -> Unit
 ) {
     val cleanDayDate = Regex("""(\d{1,2}\.\d{1,2})""").find(day.dateString.ifEmpty { day.dayTitle })?.value
         ?: day.dateString.take(5)
+    val changesDescription = if (isChanged) stringResource(R.string.changes_day_cd) else null
 
     Box(
         modifier = Modifier
@@ -907,6 +930,16 @@ private fun RowScope.DayTab(
                         size = androidx.compose.ui.geometry.Size(size.width, 2.5.dp.toPx())
                     )
                 }
+                // Unseen changes: a small square in the top-right corner. It lives in the
+                // canvas so the tab metrics (text sizes, paddings) stay untouched.
+                if (isChanged) {
+                    val markerSize = 3.5.dp.toPx()
+                    drawRect(
+                        color = ru.nya.nyeios.ui.theme.NierGreen,
+                        topLeft = Offset(size.width - markerSize - 4.dp.toPx(), 4.dp.toPx()),
+                        size = androidx.compose.ui.geometry.Size(markerSize, markerSize)
+                    )
+                }
             },
         contentAlignment = Alignment.Center
     ) {
@@ -930,6 +963,16 @@ private fun RowScope.DayTab(
                     color = if (isSelected) ru.nya.nyeios.ui.theme.NierBlue else ru.nya.nyeios.ui.theme.NierDim
                 )
             }
+        }
+        // Semantics carrier for the canvas marker: a Canvas alone is invisible to TalkBack.
+        if (changesDescription != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 4.dp, end = 4.dp)
+                    .size(3.5.dp)
+                    .clearAndSetSemantics { contentDescription = changesDescription }
+            )
         }
     }
 }
@@ -1086,6 +1129,7 @@ fun LessonCard(
     isToday: Boolean,
     scopeLabel: String? = null,
     hasNote: Boolean = false,
+    isNew: Boolean = false,
     cardModifier: Modifier = Modifier,
     noteButtonModifier: Modifier = Modifier,
     roomButtonModifier: Modifier = Modifier,
@@ -1373,6 +1417,36 @@ fun LessonCard(
                             .background(ru.nya.nyeios.ui.theme.NierGreen)
                     )
                 }
+            }
+        }
+
+        // «НОВОЕ»: маркер нерассмотренной пары. Оверлей поверх карточки, поэтому
+        // вёрстка, высота и существующие бейджи/анимации не меняются.
+        if (isNew) {
+            val badgeDescription = stringResource(R.string.changes_lesson_cd)
+            Row(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .background(ru.nya.nyeios.ui.theme.NierGreen.copy(alpha = 0.16f))
+                    .border(1.dp, ru.nya.nyeios.ui.theme.NierGreen)
+                    .clearAndSetSemantics { contentDescription = badgeDescription }
+                    .padding(horizontal = 5.dp, vertical = 1.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(4.dp)
+                        .background(ru.nya.nyeios.ui.theme.NierGreen)
+                )
+                Text(
+                    text = stringResource(R.string.changes_new_lesson_badge),
+                    fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 8.sp,
+                    letterSpacing = 0.8.sp,
+                    color = ru.nya.nyeios.ui.theme.NierGreen
+                )
             }
         }
     }

@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import ru.nya.nyeios.data.changes.ChangesRepository
 import ru.nya.nyeios.data.model.CurriculumTerm
 import ru.nya.nyeios.data.model.CurriculumUiState
 import ru.nya.nyeios.data.repository.EiosRepository
@@ -16,6 +17,7 @@ import ru.nya.nyeios.data.repository.EiosRepository
 class CurriculumViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = EiosRepository.getInstance(application.applicationContext)
+    private val changesRepository = ChangesRepository.getInstance(application.applicationContext)
 
     private val _uiState = MutableStateFlow<CurriculumUiState>(CurriculumUiState.Loading)
     val uiState: StateFlow<CurriculumUiState> = _uiState.asStateFlow()
@@ -89,6 +91,8 @@ class CurriculumViewModel(application: Application) : AndroidViewModel(applicati
 
             val result = repository.getCurriculum(forceNetwork)
             result.onSuccess { terms ->
+                changesRepository.onCurriculumFetched(terms)
+
                 val chosenTermNum = _selectedTermNum.value
                     ?: terms.firstOrNull { it.isCurrent }?.termNum
                     ?: terms.firstOrNull()?.termNum

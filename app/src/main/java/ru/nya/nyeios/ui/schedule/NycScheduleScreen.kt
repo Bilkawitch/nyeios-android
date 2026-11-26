@@ -52,7 +52,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import ru.nya.nyeios.R
+import ru.nya.nyeios.data.changes.ChangesDiff
+import ru.nya.nyeios.data.changes.ScheduleChanges
+import ru.nya.nyeios.data.changes.WeekChanges
 import ru.nya.nyeios.ui.common.isAuthRelatedMessage
 import ru.nya.nyeios.ui.common.localizeErrorMessage
 import ru.nya.nyeios.ui.common.localizedLessonScopeLabel
@@ -131,6 +136,9 @@ private val nycText = Color(0xFFDBE4F0)
 private val nycMuted = Color(0xFF8794A7)
 private val nycFaint = Color(0xFF5B6A7E)
 
+// "Что нового": единый зелёный маркер изменений NyC-семейства (контракт UI §4).
+private val nycChangeGreen = Color(0xFF46E08C)
+
 @Composable
 fun NycScheduleScreen(
     uiState: ScheduleUiState,
@@ -143,6 +151,7 @@ fun NycScheduleScreen(
     onRefresh: () -> Unit,
     onOpenLogin: () -> Unit,
     flowState: FlowWeekState? = null,
+    changes: ScheduleChanges = ScheduleChanges(),
     modifier: Modifier = Modifier
 ) {
     var floorMapTargetRoom by rememberSaveable { mutableStateOf<String?>(null) }
@@ -190,11 +199,16 @@ fun NycScheduleScreen(
             )
 
             val daysList = schedule?.days ?: emptyList()
+            // Изменения именно отображаемой недели: точка на дне и бейдж «НОВОЕ» на паре.
+            val weekChanges = remember(schedule?.startDate, schedule?.endDate, changes) {
+                schedule?.let { changes.forWeek(it.startDate, it.endDate) }
+            }
             if (daysList.isNotEmpty()) {
                 NycDayRow(
                     days = daysList,
                     selectedIndex = selectedDayIndex.coerceIn(0, (daysList.size - 1).coerceAtLeast(0)),
                     remindersCount = activeRemindersCount,
+                    weekChanges = weekChanges,
                     onOpenReminders = {
                         isHomeworkSheetVisible = false
                         isRemindersSheetVisible = true
@@ -276,6 +290,14 @@ fun NycScheduleScreen(
                 is ScheduleUiState.Success -> {
                     val safeDayIndex =
                         selectedDayIndex.coerceIn(0, (uiState.schedule.days.size - 1).coerceAtLeast(0))
+                    // Изменения текущей недели для бейджа «НОВОЕ» на карточках пар.
+                    val weekChanges = remember(
+                        uiState.schedule.startDate,
+                        uiState.schedule.endDate,
+                        changes
+                    ) {
+                        changes.forWeek(uiState.schedule.startDate, uiState.schedule.endDate)
+                    }
 
                     // Same day/week slide as the YoRHa screen so "Анимации переходов" has an
                     // effect in the NyC theme too; gated() collapses it to an instant swap.
@@ -434,6 +456,18 @@ fun NycScheduleScreen(
                                     }
                                     val hasNote = notesMap[noteKey]?.hasVisibleContent == true
 
+                                    // Ключ пары собирается ровно так же, как в diff-движке:
+                                    // нормализованный номер + dateString + подгруппа.
+                                    val normalizedLessonNumber = ChangesDiff.normalizedLessonNumber(
+                                        lesson.lessonNumber,
+                                        lesson.time
+                                    )
+                                    val isNewLesson = weekChanges?.isLessonMarked(
+                                        cleanDate,
+                                        normalizedLessonNumber,
+                                        lesson.subgroup
+                                    ) == true
+
                                     NycLessonCard(
                                         lesson = lesson,
                                         scopeLabel = localizedLessonScopeLabel(
@@ -449,6 +483,7 @@ fun NycScheduleScreen(
                                         ) == LessonScope.STREAM,
                                         isToday = isDayToday,
                                         hasNote = hasNote,
+                                        isNew = isNewLesson,
                                         cardModifier = Modifier.onboardingTarget(OnboardingTargetId.LESSON_CARD, enabled = index == 0),
                                         noteButtonModifier = Modifier.onboardingTarget(OnboardingTargetId.LESSON_NOTE_BUTTON, enabled = index == 0),
                                         roomButtonModifier = Modifier.onboardingTarget(OnboardingTargetId.LESSON_ROOM_BUTTON, enabled = index == firstRoomIndex),
@@ -748,6 +783,7 @@ private fun NycDayRow(
     days: List<DaySchedule>,
     selectedIndex: Int,
     remindersCount: Int = 0,
+    weekChanges: WeekChanges? = null,
     onOpenReminders: () -> Unit = {},
     onSelectDay: (Int) -> Unit
 ) {
@@ -771,6 +807,7 @@ private fun NycDayRow(
                 is DayRowCell.Day -> NycDayCell(
                     day = cell.day,
                     isSelected = cell.originalIndex == safeSelectedIndex,
+                    marked = weekChanges?.isDayMarked(cell.day.dateString) == true,
                     onClick = { onSelectDay(cell.originalIndex) }
                 )
 
@@ -787,11 +824,13 @@ private fun NycDayRow(
 private fun RowScope.NycDayCell(
     day: DaySchedule,
     isSelected: Boolean,
+    marked: Boolean = false,
     onClick: () -> Unit
 ) {
     val cleanDayDate =
         Regex("""(\d{1,2}\.\d{1,2})""").find(day.dateString.ifEmpty { day.dayTitle })?.value
             ?: day.dateString.take(5)
+    val changesDayCd = stringResource(R.string.changes_day_cd)
 
     Box(
         modifier = Modifier
@@ -809,12 +848,32 @@ private fun RowScope.NycDayCell(
             // instead of spilling out as a sharp-edged rectangle.
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
+            .semantics { if (marked) contentDescription = changesDayCd }
             .drawBehind {
                 if (day.isToday) {
                     drawRect(
                         color = NycCyanDk,
                         topLeft = Offset((size.width - 22.dp.toPx()) / 2f, 3.dp.toPx()),
                         size = Size(22.dp.toPx(), 2.dp.toPx())
+                    )
+                }
+                // Зелёная точка изменений в свободном верхнем углу ячейки: рисуется
+                // поверх фона, но не участвует в раскладке, поэтому высота 56dp
+                // и центрирование подписи дня не меняются.
+                if (marked) {
+                    val dotCenter = Offset(
+                        x = size.width - 8.dp.toPx(),
+                        y = 9.dp.toPx()
+                    )
+                    drawCircle(
+                        color = nycChangeGreen.copy(alpha = 0.22f),
+                        radius = 3.5.dp.toPx(),
+                        center = dotCenter
+                    )
+                    drawCircle(
+                        color = nycChangeGreen,
+                        radius = 2.dp.toPx(),
+                        center = dotCenter
                     )
                 }
                 if (isSelected) {
@@ -925,6 +984,7 @@ private fun NycLessonCard(
     scopeLabel: String? = null,
     scopeIsStream: Boolean = false,
     hasNote: Boolean = false,
+    isNew: Boolean = false,
     cardModifier: Modifier = Modifier,
     noteButtonModifier: Modifier = Modifier,
     roomButtonModifier: Modifier = Modifier,
@@ -1095,6 +1155,12 @@ private fun NycLessonCard(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
+                        // Бейдж «НОВОЕ» идёт первым в ряду статус-бейджей: верхний
+                        // правый угол карточки занят кнопкой заметки (48dp touch-target),
+                        // поэтому свободная зона — тот же ряд, слева от кнопки.
+                        if (isNew) {
+                            NycNewLessonBadge()
+                        }
                         NycTypeBadge(text = localizedLessonType(lesson.type).uppercase(), color = typeColor)
                         if (!scopeLabel.isNullOrEmpty()) {
                             NycTypeBadge(
@@ -1226,6 +1292,32 @@ private fun NycLessonCard(
                 }
             }
         }
+    }
+}
+
+/** Зелёный бейдж «НОВОЕ» на карточке пары, появившейся или изменившейся с baseline. */
+@Composable
+private fun NycNewLessonBadge() {
+    val lessonChangedCd = stringResource(R.string.changes_lesson_cd)
+    Row(
+        modifier = Modifier
+            .height(20.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .background(nycChangeGreen)
+            .padding(horizontal = 7.dp)
+            // Видимый текст «НОВОЕ» дублируется осмысленной подписью для TalkBack.
+            .clearAndSetSemantics { contentDescription = lessonChangedCd },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = stringResource(R.string.changes_new_lesson_badge),
+            fontFamily = NycMonoFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 9.sp,
+            letterSpacing = 0.8.sp,
+            color = Color(0xFF06231A),
+            maxLines = 1
+        )
     }
 }
 

@@ -39,7 +39,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import ru.nya.nyeios.R
+import ru.nya.nyeios.data.changes.CurriculumChanges
+import ru.nya.nyeios.data.changes.ScoreChange
 import ru.nya.nyeios.ui.common.localizeErrorMessage
 import ru.nya.nyeios.ui.onboarding.OnboardingTargetId
 import ru.nya.nyeios.ui.onboarding.onboardingTarget
@@ -72,6 +76,7 @@ fun CurriculumScreen(
     onSelectTerm: (Int) -> Unit,
     onRefresh: () -> Unit,
     onOpenLogin: () -> Unit,
+    changes: CurriculumChanges = CurriculumChanges(),
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -253,6 +258,7 @@ fun CurriculumScreen(
                         CurriculumTermsBar(
                             terms = uiState.terms,
                             selectedTermNum = activeTerm.termNum,
+                            changes = changes,
                             onSelectTerm = onSelectTerm
                         )
 
@@ -286,6 +292,10 @@ fun CurriculumScreen(
                                 itemsIndexed(activeTerm.subjects) { index, subject ->
                                     CurriculumSubjectCard(
                                         subject = subject,
+                                        termNum = activeTerm.termNum,
+                                        scoreChanges = changes.forTerm(activeTerm.termNum)
+                                            ?.forSubject(subject.subject, subject.controlType)
+                                            .orEmpty(),
                                         modifier = Modifier.onboardingTarget(
                                             OnboardingTargetId.CURRICULUM_GRADES,
                                             enabled = index == 0
@@ -308,6 +318,7 @@ fun CurriculumScreen(
 fun CurriculumTermsBar(
     terms: List<CurriculumTerm>,
     selectedTermNum: Int,
+    changes: CurriculumChanges = CurriculumChanges(),
     onSelectTerm: (Int) -> Unit
 ) {
     LazyRow(
@@ -321,6 +332,7 @@ fun CurriculumTermsBar(
     ) {
         items(terms) { term ->
             val isSelected = term.termNum == selectedTermNum
+            val hasChanges = changes.forTerm(term.termNum)?.hasChanges == true
             Box(
                 modifier = Modifier
                     .background(if (isSelected) ru.nya.nyeios.ui.theme.NierBlue else ru.nya.nyeios.ui.theme.NierPanelAlt)
@@ -339,6 +351,17 @@ fun CurriculumTermsBar(
                     fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
                     fontSize = 11.sp
                 )
+                // Непрочитанные изменения баллов в семестре: квадратный маркер в углу чипа.
+                // Оверлей, поэтому размеры чипа и отступы ряда не меняются.
+                if (hasChanges) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(top = 2.dp, end = 2.dp)
+                            .size(4.dp)
+                            .background(ru.nya.nyeios.ui.theme.NierGreen)
+                    )
+                }
             }
         }
     }
@@ -416,6 +439,10 @@ fun StatCard(
 @Composable
 fun CurriculumSubjectCard(
     subject: CurriculumSubject,
+    /** Семестр, к которому относятся переданные [scoreChanges] (контекст карточки). */
+    termNum: Int = 0,
+    /** Непросмотренные изменения баллов предмета из diff-движка; пусто — блока нет. */
+    scoreChanges: List<ScoreChange> = emptyList(),
     modifier: Modifier = Modifier
 ) {
     var isExpanded by remember { mutableStateOf(false) }
@@ -545,6 +572,23 @@ fun CurriculumSubjectCard(
                 }
             }
 
+            // Непросмотренные изменения баллов: компактная полоса «старое → новое» сразу
+            // под строкой оценок. При пустом списке блок не рисуется и карточка выглядит
+            // ровно как раньше.
+            if (scoreChanges.isNotEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(ru.nya.nyeios.ui.theme.NierPanel)
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    scoreChanges.forEach { change ->
+                        ScoreDeltaRow(change = change)
+                    }
+                }
+            }
+
             // Expanded details block
             UiAnimatedVisibility(visible = isExpanded) {
                 Column(
@@ -573,6 +617,48 @@ fun CurriculumSubjectCard(
     }
 }
 
+
+/**
+ * Одна дельта БРС в стиле YoRHa: старое значение красным, стрелка, новое — зелёным.
+ * Пустое значение показывается прочерком. Строка целиком озвучивается одной
+ * contentDescription, чтобы TalkBack не читал цвета по отдельности.
+ */
+@Composable
+private fun ScoreDeltaRow(change: ScoreChange) {
+    val dash = stringResource(R.string.eios_health_value_dash)
+    val oldText = change.oldValue.ifEmpty { dash }
+    val newText = change.newValue.ifEmpty { dash }
+    val description = stringResource(R.string.changes_score_delta_cd, oldText, newText)
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clearAndSetSemantics { contentDescription = description },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+        Text(
+            text = oldText,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+            color = ru.nya.nyeios.ui.theme.NierRed
+        )
+        Text(
+            text = "→",
+            fontSize = 11.sp,
+            fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+            color = ru.nya.nyeios.ui.theme.NierDim
+        )
+        Text(
+            text = newText,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = ru.nya.nyeios.ui.theme.ShareTechMonoFamily,
+            color = ru.nya.nyeios.ui.theme.NierGreen
+        )
+    }
+}
 
 @Composable
 fun BrsDetailRow(

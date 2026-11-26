@@ -35,7 +35,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import ru.nya.nyeios.R
+import ru.nya.nyeios.data.changes.CurriculumChanges
+import ru.nya.nyeios.data.changes.ScoreChange
+import ru.nya.nyeios.data.changes.ScoreField
 import ru.nya.nyeios.ui.common.localizeErrorMessage
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -76,12 +81,17 @@ private val nycText = Color(0xFFDBE4F0)
 private val nycMuted = Color(0xFF8794A7)
 private val nycFaint = Color(0xFF5B6A7E)
 
+// "Что нового" в БРС: семантика дельты баллов NyC-семейства (контракт UI §4).
+private val nycChangeGreen = Color(0xFF46E08C)
+private val nycChangeRed = Color(0xFFFF6B6B)
+
 @Composable
 fun NycCurriculumScreen(
     uiState: CurriculumUiState,
     onSelectTerm: (Int) -> Unit,
     onRefresh: () -> Unit,
     onOpenLogin: () -> Unit,
+    changes: CurriculumChanges = CurriculumChanges(),
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -228,6 +238,7 @@ fun NycCurriculumScreen(
                         NycTermsRow(
                             terms = uiState.terms,
                             selectedTermNum = activeTerm.termNum,
+                            changes = changes,
                             onSelectTerm = onSelectTerm
                         )
 
@@ -260,6 +271,10 @@ fun NycCurriculumScreen(
                                 itemsIndexed(activeTerm.subjects) { index, subject ->
                                     NycSubjectCard(
                                         subject = subject,
+                                        scoreChanges = changes
+                                            .forTerm(activeTerm.termNum)
+                                            ?.forSubject(subject.subject, subject.controlType)
+                                            .orEmpty(),
                                         modifier = Modifier.onboardingTarget(
                                             OnboardingTargetId.CURRICULUM_GRADES,
                                             enabled = index == 0
@@ -284,6 +299,7 @@ fun NycCurriculumScreen(
 private fun NycTermsRow(
     terms: List<CurriculumTerm>,
     selectedTermNum: Int,
+    changes: CurriculumChanges = CurriculumChanges(),
     onSelectTerm: (Int) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxWidth()) {
@@ -294,6 +310,7 @@ private fun NycTermsRow(
         ) {
             items(terms) { term ->
                 val isSelected = term.termNum == selectedTermNum
+                val hasChanges = changes.forTerm(term.termNum)?.hasChanges == true
                 Box(
                     modifier = Modifier
                         .height(34.dp)
@@ -309,15 +326,29 @@ private fun NycTermsRow(
                         .padding(horizontal = 12.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = stringResource(R.string.semester_fmt, term.termNum).uppercase(),
-                        color = if (isSelected) NycCyan else nycMuted,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = NycMonoFamily,
-                        fontSize = 9.5.sp,
-                        letterSpacing = 1.sp,
-                        maxLines = 1
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.semester_fmt, term.termNum).uppercase(),
+                            color = if (isSelected) NycCyan else nycMuted,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = NycMonoFamily,
+                            fontSize = 9.5.sp,
+                            letterSpacing = 1.sp,
+                            maxLines = 1
+                        )
+                        // Зелёная точка непросмотренных изменений семестра; декоративна:
+                        // отдельного cd-ключа для семестра в контракте строк нет.
+                        if (hasChanges) {
+                            NycLed(
+                                color = nycChangeGreen,
+                                diameter = 5.dp,
+                                modifier = Modifier.clearAndSetSemantics { }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -400,6 +431,7 @@ private fun NycSum(value: String, label: String, color: Color, modifier: Modifie
 @Composable
 private fun NycSubjectCard(
     subject: CurriculumSubject,
+    scoreChanges: List<ScoreChange> = emptyList(),
     modifier: Modifier = Modifier
 ) {
     var isExpanded by remember { mutableStateOf(false) }
@@ -587,6 +619,27 @@ private fun NycSubjectCard(
                 if (subject.grade.trim().isNotEmpty()) {
                     NycDetailRow(label = stringResource(R.string.curriculum_detail_final_grade), value = subject.grade.trim(), highlight = true)
                 }
+                // "Что нового": дельты баллов baseline -> latest. Рендерятся только
+                // в раскрытой секции, чтобы не менять компактную свёрнутую карточку.
+                if (scoreChanges.isNotEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 2.dp)
+                            .background(nycChangeGreen.copy(alpha = 0.07f), RoundedCornerShape(6.dp))
+                            .border(
+                                1.dp,
+                                nycChangeGreen.copy(alpha = 0.22f),
+                                RoundedCornerShape(6.dp)
+                            )
+                            .padding(horizontal = 8.dp, vertical = 7.dp),
+                        verticalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        scoreChanges.forEach { change ->
+                            NycScoreDeltaRow(change = change)
+                        }
+                    }
+                }
             }
         }
     }
@@ -627,4 +680,71 @@ private fun NycDetailRow(label: String, value: String, highlight: Boolean = fals
             color = if (highlight) NycCyan else nycText
         )
     }
+}
+
+/**
+ * Компактная строка изменений БРС: «старое → новое».
+ * Старое значение красное, новое — зелёное; пустое старое значение показывается «—».
+ */
+@Composable
+private fun NycScoreDeltaRow(change: ScoreChange) {
+    val oldText = change.oldValue.ifBlank { "—" }
+    val newText = change.newValue.ifBlank { "—" }
+    val deltaCd = stringResource(R.string.changes_score_delta_cd, oldText, newText)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = scoreFieldLabel(change.field),
+            fontFamily = NycSansFamily,
+            fontSize = 11.sp,
+            color = nycMuted,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false)
+        )
+        Row(
+            modifier = Modifier
+                .padding(start = 8.dp)
+                // Подпись «Баллы изменились: N → M» заменяет разрозненные узлы
+                // старого/стрелки/нового значения для TalkBack.
+                .clearAndSetSemantics { contentDescription = deltaCd },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = oldText,
+                fontFamily = NycMonoFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.sp,
+                color = nycChangeRed
+            )
+            Text(
+                text = "→",
+                fontFamily = NycMonoFamily,
+                fontSize = 10.sp,
+                color = nycFaint
+            )
+            Text(
+                text = newText,
+                fontFamily = NycMonoFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.sp,
+                color = nycChangeGreen
+            )
+        }
+    }
+}
+
+/** Локализованное название поля БРС для строки дельты. */
+@Composable
+private fun scoreFieldLabel(field: ScoreField): String = when (field) {
+    ScoreField.CURRENT_SCORE -> stringResource(R.string.curriculum_detail_current_score)
+    ScoreField.CURRENT_RATING -> stringResource(R.string.curriculum_detail_current_rating)
+    ScoreField.TERM_RATING -> stringResource(R.string.curriculum_detail_term_rating)
+    ScoreField.EXAM_SCORE -> stringResource(R.string.curriculum_detail_exam_score)
+    ScoreField.FINAL_RATING -> stringResource(R.string.curriculum_detail_final_rating)
+    ScoreField.GRADE -> stringResource(R.string.curriculum_detail_final_grade)
 }

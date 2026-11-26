@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import ru.nya.nyeios.data.changes.ChangesRepository
 import ru.nya.nyeios.data.model.AuthSession
 import ru.nya.nyeios.data.model.FlowWeekState
 import ru.nya.nyeios.data.model.ScheduleUiState
@@ -21,6 +22,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
 
     private val repository = EiosRepository.getInstance(application.applicationContext)
     private val flowRepository = PublicScheduleFlowRepository.getInstance(application.applicationContext)
+    private val changesRepository = ChangesRepository.getInstance(application.applicationContext)
 
     private val _uiState = MutableStateFlow<ScheduleUiState>(ScheduleUiState.Loading)
     val uiState: StateFlow<ScheduleUiState> = _uiState.asStateFlow()
@@ -103,6 +105,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                     }
                 }
                 _uiState.value = ScheduleUiState.Success(schedule, isRefreshing = false)
+                changesRepository.onScheduleFetched(schedule)
                 // Основное расписание уже показано; соседние группы досверяем тихо в фоне.
                 flowRepository.requestWeek(
                     ownGroup = schedule.group,
@@ -179,6 +182,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
 
     fun logout() {
         repository.logout()
+        changesRepository.reset()
         hideLoginSheet()
     }
 }
