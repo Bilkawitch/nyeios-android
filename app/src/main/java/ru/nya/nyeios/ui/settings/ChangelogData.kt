@@ -18,9 +18,34 @@ object ChangelogHistory {
     val releases: List<ChangelogVersion>
         get() = listOf(
             ChangelogVersion(
-                version = "0.4.1",
+                version = "0.4.2",
                 releaseDate = "26.11.2026",
                 isLatest = true,
+                sections = listOf(
+                    ChangelogSection(
+                        title = AppLocale.pick("РАСПИСАНИЕ", "SCHEDULE"),
+                        items = listOf(
+                            AppLocale.pick(
+                                "[экспериментально] Приложение показывает, что изменилось (если изменилось) после обновления расписания: метки на днях и парах, изменения баллов БРС и точки на вкладках. Метки исчезают после просмотра.",
+                                "[experimental] The app now shows what has changed (if anything) since the schedule was refreshed: markers on days and lessons, grade changes and tab dots. Markers disappear once seen."
+                            )
+                        )
+                    ),
+                    ChangelogSection(
+                        title = AppLocale.pick("АВТООБНОВЛЕНИЕ", "AUTO-UPDATE"),
+                        items = listOf(
+                            AppLocale.pick(
+                                "Долгое нажатие на кнопку обновления вызывает меню «Автообновления», где можно включить автоматическое обновление расписания и БРС в фоновом режиме и настроить уведомления.",
+                                "Long-press the refresh button to open the Auto-update menu: enable background schedule and grade refresh and configure notifications."
+                            )
+                        )
+                    )
+                )
+            ),
+            ChangelogVersion(
+                version = "0.4.1",
+                releaseDate = "26.11.2026",
+                isLatest = false,
                 sections = listOf(
                     ChangelogSection(
                         title = AppLocale.pick("КАРТА КОРПУСА", "FLOOR MAP"),
