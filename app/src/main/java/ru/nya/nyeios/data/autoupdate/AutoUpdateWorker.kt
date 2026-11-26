@@ -1,5 +1,6 @@
 package ru.nya.nyeios.data.autoupdate
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.content.Context
 import android.content.pm.ServiceInfo
@@ -82,7 +83,12 @@ class AutoUpdateWorker(
      * Пытается перевести воркер в foreground с dataSync-нотификацией прогресса.
      * На Android 12+ запуск FGS из фона может быть запрещён, на Android 14 нужны
      * разрешение и объявленный тип — любая ошибка означает «работаем без FGS».
+     *
+     * `FOREGROUND_SERVICE_TYPE_DATA_SYNC` появился в API 29, но это inlined-константа:
+     * на старых API значение безопасно передаётся в WorkManager, который применяет тип
+     * только там, где он поддерживается (поэтому подавляем InlinedApi, а не повышаем minSdk).
      */
+    @SuppressLint("InlinedApi")
     private suspend fun trySetForeground(notification: Notification): Boolean {
         return try {
             setForeground(
