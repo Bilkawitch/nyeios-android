@@ -60,9 +60,11 @@ internal class PrefsEiosStatusFeedStore(context: Context) : EiosStatusFeedStore 
  * - a 404 / network failure is not "site down": fall back to the cached snapshot, never throw;
  * - freshness is recomputed from `ts` (or `publishedAt`) on every read: the server-side `ageSec`
  *   only describes the moment of publication, and a cached file may be hours old;
- * - after [STALE_AGE_MS] without a fresh cycle the snapshot is flagged `stale`, and the refresh
- *   gate ignores it (it must not claim the site is dead from a day-old file); an explicit check
- *   (`force = true`) still returns it so the settings digest can show the data with its age.
+ * - after [STALE_AGE_MS] (15 minutes, one and a half publication intervals) without a fresh
+ *   cycle the snapshot is flagged `stale`, and the refresh gate ignores it (it must not claim
+ *   the site is dead from a file the monitor stopped updating); an explicit check
+ *   (`force = true`) still returns it so the settings digest can show the data with its age and
+ *   the "report overdue" warning, or reject it once it is older than 30 minutes.
  *
  * Interactive refresh attempts are bounded to [GATE_TIMEOUT_MS] and a single try; the explicit
  * settings check follows the documented retry policy: [FORCE_TIMEOUT_MS] per attempt, two retries
@@ -136,10 +138,8 @@ internal class EiosStatusFeed(
         val referenceTs = summary.ts.takeIf { it > 0L } ?: summary.publishedAt ?: return null
         val ageMs = (nowMs - referenceTs).coerceAtLeast(0L)
         val freshEnough = ageMs <= STALE_AGE_MS
-        if (!freshEnough && summary.status == EiosMonitorSummary.STATUS_UNKNOWN) {
-            // Unknown verdict from an old snapshot is worthless: report "no data" instead.
-            return null
-        }
+        // An old "unknown" snapshot is still returned here: the chain rejects it for the refresh
+        // gate, while the settings check uses its age to show the "report overdue" warning.
         return EiosMonitorFetch(
             summary = summary.copy(
                 ageSec = ageMs / 1_000L,
@@ -160,8 +160,8 @@ internal class EiosStatusFeed(
         /** A snapshot younger than this is served without a network round trip. */
         const val CACHE_TRUST_MS = 5 * 60_000L
 
-        /** "Noticeably more than ~20 minutes" from the feed documentation. */
-        const val STALE_AGE_MS = 20 * 60_000L
+        /** One and a half publication intervals: the file is no longer evidence of a live monitor. */
+        const val STALE_AGE_MS = EiosMonitorFreshness.TRUST_AGE_MS
 
         /** Interactive refresh: one quick attempt, never freeze the UI for the documented 10 s. */
         const val GATE_TIMEOUT_MS = 4_000L

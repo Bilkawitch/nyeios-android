@@ -18,7 +18,7 @@ import ru.nya.nyeios.data.net.EiosStatusFeedStore
  * - poll at most once per minute, keep the last valid JSON locally;
  * - 404 / network failure is not "site down" — fall back to the cached snapshot;
  * - freshness is computed from `ts` / `publishedAt`, not from the server-side `ageSec`;
- * - after ~20 minutes without a fresh cycle the data is stale;
+ * - after 15 minutes without a fresh cycle the data is stale;
  * - an explicit check retries twice (backoff 1 s, 2 s) with a 10 s timeout.
  */
 class EiosStatusFeedTest {
@@ -214,15 +214,43 @@ class EiosStatusFeedTest {
     }
 
     @Test
-    fun `fresh publication older than twenty minutes is marked stale`() = runBlocking {
+    fun `publication older than fifteen minutes is marked stale`() = runBlocking {
         val store = FakeStore()
-        val fetch = FakeFetch().apply { result = feedJson(ts = now - 21 * 60_000L) }
+        val fetch = FakeFetch().apply { result = feedJson(ts = now - 16 * 60_000L) }
         val feed = buildFeed(store, fetch)
 
         val result = feed.load(force = false)
 
         assertNotNull(result)
         assertTrue(result!!.summary.stale)
+    }
+
+    @Test
+    fun `old unknown snapshot is still returned so the settings check can show its age`() = runBlocking {
+        val store = FakeStore()
+        val fetch = FakeFetch().apply {
+            result = feedJson(ts = now - 20 * 60_000L, status = "unknown")
+        }
+        val feed = buildFeed(store, fetch)
+
+        val result = feed.load(force = true)
+
+        assertNotNull(result)
+        assertEquals(EiosMonitorSummary.STATUS_UNKNOWN, result!!.summary.status)
+        assertTrue(result.summary.stale)
+    }
+
+    @Test
+    fun `publication at the fifteen minute boundary is still fresh`() = runBlocking {
+        val store = FakeStore()
+        val fetch = FakeFetch().apply { result = feedJson(ts = now - 15 * 60_000L) }
+        val feed = buildFeed(store, fetch)
+
+        val result = feed.load(force = false)
+
+        assertNotNull(result)
+        assertEquals(900L, result!!.summary.ageSec)
+        assertTrue("exactly 15 minutes is the last trusted second", !result.summary.stale)
     }
 
     @Test

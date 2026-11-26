@@ -484,7 +484,9 @@ private fun NycGeneralContent(
             if (uiState.monitorChecked) {
                 NycMonitorDigest(
                     summary = uiState.monitorSummary,
-                    endpoint = uiState.monitorEndpoint
+                    endpoint = uiState.monitorEndpoint,
+                    isStaleWarning = uiState.monitorStaleWarning,
+                    isExpired = uiState.monitorExpired
                 )
             }
         }
@@ -1209,9 +1211,14 @@ private fun NycServerCheckRow(
 @Composable
 private fun NycMonitorDigest(
     summary: EiosMonitorSummary?,
-    endpoint: String?
+    endpoint: String?,
+    isStaleWarning: Boolean,
+    isExpired: Boolean
 ) {
-    val tone = nycMonitorStatusTone(summary)
+    val tone = when {
+        isExpired -> nycRed
+        else -> nycMonitorStatusTone(summary)
+    }
 
     Column(
         modifier = Modifier
@@ -1223,7 +1230,16 @@ private fun NycMonitorDigest(
             .padding(10.dp),
         verticalArrangement = Arrangement.spacedBy(7.dp)
     ) {
-        if (summary == null) {
+        if (isExpired) {
+            Text(
+                text = stringResource(R.string.eios_health_report_overdue),
+                fontFamily = NycSansFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.5.sp,
+                lineHeight = 15.sp,
+                color = nycRed
+            )
+        } else if (summary == null) {
             Text(
                 text = stringResource(R.string.eios_health_monitor_unreachable),
                 fontFamily = NycSansFamily,
@@ -1233,6 +1249,12 @@ private fun NycMonitorDigest(
                 color = nycAmber
             )
         } else {
+            if (isStaleWarning) {
+                NycMonitorWarningBanner(
+                    text = stringResource(R.string.eios_health_report_stale_warning)
+                )
+            }
+
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(6.dp))
@@ -1251,9 +1273,9 @@ private fun NycMonitorDigest(
                 )
             }
 
-            if (summary.stale || !summary.confirmed) {
+            if ((summary.stale && !isStaleWarning) || !summary.confirmed) {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    if (summary.stale) {
+                    if (summary.stale && !isStaleWarning) {
                         NycMonitorBadge(
                             text = stringResource(R.string.eios_health_badge_stale),
                             color = nycAmber
@@ -1326,6 +1348,25 @@ private fun NycMonitorDigest(
             )
         }
     }
+}
+
+/** The monitor stopped publishing: the snapshot is shown, but it must not be read as current. */
+@Composable
+private fun NycMonitorWarningBanner(text: String) {
+    Text(
+        text = text,
+        fontFamily = NycSansFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 11.5.sp,
+        lineHeight = 15.sp,
+        color = nycAmber,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(9.dp))
+            .background(nycAmber.copy(alpha = 0.10f))
+            .border(1.dp, nycAmber.copy(alpha = 0.40f), RoundedCornerShape(9.dp))
+            .padding(horizontal = 9.dp, vertical = 7.dp)
+    )
 }
 
 @Composable

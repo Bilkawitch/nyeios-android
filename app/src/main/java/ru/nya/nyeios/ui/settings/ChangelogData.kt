@@ -18,9 +18,25 @@ object ChangelogHistory {
     val releases: List<ChangelogVersion>
         get() = listOf(
             ChangelogVersion(
-                version = "0.4.2",
+                version = "0.4.3",
                 releaseDate = "26.11.2026",
                 isLatest = true,
+                sections = listOf(
+                    ChangelogSection(
+                        title = AppLocale.pick("СОСТОЯНИЕ СЕРВИСА", "SERVICE STATUS"),
+                        items = listOf(
+                            AppLocale.pick(
+                                "Добавил защиту на случай если мой сервак упадет и sttpage будет возвращать устаревшие данные. Теперь приложение такие данные просто будет благополучно игнорировать.",
+                                "Added protection for the case when my server goes down and sttpage keeps returning stale data. The app now simply ignores such data."
+                            )
+                        )
+                    )
+                )
+            ),
+            ChangelogVersion(
+                version = "0.4.2",
+                releaseDate = "26.11.2026",
+                isLatest = false,
                 sections = listOf(
                     ChangelogSection(
                         title = AppLocale.pick("РАСПИСАНИЕ", "SCHEDULE"),

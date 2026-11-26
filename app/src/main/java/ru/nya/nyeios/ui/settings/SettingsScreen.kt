@@ -396,7 +396,9 @@ private fun GeneralSettingsContent(
                 if (uiState.monitorChecked) {
                     MonitorDigestBlock(
                         summary = uiState.monitorSummary,
-                        endpoint = uiState.monitorEndpoint
+                        endpoint = uiState.monitorEndpoint,
+                        isStaleWarning = uiState.monitorStaleWarning,
+                        isExpired = uiState.monitorExpired
                     )
                 }
             }
@@ -1371,9 +1373,14 @@ private fun ServerCheckRow(
 @Composable
 private fun MonitorDigestBlock(
     summary: EiosMonitorSummary?,
-    endpoint: String?
+    endpoint: String?,
+    isStaleWarning: Boolean,
+    isExpired: Boolean
 ) {
-    val tone = monitorStatusTone(summary)
+    val tone = when {
+        isExpired -> NierRed
+        else -> monitorStatusTone(summary)
+    }
 
     Column(
         modifier = Modifier
@@ -1383,7 +1390,16 @@ private fun MonitorDigestBlock(
             .padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(7.dp)
     ) {
-        if (summary == null) {
+        if (isExpired) {
+            Text(
+                text = stringResource(R.string.eios_health_report_overdue),
+                color = NierRed,
+                fontSize = 11.sp,
+                lineHeight = 15.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = RajdhaniFamily
+            )
+        } else if (summary == null) {
             Text(
                 text = stringResource(R.string.eios_health_monitor_unreachable),
                 color = NierAmber,
@@ -1393,14 +1409,20 @@ private fun MonitorDigestBlock(
                 fontFamily = RajdhaniFamily
             )
         } else {
+            if (isStaleWarning) {
+                MonitorWarningBanner(
+                    text = stringResource(R.string.eios_health_report_stale_warning)
+                )
+            }
+
             MonitorBadge(
                 text = summary.label.ifBlank { summary.state }.ifBlank { summary.status },
                 color = tone
             )
 
-            if (summary.stale || !summary.confirmed) {
+            if ((summary.stale && !isStaleWarning) || !summary.confirmed) {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    if (summary.stale) {
+                    if (summary.stale && !isStaleWarning) {
                         MonitorBadge(
                             text = stringResource(R.string.eios_health_badge_stale),
                             color = NierAmber
@@ -1471,6 +1493,24 @@ private fun MonitorDigestBlock(
             )
         }
     }
+}
+
+/** The monitor stopped publishing: the snapshot is shown, but it must not be read as current. */
+@Composable
+private fun MonitorWarningBanner(text: String) {
+    Text(
+        text = text,
+        color = NierAmber,
+        fontSize = 11.sp,
+        lineHeight = 15.sp,
+        fontWeight = FontWeight.Bold,
+        fontFamily = RajdhaniFamily,
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(NierAmber.copy(alpha = 0.12f))
+            .border(1.dp, NierAmber.copy(alpha = 0.55f))
+            .padding(horizontal = 8.dp, vertical = 6.dp)
+    )
 }
 
 @Composable

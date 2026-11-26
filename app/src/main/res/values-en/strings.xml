@@ -59,6 +59,8 @@
     <string name="eios_health_badge_stale">STALE DATA</string>
     <string name="eios_health_badge_unconfirmed">UNCONFIRMED</string>
     <string name="eios_health_monitor_unreachable">Monitor unreachable: no response from either address</string>
+    <string name="eios_health_report_stale_warning">Data is stale and unreliable: the server did not publish its report on time</string>
+    <string name="eios_health_report_overdue">The server has not published its report on time and is probably down</string>
 
     <!-- Settings: Themes -->
     <string name="theme_section_title">[ 01 · THEME SELECTION ]</string>

@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import ru.nya.nyeios.data.model.UpdateInfo
 import ru.nya.nyeios.data.net.EiosLastGetInfo
 import ru.nya.nyeios.data.net.EiosMonitorClient
+import ru.nya.nyeios.data.net.EiosMonitorFreshness
 import ru.nya.nyeios.data.net.EiosMonitorSummary
 import ru.nya.nyeios.data.net.EndpointHealthItem
 import ru.nya.nyeios.data.net.EndpointStatus
@@ -53,6 +54,10 @@ data class SettingsUiState(
     val isCheckingMonitor: Boolean = false,
     val monitorChecked: Boolean = false,
     val monitorEndpoint: String? = null,
+    // The monitor stopped publishing: the snapshot is older than 15 minutes (show a warning
+    // banner next to the data) or older than 30 minutes (hide the data and report the outage).
+    val monitorStaleWarning: Boolean = false,
+    val monitorExpired: Boolean = false,
     val currentVersion: String = "",
     val isCheckingUpdate: Boolean = false,
     val updateCheckStatus: String? = null,
@@ -295,6 +300,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
      * `fetch(force = true)` — ручная проверка всегда идёт в сеть, минуя 6-секундный кэш клиента.
      * `null` — валидный результат «монитор не ответил ни по одному адресу» (fail-open, исключений нет),
      * а не ошибка: UI покажет [R.string.eios_health_monitor_unreachable].
+     *
+     * Возраст снимка решает, можно ли ему верить: до 15 минут — обычная сводка, от 15 до 30 минут —
+     * сводка с предупреждением «данные старые», старше 30 минут — данные скрываются и показывается
+     * ошибка «сервер не отправлял отчет вовремя» (см. [EiosMonitorFreshness]).
      */
     fun checkViaMonitor() {
         if (_uiState.value.isCheckingMonitor) return
@@ -304,16 +313,23 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                     isCheckingMonitor = true,
                     monitorChecked = false,
                     monitorSummary = null,
-                    monitorEndpoint = null
+                    monitorEndpoint = null,
+                    monitorStaleWarning = false,
+                    monitorExpired = false
                 )
             }
             val fetch = EiosMonitorClient.getInstance(getApplication()).fetch(force = true)
+            val summary = fetch?.summary
+            val level = summary?.let { EiosMonitorFreshness.level(it) }
+            val expired = level == EiosMonitorFreshness.Level.EXPIRED
             _uiState.update {
                 it.copy(
                     isCheckingMonitor = false,
                     monitorChecked = true,
-                    monitorSummary = fetch?.summary,
-                    monitorEndpoint = fetch?.endpoint
+                    monitorSummary = if (expired) null else summary,
+                    monitorEndpoint = if (expired) null else fetch?.endpoint,
+                    monitorStaleWarning = level == EiosMonitorFreshness.Level.STALE,
+                    monitorExpired = expired
                 )
             }
         }

@@ -46,6 +46,7 @@ import java.util.Date
 import java.util.Locale
 import ru.nya.nyeios.R
 import ru.nya.nyeios.data.net.EiosMonitorClient
+import ru.nya.nyeios.data.net.EiosMonitorFreshness
 import ru.nya.nyeios.data.net.EiosMonitorSummary
 import ru.nya.nyeios.ui.theme.NierAmber
 import ru.nya.nyeios.ui.theme.NierDim
@@ -101,7 +102,10 @@ class EiosHealthViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             val fetch = EiosMonitorClient.getInstance(getApplication()).fetch()
             val summary = fetch?.summary
-            if (summary != null && !summary.isHealthy) {
+            // A cached fetch can bypass the chain, so the freshness rule is enforced here too:
+            // data older than 15 minutes must not block a refresh, even if it says "down".
+            val usable = summary != null && EiosMonitorFreshness.isTrusted(summary)
+            if (usable && !summary.isHealthy) {
                 pendingAction = action
                 _uiState.value = EiosHealthUiState(warning = summary)
             } else {

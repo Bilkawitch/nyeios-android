@@ -59,6 +59,8 @@
     <string name="eios_health_badge_stale">ДАННЫЕ УСТАРЕЛИ</string>
     <string name="eios_health_badge_unconfirmed">НЕ ПОДТВЕРЖДЕНО</string>
     <string name="eios_health_monitor_unreachable">Монитор недоступен: нет ответа ни по одному адресу</string>
+    <string name="eios_health_report_stale_warning">Данные старые и недостоверные, сервер не отправил отчет вовремя</string>
+    <string name="eios_health_report_overdue">Сервер не отправлял отчет вовремя и вероятно отключен</string>
 
     <!-- Settings: Themes -->
     <string name="theme_section_title">[ 01 · ВЫБОР ТЕМЫ ОФОРМЛЕНИЯ ]</string>

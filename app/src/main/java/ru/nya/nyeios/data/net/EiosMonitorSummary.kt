@@ -26,7 +26,10 @@ data class EiosMonitorSummary(
     val ts: Long = 0L,
     /** How many seconds ago the last cycle finished. */
     val ageSec: Long = 0L,
-    /** true — the scheduler did not run; data is stale (> 3 intervals). */
+    /**
+     * true — the scheduler did not run (server flag), or the client found the snapshot older
+     * than its trust window. See [EiosMonitorFreshness].
+     */
     val stale: Boolean = false,
     /** Coarse verdict for clients: [STATUS_UP] | [STATUS_DEGRADED] | [STATUS_DOWN] | [STATUS_UNKNOWN]. */
     val status: String = STATUS_UNKNOWN,
@@ -148,6 +151,46 @@ data class EiosMonitorSession(
     val configured: Boolean = false,
     val ok: Boolean = false,
 )
+
+/**
+ * Freshness policy for a monitor snapshot, shared by the refresh gate and the explicit
+ * settings check.
+ *
+ * The monitor publishes its snapshot roughly every 10 minutes. When the publishing process
+ * dies, the LAN endpoints simply stop answering (the gate fails open), but the public GitHub
+ * file keeps serving its last state forever. The age of the snapshot itself is therefore the
+ * only signal that separates "the monitor is alive and says the site is down" from "nobody has
+ * updated this file for half an hour":
+ *
+ * - up to [TRUST_AGE_MS] the snapshot may drive the refresh gate;
+ * - after [TRUST_AGE_MS] it is stale: the gate ignores it and the settings check shows a
+ *   warning banner next to the data;
+ * - after [EXPIRED_AGE_MS] it is useless: the settings check reports that the monitor stopped
+ *   reporting instead of showing the data.
+ */
+object EiosMonitorFreshness {
+
+    /** Snapshots older than this are not trustworthy for gating a refresh. */
+    const val TRUST_AGE_MS = 15 * 60_000L
+
+    /** Snapshots older than this mean the monitor stopped publishing. */
+    const val EXPIRED_AGE_MS = 30 * 60_000L
+
+    enum class Level { TRUSTED, STALE, EXPIRED }
+
+    fun level(summary: EiosMonitorSummary): Level {
+        val ageMs = summary.ageSec.coerceAtLeast(0L) * 1_000L
+        return when {
+            ageMs > EXPIRED_AGE_MS -> Level.EXPIRED
+            ageMs > TRUST_AGE_MS -> Level.STALE
+            else -> Level.TRUSTED
+        }
+    }
+
+    /** Recent enough, and the monitor itself does not flag the snapshot as stale. */
+    fun isTrusted(summary: EiosMonitorSummary): Boolean =
+        !summary.stale && level(summary) == Level.TRUSTED
+}
 
 private fun JsonObject.objectOrNull(name: String): JsonObject? {
     val value = get(name) ?: return null
