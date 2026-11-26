@@ -40,19 +40,38 @@ data class FloorRoom(
     fun containsPoint(px: Float, py: Float): Boolean {
         return px in x..(x + width) && py in y..(y + height)
     }
-
-    fun getCorridorExitPoint(): Offset = doorPoint
-
-    fun getCorridorPoint(): Offset {
-        val corrY = if (floor == 3) 491f else 535.4f
-        val corrX = if (floor == 3) 902f else 916.6f
-        return accessWaypoints.lastOrNull() ?: when (wing) {
-            RoomWing.VERTICAL -> Offset(corrX, doorY)
-            RoomWing.LEFT -> Offset(doorX, corrY)
-            RoomWing.TOP, RoomWing.BOTTOM -> Offset(doorX, corrY)
-        }
-    }
 }
+
+/** Corridor axes of one floor, as authored in the map JSON. */
+data class FloorCorridors(
+    val horizontalY: Float,
+    val verticalX: Float,
+    val junctionX: Float = verticalX,
+    val junctionY: Float = horizontalY,
+    /** West-wing hallway axis (`corridors.startX`), floor 4 only. */
+    val startX: Float? = null,
+    val startY: Float? = null
+)
+
+/** Staircase marker on a floor map (`stairs[]` entry). */
+data class FloorStairs(
+    val id: String,
+    val name: String,
+    val x: Float,
+    val y: Float
+) {
+    val point: Offset get() = Offset(x, y)
+}
+
+/** Parsed contents of one `floor_<n>_map.json` asset. */
+data class FloorMapData(
+    val floor: Int,
+    val width: Float,
+    val height: Float,
+    val corridors: FloorCorridors? = null,
+    val stairs: List<FloorStairs> = emptyList(),
+    val rooms: List<FloorRoom> = emptyList()
+)
 
 data class FloorRoute(
     val fromRoom: FloorRoom?,

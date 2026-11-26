@@ -5,11 +5,29 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 import ru.nya.nyeios.data.floormap.FloorMapRepository
 import ru.nya.nyeios.data.floormap.RoomType
+import java.io.File
 
 class FloorMapRepositoryTest {
+
+    @Before
+    fun loadFloorMapsFromAssets() {
+        // The app now reads maps from assets, so tests feed the very same JSON files.
+        FloorMapRepository.initializeForTests(
+            floor3Json = readMapAsset("floor_3_map.json"),
+            floor4Json = readMapAsset("floor_4_map.json")
+        )
+    }
+
+    private fun readMapAsset(name: String): String {
+        val candidates = listOf(File("src/main/assets/$name"), File("app/src/main/assets/$name"))
+        val file = candidates.firstOrNull { it.isFile }
+            ?: error("Map asset $name not found, cwd=${File(".").absolutePath}")
+        return file.readText()
+    }
 
     @Test
     fun `floor 4 has exactly 41 rooms mapped`() {
@@ -22,12 +40,12 @@ class FloorMapRepositoryTest {
     fun `all rooms have coordinates within map bounds`() {
         val rooms = FloorMapRepository.getRoomsForFloor(4)
         for (room in rooms) {
-            assertTrue("Room ${room.room} x out of bounds: ${room.x}", room.x >= 0f && room.x < FloorMapRepository.MAP_WIDTH)
-            assertTrue("Room ${room.room} y out of bounds: ${room.y}", room.y >= 0f && room.y < FloorMapRepository.MAP_HEIGHT)
+            assertTrue("Room ${room.room} x out of bounds: ${room.x}", room.x >= 0f && room.x < FloorMapRepository.getMapWidth(4))
+            assertTrue("Room ${room.room} y out of bounds: ${room.y}", room.y >= 0f && room.y < FloorMapRepository.getMapHeight(4))
             assertTrue("Room ${room.room} width <= 0: ${room.width}", room.width > 0f)
             assertTrue("Room ${room.room} height <= 0: ${room.height}", room.height > 0f)
-            assertTrue("Room ${room.room} right edge exceeds map: ${room.x + room.width}", room.x + room.width <= FloorMapRepository.MAP_WIDTH)
-            assertTrue("Room ${room.room} bottom edge exceeds map: ${room.y + room.height}", room.y + room.height <= FloorMapRepository.MAP_HEIGHT)
+            assertTrue("Room ${room.room} right edge exceeds map: ${room.x + room.width}", room.x + room.width <= FloorMapRepository.getMapWidth(4))
+            assertTrue("Room ${room.room} bottom edge exceeds map: ${room.y + room.height}", room.y + room.height <= FloorMapRepository.getMapHeight(4))
         }
     }
 
@@ -114,8 +132,8 @@ class FloorMapRepositoryTest {
     fun `all rooms have valid door coordinates within room or corridor proximity`() {
         val rooms = FloorMapRepository.getRoomsForFloor(4)
         for (room in rooms) {
-            assertTrue("Room ${room.room} doorX out of bounds: ${room.doorX}", room.doorX >= 0f && room.doorX <= FloorMapRepository.MAP_WIDTH)
-            assertTrue("Room ${room.room} doorY out of bounds: ${room.doorY}", room.doorY >= 0f && room.doorY <= FloorMapRepository.MAP_HEIGHT)
+            assertTrue("Room ${room.room} doorX out of bounds: ${room.doorX}", room.doorX >= 0f && room.doorX <= FloorMapRepository.getMapWidth(4))
+            assertTrue("Room ${room.room} doorY out of bounds: ${room.doorY}", room.doorY >= 0f && room.doorY <= FloorMapRepository.getMapHeight(4))
             assertEquals(room.doorX, room.doorPoint.x, 0.01f)
             assertEquals(room.doorY, room.doorPoint.y, 0.01f)
         }
@@ -231,6 +249,25 @@ class FloorMapRepositoryTest {
         // Reset back to defaults for subsequent tests
         FloorMapRepository.resetToDefaults()
         assertEquals(41, FloorMapRepository.getRoomsForFloor(4).size)
+    }
+
+    @Test
+    fun `map geometry, corridors and stairs are loaded from json assets`() {
+        assertEquals(1024f, FloorMapRepository.getMapWidth(4), 0.01f)
+        assertEquals(727f, FloorMapRepository.getMapHeight(4), 0.01f)
+        assertEquals(4, FloorMapRepository.getRoomsForFloor(3).size)
+
+        val corridors = FloorMapRepository.getCorridors(4)
+        assertNotNull(corridors)
+        assertEquals(535.4f, corridors!!.horizontalY, 0.01f)
+        assertEquals(916.6f, corridors.verticalX, 0.01f)
+        assertEquals(105.2f, corridors.startX ?: 0f, 0.01f)
+
+        val stairs4 = FloorMapRepository.getStairsForFloor(4)
+        assertEquals(3, stairs4.size)
+        assertEquals("Западная лестница", stairs4.first { it.id == "west" }.name)
+        assertEquals("Центральная лестница", stairs4.first { it.id == "central" }.name)
+        assertEquals(3, FloorMapRepository.getStairsForFloor(3).size)
     }
 
     @Test

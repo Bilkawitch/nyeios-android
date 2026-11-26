@@ -1,43 +1,179 @@
 package ru.nya.nyeios.data.floormap
 
+import android.content.Context
 import androidx.compose.ui.geometry.Offset
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 
 object FloorMapRepository {
 
-    const val MAP_WIDTH_4 = 1024f
-    const val MAP_HEIGHT_4 = 727f
-    const val MAP_WIDTH_3 = 1024f
-    const val MAP_HEIGHT_3 = 603f
+    private const val FLOOR_3_DEFAULT_WIDTH = 1024f
+    private const val FLOOR_3_DEFAULT_HEIGHT = 603f
+    private const val FLOOR_4_DEFAULT_WIDTH = 1024f
+    private const val FLOOR_4_DEFAULT_HEIGHT = 727f
 
-    const val MAP_WIDTH = 1024f
-    const val MAP_HEIGHT = 727f
+    private const val FLOOR_3_CORRIDOR_Y = 491f
+    private const val FLOOR_3_CORRIDOR_X = 902f
+    private const val FLOOR_4_CORRIDOR_Y = 535.4f
+    private const val FLOOR_4_CORRIDOR_X = 916.6f
+    private const val FLOOR_4_HALLWAY_X = 105.2f
 
-    // Floor 4 stairs
-    val STAIRS_4_WEST = Offset(203.8f, 509.8f)
-    val STAIRS_4_CENTRAL = Offset(605.1f, 499f)
-    val STAIRS_4_EAST = Offset(878.8f, 491.9f)
+    /** Assets are discovered by name, so a new floor only needs `floor_<n>_map.json`. */
+    private val FLOOR_MAP_ASSET_REGEX = Regex("^floor_(\\d+)_map\\.json$")
 
-    // Floor 3 stairs
-    val STAIRS_3_WEST = Offset(162.2f, 452f)
-    val STAIRS_3_CENTRAL = Offset(606.4f, 461.6f)
-    val STAIRS_3_EAST = Offset(880.9f, 454.8f)
+    /** Parsed floor maps keyed by floor number. */
+    private val maps = mutableMapOf<Int, FloorMapData>()
+
+    /** Original asset JSON per floor, kept so [resetToDefaults] can drop runtime overrides. */
+    private val baselineMapJson = mutableMapOf<Int, String>()
+
+    private var initialized = false
+
+    // Stairs are read from the floor JSON; the constants below are legacy fallbacks.
+    val STAIRS_4_WEST: Offset get() = stairsPoint(4, "west", 203.8f, 509.8f)
+    val STAIRS_4_CENTRAL: Offset get() = stairsPoint(4, "central", 605.1f, 499f)
+    val STAIRS_4_EAST: Offset get() = stairsPoint(4, "east", 878.8f, 491.9f)
+
+    val STAIRS_3_WEST: Offset get() = stairsPoint(3, "west", 162.2f, 452f)
+    val STAIRS_3_CENTRAL: Offset get() = stairsPoint(3, "central", 606.4f, 461.6f)
+    val STAIRS_3_EAST: Offset get() = stairsPoint(3, "east", 880.9f, 454.8f)
 
     // Aliases for floor 4 backward compatibility
-    val STAIRS_WEST = STAIRS_4_WEST
-    val STAIRS_CENTRAL = STAIRS_4_CENTRAL
-    val STAIRS_EAST = STAIRS_4_EAST
+    val STAIRS_WEST: Offset get() = STAIRS_4_WEST
+    val STAIRS_CENTRAL: Offset get() = STAIRS_4_CENTRAL
+    val STAIRS_EAST: Offset get() = STAIRS_4_EAST
 
-    private val defaultFloor4Rooms: List<FloorRoom> by lazy {
-        parseRoomsFromJson(DEFAULT_FLOOR_4_JSON, 4)
+    /**
+     * Loads every `floor_<n>_map.json` from assets. Call once from [android.app.Application].
+     * Safe to call multiple times.
+     */
+    fun initialize(context: Context) {
+        if (initialized) return
+        val assets = context.applicationContext.assets
+        for (name in assets.list("").orEmpty()) {
+            if (!FLOOR_MAP_ASSET_REGEX.matches(name)) continue
+            val json = runCatching {
+                assets.open(name).bufferedReader().use { it.readText() }
+            }.getOrNull() ?: continue
+            applyBaselineMap(json)
+        }
+        initialized = true
     }
 
-    private val defaultFloor3Rooms: List<FloorRoom> by lazy {
-        parseRoomsFromJson(DEFAULT_FLOOR_3_JSON, 3)
+    /** Test/preview entry point that takes map JSON directly instead of assets. */
+    fun initializeForTests(floor3Json: String? = null, floor4Json: String? = null) {
+        maps.clear()
+        baselineMapJson.clear()
+        floor3Json?.let { applyBaselineMap(it) }
+        floor4Json?.let { applyBaselineMap(it) }
+        initialized = true
     }
 
-    private var floor4Rooms: List<FloorRoom> = defaultFloor4Rooms
-    private var floor3Rooms: List<FloorRoom> = defaultFloor3Rooms
+    fun isInitialized(): Boolean = initialized
+
+    private fun applyBaselineMap(json: String) {
+        val map = parseMapFromJson(json) ?: return
+        if (map.rooms.isEmpty()) return
+        baselineMapJson[map.floor] = json
+        maps[map.floor] = map
+    }
+
+    /** Parses one whole floor map: rooms, corridors, stairs and canvas size. */
+    fun parseMapFromJson(jsonString: String): FloorMapData? {
+        return try {
+            val root = JsonParser.parseString(jsonString).asJsonObject
+            val floor = if (root.has("floor")) root.get("floor").asInt else 4
+            val rooms = parseRoomsFromJson(jsonString, floor)
+            val width = if (root.has("width")) root.get("width").asFloat else defaultWidth(floor)
+            val height = if (root.has("height")) root.get("height").asFloat else defaultHeight(floor)
+            val corridors = if (root.has("corridors") && root.get("corridors").isJsonObject) {
+                parseCorridors(root.getAsJsonObject("corridors"))
+            } else null
+            val stairs = if (root.has("stairs") && root.get("stairs").isJsonArray) {
+                parseStairs(root.getAsJsonArray("stairs"))
+            } else emptyList()
+
+            FloorMapData(
+                floor = floor,
+                width = width,
+                height = height,
+                corridors = corridors,
+                stairs = stairs,
+                rooms = rooms
+            )
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun parseCorridors(obj: JsonObject): FloorCorridors {
+        val verticalX = if (obj.has("verticalX")) obj.get("verticalX").asFloat else 0f
+        val horizontalY = if (obj.has("horizontalY")) obj.get("horizontalY").asFloat else 0f
+        var junctionX = verticalX
+        var junctionY = horizontalY
+        if (obj.has("junction") && obj.get("junction").isJsonObject) {
+            val junction = obj.getAsJsonObject("junction")
+            if (junction.has("x")) junctionX = junction.get("x").asFloat
+            if (junction.has("y")) junctionY = junction.get("y").asFloat
+        }
+        return FloorCorridors(
+            horizontalY = horizontalY,
+            verticalX = verticalX,
+            junctionX = junctionX,
+            junctionY = junctionY,
+            startX = if (obj.has("startX")) obj.get("startX").asFloat else null,
+            startY = if (obj.has("startY")) obj.get("startY").asFloat else null
+        )
+    }
+
+    private fun parseStairs(array: JsonArray): List<FloorStairs> {
+        val result = mutableListOf<FloorStairs>()
+        for (elem in array) {
+            if (!elem.isJsonObject) continue
+            val obj = elem.asJsonObject
+            val id = if (obj.has("id")) obj.get("id").asString else continue
+            val name = if (obj.has("name")) obj.get("name").asString else id
+            val x = if (obj.has("x")) obj.get("x").asFloat else 0f
+            val y = if (obj.has("y")) obj.get("y").asFloat else 0f
+            result.add(FloorStairs(id = id, name = name, x = x, y = y))
+        }
+        return result
+    }
+
+    fun getMapData(floor: Int): FloorMapData? = maps[floor]
+
+    fun getMapWidth(floor: Int): Float = maps[floor]?.width ?: defaultWidth(floor)
+
+    fun getMapHeight(floor: Int): Float = maps[floor]?.height ?: defaultHeight(floor)
+
+    fun getStairsForFloor(floor: Int): List<FloorStairs> = maps[floor]?.stairs.orEmpty()
+
+    fun getCorridors(floor: Int): FloorCorridors? = maps[floor]?.corridors
+
+    private fun defaultWidth(floor: Int): Float =
+        if (floor == 3) FLOOR_3_DEFAULT_WIDTH else FLOOR_4_DEFAULT_WIDTH
+
+    private fun defaultHeight(floor: Int): Float =
+        if (floor == 3) FLOOR_3_DEFAULT_HEIGHT else FLOOR_4_DEFAULT_HEIGHT
+
+    private fun stairsPoint(floor: Int, id: String, fallbackX: Float, fallbackY: Float): Offset {
+        val stairs = maps[floor]?.stairs?.firstOrNull { it.id.equals(id, ignoreCase = true) }
+        return if (stairs != null) Offset(stairs.x, stairs.y) else Offset(fallbackX, fallbackY)
+    }
+
+    private fun stairsPointOrFallback(floor: Int, id: String): Offset = when (floor) {
+        3 -> when (id) {
+            "west" -> STAIRS_3_WEST
+            "east" -> STAIRS_3_EAST
+            else -> STAIRS_3_CENTRAL
+        }
+        else -> when (id) {
+            "west" -> STAIRS_4_WEST
+            "east" -> STAIRS_4_EAST
+            else -> STAIRS_4_CENTRAL
+        }
+    }
 
     fun parseRoomsFromJson(jsonString: String, defaultFloor: Int = 4): List<FloorRoom> {
         val root = JsonParser.parseString(jsonString).asJsonObject
@@ -110,48 +246,31 @@ object FloorMapRepository {
         return result
     }
 
+    /** Applies a runtime map override (e.g. imported JSON); [resetToDefaults] reverts it. */
     fun loadMapFromJson(jsonString: String): Boolean {
-        return try {
-            val root = JsonParser.parseString(jsonString).asJsonObject
-            val floor = if (root.has("floor")) root.get("floor").asInt else 4
-            val parsed = parseRoomsFromJson(jsonString, floor)
-            if (parsed.isNotEmpty()) {
-                if (floor == 3) {
-                    floor3Rooms = parsed
-                } else {
-                    floor4Rooms = parsed
-                }
-                true
-            } else {
-                false
-            }
-        } catch (_: Exception) {
-            false
-        }
+        val map = parseMapFromJson(jsonString) ?: return false
+        if (map.rooms.isEmpty()) return false
+        maps[map.floor] = map
+        return true
     }
 
     fun resetToDefaults() {
-        floor4Rooms = defaultFloor4Rooms
-        floor3Rooms = defaultFloor3Rooms
+        maps.clear()
+        for (json in baselineMapJson.values) {
+            parseMapFromJson(json)?.let { maps[it.floor] = it }
+        }
     }
 
     fun getRoomsForFloor(floor: Int): List<FloorRoom> {
-        return when (floor) {
-            3 -> floor3Rooms
-            4 -> floor4Rooms
-            else -> emptyList()
-        }
+        return maps[floor]?.rooms.orEmpty()
     }
 
     fun findRoom(query: String): FloorRoom? {
         val normalized = normalizeRoomQuery(query)
         if (normalized.isEmpty()) return null
 
-        val allRooms = if (normalized.startsWith("3")) {
-            floor3Rooms + floor4Rooms
-        } else {
-            floor4Rooms + floor3Rooms
-        }
+        val orderedFloors = if (normalized.startsWith("3")) maps.keys.sorted() else maps.keys.sortedDescending()
+        val allRooms = orderedFloors.flatMap { floor -> maps[floor]?.rooms.orEmpty() }
 
         allRooms.find { it.room.equals(normalized, ignoreCase = true) }?.let { return it }
 
@@ -184,8 +303,51 @@ object FloorMapRepository {
             .trim()
     }
 
-    fun getCorridorY(floor: Int): Float = if (floor == 3) 491f else 535.4f
-    fun getCorridorX(floor: Int): Float = if (floor == 3) 902f else 916.6f
+    fun getCorridorY(floor: Int): Float =
+        maps[floor]?.corridors?.horizontalY
+            ?: if (floor == 3) FLOOR_3_CORRIDOR_Y else FLOOR_4_CORRIDOR_Y
+
+    fun getCorridorX(floor: Int): Float =
+        maps[floor]?.corridors?.verticalX
+            ?: if (floor == 3) FLOOR_3_CORRIDOR_X else FLOOR_4_CORRIDOR_X
+
+    private fun hallwayX(floor: Int): Float =
+        maps[floor]?.corridors?.startX
+            ?: if (floor == 3) FLOOR_3_CORRIDOR_X else FLOOR_4_HALLWAY_X
+
+    /** Corridor entry point for the room, resolved from its own floor map geometry. */
+    private fun corridorPoint(room: FloorRoom): Offset {
+        room.accessWaypoints.lastOrNull()?.let { return it }
+        val corridors = maps[room.floor]?.corridors
+        val corrY = corridors?.horizontalY
+            ?: if (room.floor == 3) FLOOR_3_CORRIDOR_Y else FLOOR_4_CORRIDOR_Y
+        val corrX = corridors?.verticalX
+            ?: if (room.floor == 3) FLOOR_3_CORRIDOR_X else FLOOR_4_CORRIDOR_X
+        return when (room.wing) {
+            RoomWing.VERTICAL -> Offset(corrX, room.doorY)
+            RoomWing.LEFT -> Offset(room.doorX, corrY)
+            RoomWing.TOP, RoomWing.BOTTOM -> Offset(room.doorX, corrY)
+        }
+    }
+
+    private data class StairPair(val name: String, val pt4: Offset, val pt3: Offset)
+
+    /** Pairs staircases of the two mapped floors by their `id` from map JSON. */
+    private fun crossFloorStairPairs(): List<StairPair> {
+        val floor3Stairs = getStairsForFloor(3)
+        val pairs = getStairsForFloor(4).mapNotNull { stairs4 ->
+            val stairs3 = floor3Stairs.firstOrNull {
+                it.id.equals(stairs4.id, ignoreCase = true)
+            } ?: return@mapNotNull null
+            StairPair(stairs4.name, Offset(stairs4.x, stairs4.y), Offset(stairs3.x, stairs3.y))
+        }
+        if (pairs.isNotEmpty()) return pairs
+        return listOf(
+            StairPair("Западная лестница", STAIRS_4_WEST, STAIRS_3_WEST),
+            StairPair("Центральная лестница", STAIRS_4_CENTRAL, STAIRS_3_CENTRAL),
+            StairPair("Восточная лестница", STAIRS_4_EAST, STAIRS_3_EAST)
+        )
+    }
 
     fun calculatePathLength(points: List<Offset>): Float {
         var total = 0f
@@ -234,19 +396,12 @@ object FloorMapRepository {
 
         // Cross-floor where fromRoom is unknown/unmapped but fromFloor is different
         if (fromFloor != toFloor && fromRoom == null) {
-            val stairsOffset = if (toFloor == 3) {
-                when {
-                    toRoom.wing == RoomWing.VERTICAL || toRoom.nearestStairs.contains("Восточ", true) -> STAIRS_3_EAST
-                    toRoom.wing == RoomWing.LEFT || toRoom.nearestStairs.contains("Запад", true) || toRoom.centerX < 350f -> STAIRS_3_WEST
-                    else -> STAIRS_3_CENTRAL
-                }
-            } else {
-                when {
-                    toRoom.wing == RoomWing.VERTICAL || toRoom.nearestStairs.contains("Восточ", true) -> STAIRS_4_EAST
-                    toRoom.wing == RoomWing.LEFT || toRoom.nearestStairs.contains("Запад", true) || toRoom.centerX < 350f -> STAIRS_4_WEST
-                    else -> STAIRS_4_CENTRAL
-                }
+            val stairsId = when {
+                toRoom.wing == RoomWing.VERTICAL || toRoom.nearestStairs.contains("Восточ", true) -> "east"
+                toRoom.wing == RoomWing.LEFT || toRoom.nearestStairs.contains("Запад", true) || toRoom.centerX < 350f -> "west"
+                else -> "central"
             }
+            val stairsOffset = stairsPointOrFallback(toFloor, stairsId)
             val legTo = buildPathFromStairs(stairsOffset, toRoom, toFloor)
             val action = if (toFloor > fromFloor) "Поднимитесь" else "Спуститесь"
 
@@ -282,7 +437,7 @@ object FloorMapRepository {
     private fun buildSingleFloorRoute(fromRoom: FloorRoom, toRoom: FloorRoom, floor: Int): FloorRoute {
         val corrY = getCorridorY(floor)
         val corrX = getCorridorX(floor)
-        val westX = 105.2f
+        val westX = hallwayX(floor)
         val points = mutableListOf<Offset>()
         points.add(fromRoom.doorPoint)
 
@@ -308,7 +463,7 @@ object FloorMapRepository {
             } else if (fromRoom.accessWaypoints.isNotEmpty()) {
                 fromRoom.accessWaypoints.forEach { points.add(it) }
             } else {
-                points.add(fromRoom.getCorridorPoint())
+                points.add(corridorPoint(fromRoom))
             }
 
             val fromCorrExit = points.last()
@@ -317,7 +472,7 @@ object FloorMapRepository {
             val toCorrEntry = if (isToWest) {
                 Offset(westX, corrY)
             } else {
-                toRoom.getCorridorPoint()
+                corridorPoint(toRoom)
             }
 
             val isFromVert = fromRoom.wing == RoomWing.VERTICAL
@@ -367,7 +522,7 @@ object FloorMapRepository {
     private fun buildPathToStairs(fromRoom: FloorRoom, stairsPt: Offset, floor: Int): List<Offset> {
         val corrY = getCorridorY(floor)
         val corrX = getCorridorX(floor)
-        val westX = 105.2f
+        val westX = hallwayX(floor)
         val points = mutableListOf<Offset>()
         points.add(fromRoom.doorPoint)
 
@@ -381,7 +536,7 @@ object FloorMapRepository {
         } else if (fromRoom.accessWaypoints.isNotEmpty()) {
             fromRoom.accessWaypoints.forEach { points.add(it) }
         } else {
-            points.add(fromRoom.getCorridorPoint())
+            points.add(corridorPoint(fromRoom))
         }
 
         if (fromRoom.wing == RoomWing.VERTICAL) {
@@ -399,7 +554,7 @@ object FloorMapRepository {
     private fun buildPathFromStairs(stairsPt: Offset, toRoom: FloorRoom, floor: Int): List<Offset> {
         val corrY = getCorridorY(floor)
         val corrX = getCorridorX(floor)
-        val westX = 105.2f
+        val westX = hallwayX(floor)
         val points = mutableListOf<Offset>()
         points.add(stairsPt)
 
@@ -415,9 +570,9 @@ object FloorMapRepository {
             }
         } else if (toRoom.wing == RoomWing.VERTICAL) {
             points.add(Offset(corrX, corrY))
-            points.add(Offset(corrX, toRoom.getCorridorPoint().y))
+            points.add(Offset(corrX, corridorPoint(toRoom).y))
         } else {
-            points.add(toRoom.getCorridorPoint())
+            points.add(corridorPoint(toRoom))
         }
 
         if (toRoom.accessWaypoints.isNotEmpty()) {
@@ -432,14 +587,9 @@ object FloorMapRepository {
         val fromFloor = fromRoom.floor
         val toFloor = toRoom.floor
 
-        data class StairPair(val name: String, val pt4: Offset, val pt3: Offset)
-        val stairPairs = listOf(
-            StairPair("Западная лестница", STAIRS_4_WEST, STAIRS_3_WEST),
-            StairPair("Центральная лестница", STAIRS_4_CENTRAL, STAIRS_3_CENTRAL),
-            StairPair("Восточная лестница", STAIRS_4_EAST, STAIRS_3_EAST)
-        )
-
-        var bestStair = stairPairs[1] // default central
+        val stairPairs = crossFloorStairPairs()
+        var bestStair = stairPairs.firstOrNull { it.name.contains("Централь", ignoreCase = true) }
+            ?: stairPairs.first()
         var bestTotalDist = Float.MAX_VALUE
         var bestLegFrom = emptyList<Offset>()
         var bestLegTo = emptyList<Offset>()
@@ -509,818 +659,4 @@ object FloorMapRepository {
         }
         return result
     }
-
-
-    const val DEFAULT_FLOOR_4_JSON: String = """{
-  "floor": 4,
-  "width": 1024,
-  "height": 727,
-  "corridors": {
-    "horizontalY": 535.4,
-    "verticalX": 916.6,
-    "junction": {
-      "x": 916.6,
-      "y": 535.4
-    },
-    "startX": 107.1,
-    "startY": 288.3
-  },
-  "stairs": [
-    {
-      "id": "west",
-      "name": "Западная лестница",
-      "x": 203.8,
-      "y": 509.8
-    },
-    {
-      "id": "central",
-      "name": "Центральная лестница",
-      "x": 605.1,
-      "y": 499
-    },
-    {
-      "id": "east",
-      "name": "Восточная лестница",
-      "x": 878.8,
-      "y": 491.9
-    }
-  ],
-  "rooms": [
-    {
-      "room": "401",
-      "name": "401",
-      "x": 835,
-      "y": 314,
-      "w": 62,
-      "h": 34,
-      "wing": "VERTICAL",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 897,
-        "y": 333
-      },
-      "waypoints": [],
-      "stairs": "Восточная лестница"
-    },
-    {
-      "room": "401а",
-      "name": "401а",
-      "x": 836,
-      "y": 274,
-      "w": 62,
-      "h": 36,
-      "wing": "VERTICAL",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 898,
-        "y": 297
-      },
-      "waypoints": [],
-      "stairs": "Восточная лестница"
-    },
-    {
-      "room": "402",
-      "name": "402",
-      "x": 833,
-      "y": 112,
-      "w": 102,
-      "h": 159,
-      "wing": "VERTICAL",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 921.7,
-        "y": 271.5
-      },
-      "waypoints": [],
-      "stairs": "Восточная лестница"
-    },
-    {
-      "room": "405",
-      "name": "405",
-      "x": 938,
-      "y": 343,
-      "w": 56,
-      "h": 35,
-      "wing": "VERTICAL",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 937,
-        "y": 369
-      },
-      "waypoints": [],
-      "stairs": "Восточная лестница"
-    },
-    {
-      "room": "406",
-      "name": "406",
-      "x": 857,
-      "y": 381,
-      "w": 42,
-      "h": 35,
-      "wing": "VERTICAL",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 897.4,
-        "y": 399.9
-      },
-      "waypoints": [],
-      "stairs": "Восточная лестница"
-    },
-    {
-      "room": "407",
-      "name": "407",
-      "x": 938,
-      "y": 382,
-      "w": 56,
-      "h": 39,
-      "wing": "VERTICAL",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 938,
-        "y": 401
-      },
-      "waypoints": [],
-      "stairs": "Восточная лестница"
-    },
-    {
-      "room": "408",
-      "name": "408",
-      "x": 940,
-      "y": 519,
-      "w": 56,
-      "h": 34,
-      "wing": "VERTICAL",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 938,
-        "y": 535
-      },
-      "waypoints": [],
-      "stairs": "Восточная лестница"
-    },
-    {
-      "room": "409",
-      "name": "409",
-      "x": 939,
-      "y": 423,
-      "w": 55,
-      "h": 60,
-      "wing": "VERTICAL",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 938,
-        "y": 464
-      },
-      "waypoints": [],
-      "stairs": "Восточная лестница"
-    },
-    {
-      "room": "411",
-      "name": "411",
-      "x": 940,
-      "y": 485,
-      "w": 57,
-      "h": 30,
-      "wing": "VERTICAL",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 937,
-        "y": 498
-      },
-      "waypoints": [],
-      "stairs": "Восточная лестница"
-    },
-    {
-      "room": "410",
-      "name": "410",
-      "x": 906,
-      "y": 558,
-      "w": 59,
-      "h": 65,
-      "wing": "BOTTOM",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 918,
-        "y": 557
-      },
-      "waypoints": [],
-      "stairs": "Восточная лестница"
-    },
-    {
-      "room": "412",
-      "name": "412",
-      "x": 839,
-      "y": 557,
-      "w": 63,
-      "h": 65,
-      "wing": "BOTTOM",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 879,
-        "y": 555
-      },
-      "waypoints": [],
-      "stairs": "Восточная лестница"
-    },
-    {
-      "room": "414",
-      "name": "414",
-      "x": 797,
-      "y": 557,
-      "w": 40,
-      "h": 65,
-      "wing": "BOTTOM",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 817,
-        "y": 555
-      },
-      "waypoints": [],
-      "stairs": "Восточная лестница"
-    },
-    {
-      "room": "416",
-      "name": "416",
-      "x": 731,
-      "y": 556,
-      "w": 63,
-      "h": 65,
-      "wing": "BOTTOM",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 772,
-        "y": 554
-      },
-      "waypoints": [],
-      "stairs": "Восточная лестница"
-    },
-    {
-      "room": "418",
-      "name": "418",
-      "x": 695,
-      "y": 557,
-      "w": 35,
-      "h": 65,
-      "wing": "BOTTOM",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 714,
-        "y": 555
-      },
-      "waypoints": [],
-      "stairs": "Восточная лестница"
-    },
-    {
-      "room": "420",
-      "name": "420",
-      "x": 660,
-      "y": 557,
-      "w": 34,
-      "h": 65,
-      "wing": "BOTTOM",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 680,
-        "y": 555
-      },
-      "waypoints": [],
-      "stairs": "Восточная лестница"
-    },
-    {
-      "room": "422",
-      "name": "422",
-      "x": 584,
-      "y": 576,
-      "w": 74,
-      "h": 47,
-      "wing": "BOTTOM",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 637,
-        "y": 576
-      },
-      "waypoints": [],
-      "stairs": "Центральная лестница"
-    },
-    {
-      "room": "424",
-      "name": "424",
-      "x": 537,
-      "y": 575,
-      "w": 45,
-      "h": 47,
-      "wing": "BOTTOM",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 551,
-        "y": 575
-      },
-      "waypoints": [],
-      "stairs": "Центральная лестница"
-    },
-    {
-      "room": "426",
-      "name": "426",
-      "x": 499,
-      "y": 576,
-      "w": 37,
-      "h": 47,
-      "wing": "BOTTOM",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 511,
-        "y": 576
-      },
-      "waypoints": [],
-      "stairs": "Центральная лестница"
-    },
-    {
-      "room": "428",
-      "name": "428",
-      "x": 451,
-      "y": 577,
-      "w": 47,
-      "h": 47,
-      "wing": "BOTTOM",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 467,
-        "y": 577
-      },
-      "waypoints": [],
-      "stairs": "Центральная лестница"
-    },
-    {
-      "room": "430",
-      "name": "430",
-      "x": 371,
-      "y": 576,
-      "w": 78,
-      "h": 47,
-      "wing": "BOTTOM",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 391,
-        "y": 576
-      },
-      "waypoints": [],
-      "stairs": "Центральная лестница"
-    },
-    {
-      "room": "432",
-      "name": "432",
-      "x": 264,
-      "y": 551,
-      "w": 105,
-      "h": 72,
-      "wing": "BOTTOM",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 295,
-        "y": 551
-      },
-      "waypoints": [],
-      "stairs": "Западная лестница"
-    },
-    {
-      "room": "436",
-      "name": "436",
-      "x": 222,
-      "y": 552,
-      "w": 40,
-      "h": 72,
-      "wing": "BOTTOM",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 244,
-        "y": 552
-      },
-      "waypoints": [],
-      "stairs": "Западная лестница"
-    },
-    {
-      "room": "438",
-      "name": "438",
-      "x": 185,
-      "y": 552,
-      "w": 36,
-      "h": 72,
-      "wing": "BOTTOM",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 205,
-        "y": 552
-      },
-      "waypoints": [],
-      "stairs": "Западная лестница"
-    },
-    {
-      "room": "440",
-      "name": "440",
-      "x": 150,
-      "y": 550,
-      "w": 34,
-      "h": 72,
-      "wing": "BOTTOM",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 163,
-        "y": 550
-      },
-      "waypoints": [],
-      "stairs": "Западная лестница"
-    },
-    {
-      "room": "413",
-      "name": "413",
-      "x": 697,
-      "y": 458,
-      "w": 156,
-      "h": 62,
-      "wing": "TOP",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 723.4,
-        "y": 523.2
-      },
-      "waypoints": [],
-      "stairs": "Восточная лестница"
-    },
-    {
-      "room": "415",
-      "name": "415",
-      "x": 660,
-      "y": 456,
-      "w": 33,
-      "h": 65,
-      "wing": "TOP",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 679,
-        "y": 522.2
-      },
-      "waypoints": [],
-      "stairs": "Восточная лестница"
-    },
-    {
-      "room": "417а",
-      "name": "417а",
-      "x": 552,
-      "y": 454,
-      "w": 40,
-      "h": 44,
-      "wing": "TOP",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 574,
-        "y": 499.3
-      },
-      "waypoints": [],
-      "stairs": "Центральная лестница"
-    },
-    {
-      "room": "417",
-      "name": "417",
-      "x": 512,
-      "y": 453,
-      "w": 37,
-      "h": 45,
-      "wing": "TOP",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 532,
-        "y": 497
-      },
-      "waypoints": [],
-      "stairs": "Центральная лестница"
-    },
-    {
-      "room": "419",
-      "name": "419",
-      "x": 470,
-      "y": 454,
-      "w": 41,
-      "h": 43,
-      "wing": "TOP",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 485,
-        "y": 497
-      },
-      "waypoints": [],
-      "stairs": "Центральная лестница"
-    },
-    {
-      "room": "421",
-      "name": "421",
-      "x": 374,
-      "y": 453,
-      "w": 96,
-      "h": 44,
-      "wing": "TOP",
-      "type": "DEAN_OFFICE",
-      "door": {
-        "x": 453.4,
-        "y": 496
-      },
-      "waypoints": [],
-      "stairs": "Центральная лестница"
-    },
-    {
-      "room": "423",
-      "name": "423",
-      "x": 339,
-      "y": 455,
-      "w": 31,
-      "h": 57,
-      "wing": "TOP",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 358,
-        "y": 511
-      },
-      "waypoints": [],
-      "stairs": "Западная лестница"
-    },
-    {
-      "room": "425",
-      "name": "425",
-      "x": 256,
-      "y": 455,
-      "w": 81,
-      "h": 57,
-      "wing": "TOP",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 293,
-        "y": 511
-      },
-      "waypoints": [],
-      "stairs": "Западная лестница"
-    },
-    {
-      "room": "427",
-      "name": "427",
-      "x": 227,
-      "y": 454,
-      "w": 28,
-      "h": 57,
-      "wing": "TOP",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 237,
-        "y": 510
-      },
-      "waypoints": [],
-      "stairs": "Западная лестница"
-    },
-    {
-      "room": "429",
-      "name": "429",
-      "x": 6,
-      "y": 426,
-      "w": 75,
-      "h": 85,
-      "wing": "LEFT",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 82,
-        "y": 500
-      },
-      "waypoints": [],
-      "stairs": "Западная лестница"
-    },
-    {
-      "room": "431",
-      "name": "431",
-      "x": 84,
-      "y": 392,
-      "w": 44,
-      "h": 91,
-      "wing": "LEFT",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 105.4,
-        "y": 484
-      },
-      "waypoints": [],
-      "stairs": "Западная лестница"
-    },
-    {
-      "room": "433",
-      "name": "433",
-      "x": 6,
-      "y": 388,
-      "w": 75,
-      "h": 36,
-      "wing": "LEFT",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 82,
-        "y": 408
-      },
-      "waypoints": [
-        {
-          "x": 104.9,
-          "y": 408
-        },
-        {
-          "x": 105.2,
-          "y": 487.8
-        }
-      ],
-      "stairs": "Западная лестница"
-    },
-    {
-      "room": "442",
-      "name": "442",
-      "x": 6,
-      "y": 511,
-      "w": 75,
-      "h": 39,
-      "wing": "LEFT",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 82,
-        "y": 539
-      },
-      "waypoints": [],
-      "stairs": "Западная лестница"
-    },
-    {
-      "room": "444",
-      "name": "444",
-      "x": 4,
-      "y": 551,
-      "w": 111,
-      "h": 72,
-      "wing": "LEFT",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 24,
-        "y": 551
-      },
-      "waypoints": [
-        {
-          "x": 24.7,
-          "y": 539.6
-        },
-        {
-          "x": 80,
-          "y": 539
-        }
-      ],
-      "stairs": "Западная лестница"
-    },
-    {
-      "room": "404",
-      "name": "404",
-      "x": 940,
-      "y": 146,
-      "w": 54,
-      "h": 127,
-      "wing": "BOTTOM",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 950.8,
-        "y": 273.8
-      },
-      "waypoints": [],
-      "stairs": "Центральная лестница"
-    },
-    {
-      "room": "404а",
-      "name": "404а",
-      "x": 940,
-      "y": 290,
-      "w": 54,
-      "h": 17,
-      "wing": "BOTTOM",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 938.8,
-        "y": 298.8
-      },
-      "waypoints": [],
-      "stairs": "Центральная лестница"
-    },
-    {
-      "room": "403",
-      "name": "403",
-      "x": 940,
-      "y": 309,
-      "w": 53,
-      "h": 32,
-      "wing": "BOTTOM",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 937,
-        "y": 330.8
-      },
-      "waypoints": [],
-      "stairs": "Центральная лестница"
-    }
-  ]
-}"""
-
-    const val DEFAULT_FLOOR_3_JSON: String = """{
-  "floor": 3,
-  "width": 1024,
-  "height": 603,
-  "corridors": {
-    "horizontalY": 491,
-    "verticalX": 902,
-    "junction": {
-      "x": 902,
-      "y": 491
-    }
-  },
-  "stairs": [
-    {
-      "id": "west",
-      "name": "Западная лестница",
-      "x": 162.2,
-      "y": 452
-    },
-    {
-      "id": "central",
-      "name": "Центральная лестница",
-      "x": 606.4,
-      "y": 461.6
-    },
-    {
-      "id": "east",
-      "name": "Восточная лестница",
-      "x": 880.9,
-      "y": 454.8
-    }
-  ],
-  "rooms": [
-    {
-      "room": "301",
-      "name": "301",
-      "x": 835,
-      "y": 275,
-      "w": 66,
-      "h": 34,
-      "wing": "VERTICAL",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 901.4,
-        "y": 293.1
-      },
-      "waypoints": [],
-      "stairs": "Восточная лестница"
-    },
-    {
-      "room": "302",
-      "name": "302",
-      "x": 835,
-      "y": 221,
-      "w": 67,
-      "h": 52,
-      "wing": "VERTICAL",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 902.2,
-        "y": 260
-      },
-      "waypoints": [],
-      "stairs": "Восточная лестница"
-    },
-    {
-      "room": "303",
-      "name": "303",
-      "x": 835,
-      "y": 172,
-      "w": 67,
-      "h": 46,
-      "wing": "VERTICAL",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 902,
-        "y": 191
-      },
-      "waypoints": [],
-      "stairs": "Восточная лестница"
-    },
-    {
-      "room": "304",
-      "name": "304",
-      "x": 835,
-      "y": 137,
-      "w": 66,
-      "h": 34,
-      "wing": "VERTICAL",
-      "type": "CLASSROOM",
-      "door": {
-        "x": 902,
-        "y": 150.3
-      },
-      "waypoints": [],
-      "stairs": "Восточная лестница"
-    }
-  ]
-}"""
 }
-

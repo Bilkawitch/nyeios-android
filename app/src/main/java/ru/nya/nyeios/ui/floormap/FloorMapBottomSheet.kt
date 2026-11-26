@@ -1,5 +1,6 @@
 package ru.nya.nyeios.ui.floormap
 
+import android.content.Context
 import android.graphics.Paint
 import android.graphics.Typeface
 import androidx.compose.animation.AnimatedVisibility
@@ -76,6 +77,7 @@ import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -566,10 +568,10 @@ internal fun SingleFloorInteractiveView(
     onRoomSelected: (FloorRoom) -> Unit
 ) {
     val floorImageBitmap = ImageBitmap.imageResource(
-        id = if (floor == 3) R.drawable.floor_3 else R.drawable.floor_4
+        id = LocalContext.current.floorMapDrawableRes(floor)
     )
-    val mapWidth = if (floor == 3) FloorMapRepository.MAP_WIDTH_3 else FloorMapRepository.MAP_WIDTH_4
-    val mapHeight = if (floor == 3) FloorMapRepository.MAP_HEIGHT_3 else FloorMapRepository.MAP_HEIGHT_4
+    val mapWidth = FloorMapRepository.getMapWidth(floor)
+    val mapHeight = FloorMapRepository.getMapHeight(floor)
     val rooms = remember(floor) { FloorMapRepository.getRoomsForFloor(floor) }
 
     // Pulsing highlight animation for destination room (static when animations are off)
@@ -850,16 +852,17 @@ private fun MultiFloorInteractiveView(
     route: FloorRoute?,
     onRoomSelected: (FloorRoom) -> Unit
 ) {
-    val floor4ImageBitmap = ImageBitmap.imageResource(id = R.drawable.floor_4)
-    val floor3ImageBitmap = ImageBitmap.imageResource(id = R.drawable.floor_3)
+    val floor4ImageBitmap = ImageBitmap.imageResource(id = LocalContext.current.floorMapDrawableRes(4))
+    val floor3ImageBitmap = ImageBitmap.imageResource(id = LocalContext.current.floorMapDrawableRes(3))
 
     val rooms4 = remember { FloorMapRepository.getRoomsForFloor(4) }
     val rooms3 = remember { FloorMapRepository.getRoomsForFloor(3) }
 
     val floorGap = 160f
-    val floor3Y = FloorMapRepository.MAP_HEIGHT_4 + floorGap // 727 + 160 = 887f
-    val combinedWidth = 1024f
-    val combinedHeight = floor3Y + FloorMapRepository.MAP_HEIGHT_3 // 887 + 603 = 1490f
+    val floor4Height = FloorMapRepository.getMapHeight(4)
+    val floor3Y = floor4Height + floorGap
+    val combinedWidth = FloorMapRepository.getMapWidth(4)
+    val combinedHeight = floor3Y + FloorMapRepository.getMapHeight(3)
 
     val infiniteTransition = rememberUiInfiniteTransition("multi_floor_anim")
     val pulseAlpha = infiniteTransition?.animateFloat(
@@ -997,7 +1000,7 @@ private fun MultiFloorInteractiveView(
                     detectTapGestures { tapOffset ->
                         val mapX = (tapOffset.x - offset.x) / scale
                         val mapY = (tapOffset.y - offset.y) / scale
-                        val clicked = if (mapY < FloorMapRepository.MAP_HEIGHT_4 + floorGap / 2f) {
+                        val clicked = if (mapY < FloorMapRepository.getMapHeight(4) + floorGap / 2f) {
                             rooms4.find { it.containsPoint(mapX, mapY) }
                         } else {
                             rooms3.find { it.containsPoint(mapX, mapY - floor3Y) }
@@ -1548,3 +1551,15 @@ internal fun computeRouteDistance(route: FloorRoute): Float {
     }
 }
 
+
+/**
+ * Resolves the floor plan image by resource name (`floor_<n>`), so a new floor map only
+ * needs an asset JSON and a drawable PNG. Falls back to the legacy 3/4 drawables.
+ */
+private fun Context.floorMapDrawableRes(floor: Int): Int {
+    val dynamicId = resources.getIdentifier("floor_$floor", "drawable", packageName)
+    return if (dynamicId != 0) dynamicId else when (floor) {
+        3 -> R.drawable.floor_3
+        else -> R.drawable.floor_4
+    }
+}
