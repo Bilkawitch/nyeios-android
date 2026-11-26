@@ -30,10 +30,17 @@ class FloorMapRepositoryTest {
     }
 
     @Test
-    fun `floor 4 has exactly 41 rooms mapped`() {
+    fun `floor 4 has exactly 42 rooms mapped`() {
         val rooms = FloorMapRepository.getRoomsForFloor(4)
-        assertEquals(41, rooms.size)
-        assertNull(FloorMapRepository.findRoom("434"))
+        assertEquals(42, rooms.size)
+
+        val room434 = FloorMapRepository.findRoom("434")
+        assertNotNull(room434)
+        assertEquals(244f, room434?.x)
+        assertEquals(551f, room434?.y)
+        assertEquals(41f, room434?.width)
+        assertEquals(71f, room434?.height)
+        assertEquals("434", room434?.room)
     }
 
     @Test
@@ -151,9 +158,9 @@ class FloorMapRepositoryTest {
         assertEquals(24f, route.points.first().x, 1f)
         assertEquals(551f, route.points.first().y, 1f)
 
-        // Finishes at 436 door (244, 552)
-        assertEquals(244f, route.points.last().x, 1f)
-        assertEquals(552f, route.points.last().y, 1f)
+        // Finishes at 436 door (230, 551)
+        assertEquals(230f, route.points.last().x, 1f)
+        assertEquals(551f, route.points.last().y, 1f)
 
         // Enters main corridor and travels along y = 535.4
         val corridorPoints = route.points.filter { kotlin.math.abs(it.y - 535.4f) < 1f }
@@ -171,9 +178,9 @@ class FloorMapRepositoryTest {
         assertEquals(82f, route!!.points.first().x, 1f)
         assertEquals(408f, route.points.first().y, 1f)
 
-        // Finishes at 436 door (244, 552)
-        assertEquals(244f, route.points.last().x, 1f)
-        assertEquals(552f, route.points.last().y, 1f)
+        // Finishes at 436 door (230, 551)
+        assertEquals(230f, route.points.last().x, 1f)
+        assertEquals(551f, route.points.last().y, 1f)
 
         // Passes through hallway waypoint (104.9, 408)
         val passesHallway = route.points.any { kotlin.math.abs(it.x - 104.9f) < 1f && kotlin.math.abs(it.y - 408f) < 1f }
@@ -209,13 +216,13 @@ class FloorMapRepositoryTest {
     fun `room 438 and 440 route from shifted doors into corridor`() {
         val route438 = FloorMapRepository.buildRoute("438", "421")
         assertNotNull(route438)
-        assertEquals(205f, route438!!.points.first().x, 1f)
-        assertEquals(552f, route438.points.first().y, 1f)
+        assertEquals(191f, route438!!.points.first().x, 1f)
+        assertEquals(551f, route438.points.first().y, 1f)
 
         val route440 = FloorMapRepository.buildRoute("440", "421")
         assertNotNull(route440)
-        assertEquals(163f, route440!!.points.first().x, 1f)
-        assertEquals(550f, route440.points.first().y, 1f)
+        assertEquals(148f, route440!!.points.first().x, 1f)
+        assertEquals(551f, route440.points.first().y, 1f)
     }
 
     @Test
@@ -248,7 +255,7 @@ class FloorMapRepositoryTest {
 
         // Reset back to defaults for subsequent tests
         FloorMapRepository.resetToDefaults()
-        assertEquals(41, FloorMapRepository.getRoomsForFloor(4).size)
+        assertEquals(42, FloorMapRepository.getRoomsForFloor(4).size)
     }
 
     @Test
