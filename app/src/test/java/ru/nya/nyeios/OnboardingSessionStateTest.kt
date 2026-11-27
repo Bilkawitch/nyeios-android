@@ -11,9 +11,9 @@ import ru.nya.nyeios.ui.onboarding.OnboardingTargetId
 class OnboardingSessionStateTest {
 
     @Test
-    fun `onboarding spec has 15 sequential steps covering all 4 tabs`() {
-        assertEquals(15, OnboardingSteps.size)
-        assertEquals((1..15).toList(), OnboardingSteps.map { it.stepNumber })
+    fun `onboarding spec has 17 sequential steps covering all 4 tabs`() {
+        assertEquals(17, OnboardingSteps.size)
+        assertEquals((1..17).toList(), OnboardingSteps.map { it.stepNumber })
         assertEquals(0, OnboardingSteps[0].requiredTab)
         assertEquals(0, OnboardingSteps[7].requiredTab)
         assertEquals(0, OnboardingSteps[8].requiredTab)
@@ -21,10 +21,34 @@ class OnboardingSessionStateTest {
         assertEquals(1, OnboardingSteps[10].requiredTab)
         assertEquals(2, OnboardingSteps[11].requiredTab)
         assertEquals(2, OnboardingSteps[12].requiredTab)
-        assertEquals(3, OnboardingSteps[13].requiredTab)
+        assertEquals(2, OnboardingSteps[13].requiredTab)
         assertEquals(3, OnboardingSteps[14].requiredTab)
+        assertEquals(3, OnboardingSteps[15].requiredTab)
+        assertEquals(3, OnboardingSteps[16].requiredTab)
         assertTrue(OnboardingSteps.last().isFinal)
         assertTrue(OnboardingSteps.dropLast(1).none { it.isFinal })
+    }
+
+    @Test
+    fun `history step follows BRS grades and precedes settings transition`() {
+        val history = OnboardingSteps.first { it.textRes == R.string.onboarding_step_13 }
+        assertEquals(13, history.stepNumber)
+        assertEquals(2, history.requiredTab)
+        assertEquals(OnboardingTargetId.CURRICULUM_HISTORY, history.targetId)
+        assertEquals(
+            OnboardingTargetId.CURRICULUM_GRADES,
+            OnboardingSteps[11].targetId
+        )
+        assertEquals(OnboardingTargetId.TAB_SETTINGS, OnboardingSteps[13].targetId)
+    }
+
+    @Test
+    fun `replay onboarding step goes right before the final goodbye step`() {
+        val replay = OnboardingSteps.first { it.textRes == R.string.onboarding_step_16 }
+        assertEquals(16, replay.stepNumber)
+        assertEquals(3, replay.requiredTab)
+        assertEquals(1, OnboardingSteps.last().stepNumber - replay.stepNumber)
+        assertEquals(R.string.onboarding_step_17, OnboardingSteps.last().textRes)
     }
 
     @Test
@@ -73,7 +97,7 @@ class OnboardingSessionStateTest {
     }
 
     @Test
-    fun `nextStep and prevStep navigate across all 15 steps and complete on last`() {
+    fun `nextStep and prevStep navigate across all 17 steps and complete on last`() {
         var completed = false
         val state = OnboardingSessionState(
             totalSteps = OnboardingSteps.size,
@@ -85,17 +109,17 @@ class OnboardingSessionStateTest {
         state.prevStep()
         assertEquals(0, state.currentStepIndex.value)
 
-        repeat(14) { idx ->
+        repeat(16) { idx ->
             assertEquals(idx, state.currentStepIndex.value)
             state.nextStep()
         }
-        assertEquals(14, state.currentStepIndex.value)
+        assertEquals(16, state.currentStepIndex.value)
         assertTrue(state.isActive.value)
 
         state.prevStep()
-        assertEquals(13, state.currentStepIndex.value)
+        assertEquals(15, state.currentStepIndex.value)
         state.nextStep()
-        assertEquals(14, state.currentStepIndex.value)
+        assertEquals(16, state.currentStepIndex.value)
 
         state.nextStep()
         assertFalse(state.isActive.value)

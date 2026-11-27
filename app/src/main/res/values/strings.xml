@@ -328,9 +328,11 @@
     <string name="onboarding_step_10">Тут можно подгрузить ленту с сайта, но это занимает время, имейте ввиду</string>
     <string name="onboarding_step_11">Перейди во вкладку «БРС»</string>
     <string name="onboarding_step_12">Тут — ваши баллы по предметам</string>
-    <string name="onboarding_step_13">Перейди во вкладку «Настройки»</string>
-    <string name="onboarding_step_14">В «Общем» можно проверить, работает ли сайт. Также у нас есть разные «Темы» и поддержка английского и русского языков!</string>
-    <string name="onboarding_step_15">Удачи в учебе!</string>
+    <string name="onboarding_step_13">Тут — история баллов: общий график по всем предметам и японские свечи по каждому предмету. Экспорт и импорт истории — в «Настройках», в «Общем»</string>
+    <string name="onboarding_step_14">Перейди во вкладку «Настройки»</string>
+    <string name="onboarding_step_15">В «Общем» можно проверить, работает ли сайт. Также у нас есть разные «Темы» и поддержка английского и русского языков!</string>
+    <string name="onboarding_step_16">Повторить обучение (особенно если приложение обновилось и вы хотите узнать новые функции) можно в «Настройках» → «Общем», внизу страницы — кнопка «Повторить обучение»</string>
+    <string name="onboarding_step_17">Удачи в учебе!</string>
 
     <!-- Curriculum (BRS) -->
     <string name="curriculum_loading">Загрузка успеваемости (БРС)...</string>

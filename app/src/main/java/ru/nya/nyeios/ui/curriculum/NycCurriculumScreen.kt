@@ -448,6 +448,7 @@ private fun NycHistoryButton(onClick: () -> Unit) {
 
     Box(
         modifier = Modifier
+            .onboardingTarget(OnboardingTargetId.CURRICULUM_HISTORY)
             .padding(start = 8.dp)
             .height(44.dp)
             .widthIn(min = 72.dp)

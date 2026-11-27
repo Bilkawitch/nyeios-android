@@ -328,9 +328,11 @@
     <string name="onboarding_step_10">Here you can load the feed from the portal, though keep in mind it takes some time</string>
     <string name="onboarding_step_11">Switch to the Grades tab</string>
     <string name="onboarding_step_12">Here are your scores by subject</string>
-    <string name="onboarding_step_13">Switch to the Settings tab</string>
-    <string name="onboarding_step_14">In General you can check if the portal is online. We also have different Themes and support for English and Russian!</string>
-    <string name="onboarding_step_15">Good luck with your studies!</string>
+    <string name="onboarding_step_13">Here is your score history: one shared chart for all subjects and candlestick charts for each subject. Export and import live in Settings → General</string>
+    <string name="onboarding_step_14">Switch to the Settings tab</string>
+    <string name="onboarding_step_15">In General you can check if the portal is online. We also have different Themes and support for English and Russian!</string>
+    <string name="onboarding_step_16">You can replay this tour (especially after an app update, when you want to learn the new features) in Settings → General, at the bottom of the page — the Replay app tour button</string>
+    <string name="onboarding_step_17">Good luck with your studies!</string>
 
     <!-- Curriculum (BRS) -->
     <string name="curriculum_loading">Loading grades (BRS)...</string>

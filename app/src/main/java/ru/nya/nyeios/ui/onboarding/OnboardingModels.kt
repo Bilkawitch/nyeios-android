@@ -15,6 +15,7 @@ enum class OnboardingTargetId {
     FEED_FETCH_BUTTON,
     TAB_CURRICULUM,
     CURRICULUM_GRADES,
+    CURRICULUM_HISTORY,
     TAB_SETTINGS,
     SCHEDULE_AREA,
     CURRICULUM_AREA
@@ -109,20 +110,33 @@ val OnboardingSteps: List<OnboardingStepSpec> = listOf(
     OnboardingStepSpec(
         stepNumber = 13,
         requiredTab = 2,
-        targetId = OnboardingTargetId.TAB_SETTINGS,
+        targetId = OnboardingTargetId.CURRICULUM_HISTORY,
+        fallbackTargetId = OnboardingTargetId.CURRICULUM_AREA,
         textRes = R.string.onboarding_step_13
     ),
     OnboardingStepSpec(
         stepNumber = 14,
-        requiredTab = 3,
-        targetId = null,
+        requiredTab = 2,
+        targetId = OnboardingTargetId.TAB_SETTINGS,
         textRes = R.string.onboarding_step_14
     ),
     OnboardingStepSpec(
         stepNumber = 15,
         requiredTab = 3,
         targetId = null,
-        textRes = R.string.onboarding_step_15,
+        textRes = R.string.onboarding_step_15
+    ),
+    OnboardingStepSpec(
+        stepNumber = 16,
+        requiredTab = 3,
+        targetId = null,
+        textRes = R.string.onboarding_step_16
+    ),
+    OnboardingStepSpec(
+        stepNumber = 17,
+        requiredTab = 3,
+        targetId = null,
+        textRes = R.string.onboarding_step_17,
         isFinal = true
     )
 )

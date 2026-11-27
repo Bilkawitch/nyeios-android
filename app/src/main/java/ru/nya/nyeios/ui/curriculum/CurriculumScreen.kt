@@ -460,6 +460,7 @@ private fun HistoryButton(
 
     Box(
         modifier = modifier
+            .onboardingTarget(OnboardingTargetId.CURRICULUM_HISTORY)
             .background(ru.nya.nyeios.ui.theme.NierPanelAlt)
             .border(1.dp, ru.nya.nyeios.ui.theme.NierBorderLight)
             .clickable(role = Role.Button, onClick = onClick)

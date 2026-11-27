@@ -279,7 +279,12 @@ class MainActivity : ComponentActivity() {
                     }
 
                     LaunchedEffect(authSession.isLoggedIn, scheduleUiState) {
-                        if (authSession.isLoggedIn && scheduleUiState !is ScheduleUiState.Loading) {
+                        // Debug-хук для эмулятора: тур можно смотреть без авторизации
+                        // (БРС и его шаги работают на синтетическом семестре).
+                        val debugTutorial = BuildConfig.DEBUG && DebugHistoryFlags.fakeCurriculum
+                        if (debugTutorial ||
+                            (authSession.isLoggedIn && scheduleUiState !is ScheduleUiState.Loading)
+                        ) {
                             onboardingViewModel.startIfFirstLaunch()
                         }
                     }
