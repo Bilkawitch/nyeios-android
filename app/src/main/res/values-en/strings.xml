@@ -709,4 +709,35 @@
     <string name="notif_line_modified_fmt">%1$s %2$s changed: %3$s</string>
     <string name="notif_line_score_fmt">%1$s: %2$s → %3$s</string>
     <string name="notif_action_open">Open</string>
+
+    <!-- BRS score history -->
+    <string name="curriculum_history_button">History</string>
+    <string name="curriculum_history_cd">Score change history</string>
+    <string name="history_title">SCORE HISTORY</string>
+    <string name="history_all_subjects">All subjects</string>
+    <string name="history_group_term_fmt">%1$s · term %2$d</string>
+    <string name="history_hint">Tap a subject to open the candlestick chart</string>
+    <string name="history_empty_title">No history yet</string>
+    <string name="history_empty_desc">Scores will be recorded on the next grade refresh. You can also import history from Settings.</string>
+    <string name="history_no_data_for_subject">Not enough data for a chart</string>
+    <string name="history_back">BACK</string>
+    <string name="history_close_cd">Close history</string>
+    <string name="history_points_fmt">Points: %1$d</string>
+    <string name="history_trend_up">up</string>
+    <string name="history_trend_down">down</string>
+    <string name="history_candle_cd">Candle %1$s: open %2$s, high %3$s, low %4$s, close %5$s</string>
+    <string name="history_value_fmt">%1$s</string>
+    <string name="history_ohlc_open_fmt">open %1$s</string>
+    <string name="history_ohlc_high_fmt">high %1$s</string>
+    <string name="history_ohlc_low_fmt">low %1$s</string>
+    <string name="history_ohlc_close_fmt">close %1$s</string>
+    <string name="settings_history_title">SCORE HISTORY</string>
+    <string name="settings_history_desc">Export and import score change history</string>
+    <string name="settings_history_export">EXPORT</string>
+    <string name="settings_history_import">IMPORT</string>
+    <string name="settings_history_export_done_fmt">Points exported: %1$d</string>
+    <string name="settings_history_import_done_fmt">Added: %1$d, already present: %2$d</string>
+    <string name="settings_history_export_failed">Could not export score history</string>
+    <string name="settings_history_import_failed">Could not import score history</string>
+    <string name="settings_history_empty">History is empty, nothing to export</string>
 </resources>

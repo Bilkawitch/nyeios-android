@@ -40,6 +40,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -90,6 +91,10 @@ import ru.nya.nyeios.data.model.UpdateInfo
 import ru.nya.nyeios.data.net.EndpointHealthItem
 import ru.nya.nyeios.data.net.EndpointStatus
 import ru.nya.nyeios.ui.eios.eiosHealthAgeValue
+import ru.nya.nyeios.ui.history.TransferResult
+import ru.nya.nyeios.ui.history.isFailure
+import ru.nya.nyeios.ui.history.rememberScoreHistoryTransfer
+import ru.nya.nyeios.ui.history.transferResultText
 import ru.nya.nyeios.ui.update.UpdateViewModel
 import android.net.Uri
 
@@ -223,6 +228,11 @@ private fun GeneralSettingsContent(
     onReplayOnboarding: (() -> Unit)? = null
 ) {
     val scrollState = rememberScrollState()
+
+    // Экспорт/импорт истории баллов (SAF). Статус живёт здесь, чтобы пережить пересоздание
+    // внутренних блоков карточки, и сбрасывается только новым результатом.
+    var historyStatus by remember { mutableStateOf<TransferResult?>(null) }
+    val historyTransfer = rememberScoreHistoryTransfer { historyStatus = it }
 
     Column(
         modifier = Modifier
@@ -611,6 +621,51 @@ private fun GeneralSettingsContent(
                     fontFamily = RajdhaniFamily,
                     letterSpacing = 0.5.sp
                 )
+            }
+        }
+
+        // ── 04. ИСТОРИЯ БАЛЛОВ: ЭКСПОРТ / ИМПОРТ ─────────────────────────
+        SectionHeader(title = stringResource(R.string.settings_history_title))
+
+        NierCard {
+            Column(
+                modifier = Modifier.padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.settings_history_desc),
+                    color = NierDim,
+                    fontSize = 11.sp,
+                    fontFamily = ShareTechMonoFamily
+                )
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NieROutlineButton(
+                        text = stringResource(R.string.settings_history_export),
+                        enabled = !historyTransfer.isBusy,
+                        color = NierBlue,
+                        onClick = historyTransfer.export
+                    )
+                    NieROutlineButton(
+                        text = stringResource(R.string.settings_history_import),
+                        enabled = !historyTransfer.isBusy,
+                        color = NierBlue,
+                        onClick = historyTransfer.import
+                    )
+                }
+
+                val statusResult = historyStatus
+                if (statusResult != null) {
+                    val statusText = transferResultText(statusResult)
+                    if (statusText != null) {
+                        Text(
+                            text = statusText,
+                            color = if (statusResult.isFailure) NierRed else NierGreen,
+                            fontSize = 10.sp,
+                            fontFamily = ShareTechMonoFamily
+                        )
+                    }
+                }
             }
         }
 

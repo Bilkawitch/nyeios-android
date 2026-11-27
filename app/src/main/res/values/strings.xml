@@ -717,4 +717,35 @@
     <string name="notif_line_modified_fmt">%1$s %2$s изменена: %3$s</string>
     <string name="notif_line_score_fmt">%1$s: %2$s → %3$s</string>
     <string name="notif_action_open">Открыть</string>
+
+    <!-- BRS score history -->
+    <string name="curriculum_history_button">История</string>
+    <string name="curriculum_history_cd">История изменений баллов</string>
+    <string name="history_title">ИСТОРИЯ БАЛЛОВ</string>
+    <string name="history_all_subjects">Все предметы</string>
+    <string name="history_group_term_fmt">%1$s · %2$d семестр</string>
+    <string name="history_hint">Нажмите на предмет, чтобы открыть свечной график</string>
+    <string name="history_empty_title">История пока пуста</string>
+    <string name="history_empty_desc">Приложение запишет баллы при следующем обновлении БРС. Историю также можно импортировать в настройках.</string>
+    <string name="history_no_data_for_subject">Недостаточно данных для графика</string>
+    <string name="history_back">НАЗАД</string>
+    <string name="history_close_cd">Закрыть историю</string>
+    <string name="history_points_fmt">Точек: %1$d</string>
+    <string name="history_trend_up">рост</string>
+    <string name="history_trend_down">падение</string>
+    <string name="history_candle_cd">Свеча %1$s: откр. %2$s, макс. %3$s, мин. %4$s, закр. %5$s</string>
+    <string name="history_value_fmt">%1$s</string>
+    <string name="history_ohlc_open_fmt">откр. %1$s</string>
+    <string name="history_ohlc_high_fmt">макс. %1$s</string>
+    <string name="history_ohlc_low_fmt">мин. %1$s</string>
+    <string name="history_ohlc_close_fmt">закр. %1$s</string>
+    <string name="settings_history_title">ИСТОРИЯ БАЛЛОВ</string>
+    <string name="settings_history_desc">Экспорт и импорт истории изменений баллов</string>
+    <string name="settings_history_export">ЭКСПОРТ</string>
+    <string name="settings_history_import">ИМПОРТ</string>
+    <string name="settings_history_export_done_fmt">Экспортировано точек: %1$d</string>
+    <string name="settings_history_import_done_fmt">Добавлено: %1$d, уже было: %2$d</string>
+    <string name="settings_history_export_failed">Не удалось экспортировать историю</string>
+    <string name="settings_history_import_failed">Не удалось импортировать историю</string>
+    <string name="settings_history_empty">История пуста — нечего экспортировать</string>
 </resources>

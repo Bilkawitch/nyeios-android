@@ -6,14 +6,18 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -24,6 +28,7 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Grade
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -32,12 +37,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -45,6 +53,7 @@ import ru.nya.nyeios.R
 import ru.nya.nyeios.data.changes.CurriculumChanges
 import ru.nya.nyeios.data.changes.ScoreChange
 import ru.nya.nyeios.ui.common.localizeErrorMessage
+import ru.nya.nyeios.ui.history.YoRhaScoreHistorySheet
 import ru.nya.nyeios.ui.onboarding.OnboardingTargetId
 import ru.nya.nyeios.ui.onboarding.onboardingTarget
 import androidx.compose.ui.unit.dp
@@ -79,6 +88,15 @@ fun CurriculumScreen(
     changes: CurriculumChanges = CurriculumChanges(),
     modifier: Modifier = Modifier
 ) {
+    var showHistory by rememberSaveable { mutableStateOf(false) }
+
+    // Активный семестр нужен и для шапки, и для полноэкранной истории, поэтому
+    // вычисляем его на уровне экрана, а не внутри ветки Success.
+    val activeTermNum: Int? = (uiState as? CurriculumUiState.Success)?.let { success ->
+        (success.terms.firstOrNull { it.termNum == success.selectedTermNum }
+            ?: success.terms.firstOrNull())?.termNum
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -263,7 +281,10 @@ fun CurriculumScreen(
                         )
 
                         // Statistics summary card
-                        CurriculumStatsHeader(term = activeTerm)
+                        CurriculumStatsHeader(
+                            term = activeTerm,
+                            onOpenHistory = { showHistory = true }
+                        )
 
                         // Subjects list
                         if (activeTerm.subjects.isEmpty()) {
@@ -310,6 +331,14 @@ fun CurriculumScreen(
                     }
                 }
             }
+        }
+
+        // Полноэкранная история баллов: оверлей поверх контента вкладки БРС.
+        if (showHistory) {
+            YoRhaScoreHistorySheet(
+                onDismiss = { showHistory = false },
+                initialTermNum = activeTermNum
+            )
         }
     }
 }
@@ -368,7 +397,10 @@ fun CurriculumTermsBar(
 }
 
 @Composable
-fun CurriculumStatsHeader(term: CurriculumTerm) {
+fun CurriculumStatsHeader(
+    term: CurriculumTerm,
+    onOpenHistory: () -> Unit = {}
+) {
     val totalSubjects = term.subjects.size
     val examsCount = term.subjects.count { it.controlCategory == CurriculumControlType.EXAM }
     val passedCount = totalSubjects - examsCount
@@ -378,8 +410,14 @@ fun CurriculumStatsHeader(term: CurriculumTerm) {
             .fillMaxWidth()
             .background(ru.nya.nyeios.ui.theme.NierPanel)
             .border(1.dp, ru.nya.nyeios.ui.theme.NierBorderLight)
-            .padding(vertical = 6.dp, horizontal = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(vertical = 6.dp, horizontal = 10.dp)
+            // Кнопке истории нужна высота карточки, а карточкам — прежние пропорции:
+            // IntrinsicSize.Min растягивает кнопку по фактической высоте строки, при
+            // этом 44dp гарантируют минимальный тап-таргет даже на мелком шрифте.
+            .heightIn(min = 44.dp)
+            .height(IntrinsicSize.Min),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         StatCard(
             title = stringResource(R.string.curriculum_stat_subjects),
@@ -399,6 +437,58 @@ fun CurriculumStatsHeader(term: CurriculumTerm) {
             color = ru.nya.nyeios.ui.theme.NierRed,
             modifier = Modifier.weight(1f)
         )
+        HistoryButton(
+            onClick = onOpenHistory,
+            modifier = Modifier
+                .width(52.dp)
+                .fillMaxHeight()
+        )
+    }
+}
+
+/**
+ * Кнопка «История» рядом со сводкой БРС: иконка + мелкая подпись, рамка 1dp и
+ * 0dp скруглений (YoRHa). Всё содержимое озвучивается одной contentDescription,
+ * чтобы TalkBack не читал иконку и подпись по отдельности.
+ */
+@Composable
+private fun HistoryButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val description = stringResource(R.string.curriculum_history_cd)
+
+    Box(
+        modifier = modifier
+            .background(ru.nya.nyeios.ui.theme.NierPanelAlt)
+            .border(1.dp, ru.nya.nyeios.ui.theme.NierBorderLight)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 4.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier.clearAndSetSemantics { contentDescription = description },
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Timeline,
+                contentDescription = null,
+                tint = ru.nya.nyeios.ui.theme.NierDark,
+                modifier = Modifier.size(16.dp)
+            )
+            Text(
+                text = stringResource(R.string.curriculum_history_button).uppercase(),
+                fontFamily = ru.nya.nyeios.ui.theme.RajdhaniFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 8.sp,
+                letterSpacing = 0.3.sp,
+                color = ru.nya.nyeios.ui.theme.NierDim,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
     }
 }
 

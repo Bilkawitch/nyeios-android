@@ -8,6 +8,7 @@ import kotlinx.coroutines.withContext
 import ru.nya.nyeios.data.changes.ChangesRepository
 import ru.nya.nyeios.data.changes.CurriculumChanges
 import ru.nya.nyeios.data.changes.ScheduleChanges
+import ru.nya.nyeios.data.history.ScoreHistoryRepository
 import ru.nya.nyeios.data.reminders.ReminderPermissions
 import ru.nya.nyeios.data.repository.EiosRepository
 
@@ -61,6 +62,7 @@ object AutoUpdateRunner {
             ReminderPermissions.notificationsEnabled(appContext)
 
         val changesRepository = ChangesRepository.getInstance(appContext)
+        val historyRepository = ScoreHistoryRepository.getInstance(appContext)
 
         var foregroundActive = false
         suspend fun reportProgress(stage: AutoUpdateStage) {
@@ -89,7 +91,10 @@ object AutoUpdateRunner {
 
             val currentWeek = repository.getSchedule(0, forceNetwork = true)
             if (currentWeek.isSuccess) {
-                currentWeek.getOrNull()?.let { changesRepository.onScheduleFetched(it) }
+                currentWeek.getOrNull()?.let {
+                    historyRepository.rememberGroup(it.group)
+                    changesRepository.onScheduleFetched(it)
+                }
             } else {
                 failures++
                 lastError = currentWeek.exceptionOrNull()?.message ?: lastError
@@ -98,13 +103,17 @@ object AutoUpdateRunner {
 
             // Следующая неделя: ошибки не влияют на итог и не попадают в счётчик.
             repository.getSchedule(1, forceNetwork = true).getOrNull()?.let {
+                historyRepository.rememberGroup(it.group)
                 changesRepository.onScheduleFetched(it)
             }
             reportProgress(AutoUpdateStage.NEXT_WEEK)
 
             val curriculum = repository.getCurriculum(forceNetwork = true)
             if (curriculum.isSuccess) {
-                curriculum.getOrNull()?.let { changesRepository.onCurriculumFetched(it) }
+                curriculum.getOrNull()?.let {
+                    historyRepository.onCurriculumFetched(it)
+                    changesRepository.onCurriculumFetched(it)
+                }
             } else {
                 failures++
                 lastError = curriculum.exceptionOrNull()?.message ?: lastError

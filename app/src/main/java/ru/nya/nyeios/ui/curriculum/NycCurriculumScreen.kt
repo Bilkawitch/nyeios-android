@@ -3,6 +3,8 @@ package ru.nya.nyeios.ui.curriculum
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,18 +15,25 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import ru.nya.nyeios.R
@@ -48,6 +58,7 @@ import ru.nya.nyeios.data.model.CurriculumControlType
 import ru.nya.nyeios.data.model.CurriculumSubject
 import ru.nya.nyeios.data.model.CurriculumTerm
 import ru.nya.nyeios.data.model.CurriculumUiState
+import ru.nya.nyeios.ui.history.NycScoreHistorySheet
 import ru.nya.nyeios.ui.onboarding.OnboardingTargetId
 import ru.nya.nyeios.ui.onboarding.onboardingTarget
 import ru.nya.nyeios.ui.theme.NierAmber
@@ -94,6 +105,11 @@ fun NycCurriculumScreen(
     changes: CurriculumChanges = CurriculumChanges(),
     modifier: Modifier = Modifier
 ) {
+    // История баллов: полноэкранный NyC-диалог поверх вкладки БРС.
+    var showHistory by rememberSaveable { mutableStateOf(false) }
+    // 0 = семестр ещё не выбран (история по всем предметам).
+    var historyTermNum by rememberSaveable { mutableIntStateOf(0) }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -242,7 +258,13 @@ fun NycCurriculumScreen(
                             onSelectTerm = onSelectTerm
                         )
 
-                        NycSummaryPanel(term = activeTerm)
+                        NycSummaryPanel(
+                            term = activeTerm,
+                            onOpenHistory = {
+                                historyTermNum = activeTerm.termNum
+                                showHistory = true
+                            }
+                        )
 
                         if (activeTerm.subjects.isEmpty()) {
                             Box(
@@ -289,6 +311,13 @@ fun NycCurriculumScreen(
                     }
                 }
             }
+        }
+
+        if (showHistory) {
+            NycScoreHistorySheet(
+                onDismiss = { showHistory = false },
+                initialTermNum = historyTermNum.takeIf { it > 0 }
+            )
         }
     }
 }
@@ -370,7 +399,10 @@ private fun NycTermsRow(
 // ---------- Summary panel ----------
 
 @Composable
-private fun NycSummaryPanel(term: CurriculumTerm) {
+private fun NycSummaryPanel(
+    term: CurriculumTerm,
+    onOpenHistory: () -> Unit = {}
+) {
     val totalSubjects = term.subjects.size
     val examsCount = term.subjects.count { it.controlCategory == CurriculumControlType.EXAM }
     val passedCount = totalSubjects - examsCount
@@ -398,6 +430,69 @@ private fun NycSummaryPanel(term: CurriculumTerm) {
                 .background(Color(150, 185, 235, alpha = 36))
         )
         NycSum(value = "$examsCount", label = stringResource(R.string.curriculum_stat_exams).uppercase(), color = NierRed, modifier = Modifier.weight(1f))
+        NycHistoryButton(onClick = onOpenHistory)
+    }
+}
+
+/**
+ * Компактная кнопка «История» справа от сводки: иконка + подпись NycMono,
+ * рельеф [nycRaised] 9dp, при нажатии — cyan-акцент. Высота 44dp даёт полный тап-таргет,
+ * ширина по контенту (не уже 72dp), поэтому три счётчика остаются с weight(1f).
+ */
+@Composable
+private fun NycHistoryButton(onClick: () -> Unit) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val shape = RoundedCornerShape(9.dp)
+    val historyCd = stringResource(R.string.curriculum_history_cd)
+
+    Box(
+        modifier = Modifier
+            .padding(start = 8.dp)
+            .height(44.dp)
+            .widthIn(min = 72.dp)
+            .nycRaised(9.dp)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                role = Role.Button,
+                onClick = onClick
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        // Cyan-акцент нажатия: мягкая заливка + контур поверх рельефа.
+        if (pressed) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clip(shape)
+                    .background(NycCyan.copy(alpha = 0.12f))
+                    .border(1.dp, NycCyan.copy(alpha = 0.45f), shape)
+            )
+        }
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Timeline,
+                contentDescription = historyCd,
+                tint = if (pressed) NycCyan else nycMuted,
+                modifier = Modifier.size(14.dp)
+            )
+            Text(
+                text = stringResource(R.string.curriculum_history_button).uppercase(),
+                fontFamily = NycMonoFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 9.sp,
+                letterSpacing = 0.6.sp,
+                color = if (pressed) NycCyan else nycMuted,
+                maxLines = 1,
+                // Иконка несёт cd; подпись не должна дублироваться для TalkBack.
+                modifier = Modifier.clearAndSetSemantics { }
+            )
+        }
     }
 }
 

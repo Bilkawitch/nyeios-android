@@ -3,21 +3,26 @@ package ru.nya.nyeios.ui.curriculum
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import ru.nya.nyeios.BuildConfig
 import ru.nya.nyeios.data.changes.ChangesRepository
+import ru.nya.nyeios.data.history.ScoreHistoryRepository
 import ru.nya.nyeios.data.model.CurriculumTerm
 import ru.nya.nyeios.data.model.CurriculumUiState
 import ru.nya.nyeios.data.repository.EiosRepository
+import ru.nya.nyeios.ui.history.DebugHistoryFlags
 
 class CurriculumViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = EiosRepository.getInstance(application.applicationContext)
     private val changesRepository = ChangesRepository.getInstance(application.applicationContext)
+    private val historyRepository = ScoreHistoryRepository.getInstance(application.applicationContext)
 
     private val _uiState = MutableStateFlow<CurriculumUiState>(CurriculumUiState.Loading)
     val uiState: StateFlow<CurriculumUiState> = _uiState.asStateFlow()
@@ -32,7 +37,17 @@ class CurriculumViewModel(application: Application) : AndroidViewModel(applicati
         .stateIn(viewModelScope, SharingStarted.Eagerly, repository.authSession.value)
 
     init {
-        loadCachedOnly()
+        if (BuildConfig.DEBUG && DebugHistoryFlags.fakeCurriculum) {
+            // Debug-хук для эмулятора: показать БРС с синтетическими данными без авторизации.
+            _selectedTermNum.value = 7
+            _uiState.value = CurriculumUiState.Success(
+                terms = DebugHistoryFlags.fakeTerms(),
+                selectedTermNum = 7,
+                isRefreshing = false
+            )
+        } else {
+            loadCachedOnly()
+        }
 
         // React to auth state changes
         viewModelScope.launch {
@@ -67,6 +82,10 @@ class CurriculumViewModel(application: Application) : AndroidViewModel(applicati
                 selectedTermNum = chosenTermNum,
                 isRefreshing = false
             )
+            // История пишется в SQLite в фоне: показ кэша не должен ждать диск.
+            viewModelScope.launch(Dispatchers.IO) {
+                historyRepository.onCurriculumFetched(cached)
+            }
         }
         // If no cache and logged in, stay in Loading — user will refresh
     }
@@ -104,6 +123,10 @@ class CurriculumViewModel(application: Application) : AndroidViewModel(applicati
                     selectedTermNum = chosenTermNum,
                     isRefreshing = false
                 )
+                // Снимок истории — только после обновления StateFlow и вне главного потока.
+                viewModelScope.launch(Dispatchers.IO) {
+                    historyRepository.onCurriculumFetched(terms)
+                }
             }.onFailure { error ->
                 _uiState.value = CurriculumUiState.Error(
                     message = error.localizedMessage ?: "Не удалось загрузить успеваемость",

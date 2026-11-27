@@ -112,6 +112,9 @@ import ru.nya.nyeios.ui.auth.NycLoginGate
 import ru.nya.nyeios.ui.auth.LoginFullscreenGate
 import ru.nya.nyeios.ui.autoupdate.AutoUpdateSheet
 import ru.nya.nyeios.ui.autoupdate.NycAutoUpdateSheet
+import ru.nya.nyeios.ui.history.NycScoreHistorySheet
+import ru.nya.nyeios.ui.history.YoRhaScoreHistorySheet
+import ru.nya.nyeios.ui.history.DebugHistoryFlags
 import ru.nya.nyeios.ui.debug.NetworkLogsBottomSheet
 import ru.nya.nyeios.ui.debug.NycLogsSheet
 import ru.nya.nyeios.ui.eios.EiosHealthViewModel
@@ -247,6 +250,12 @@ class MainActivity : ComponentActivity() {
                     val lastSyncTime by scheduleViewModel.lastSyncTime.collectAsState()
                     var isNetworkLogsSheetVisible by rememberSaveable { mutableStateOf(false) }
                     var showAutoUpdateSheet by rememberSaveable { mutableStateOf(false) }
+        var showDebugHistory by rememberSaveable {
+            mutableStateOf(
+                BuildConfig.DEBUG &&
+                    intent?.getBooleanExtra("nyeios_debug_open_history", false) == true
+            )
+        }
                     // Предыдущий таб: «увидено» помечается при уходе С таба, не при входе.
                     var previousTab by remember { mutableIntStateOf(currentTab) }
 
@@ -1084,7 +1093,9 @@ class MainActivity : ComponentActivity() {
                             // Fullscreen login gate — shown when user is not authenticated.
                             // Covers the entire content area (below TopAppBar, above BottomBar).
                             // NetworkLogsBottomSheet is still accessible via the title tap.
-                            if (!authSession.isLoggedIn) {
+                            if (!authSession.isLoggedIn &&
+                                !(BuildConfig.DEBUG && DebugHistoryFlags.fakeCurriculum)
+                            ) {
                                 if (isNycModern) {
                                     NycLoginGate(
                                         authSession = authSession,
@@ -1166,6 +1177,16 @@ class MainActivity : ComponentActivity() {
                                     AutoUpdateSheet(onDismiss = { showAutoUpdateSheet = false })
                                 }
                             }
+
+                            // Debug-хук: открыть историю баллов напрямую (эмулятор/устройство),
+                            // чтобы проверять графики без входа в БРС.
+                            if (BuildConfig.DEBUG && showDebugHistory) {
+                                if (isNycModern) {
+                                    NycScoreHistorySheet(onDismiss = { showDebugHistory = false })
+                                } else {
+                                    YoRhaScoreHistorySheet(onDismiss = { showDebugHistory = false })
+                                }
+                            }
                         }
                     }
 
@@ -1206,6 +1227,17 @@ class MainActivity : ComponentActivity() {
      */
     private fun maybeRunDebugAutoUpdate(intent: Intent?) {
         if (!BuildConfig.DEBUG) return
+        if (intent?.getBooleanExtra("nyeios_debug_fake_curriculum", false) == true) {
+            DebugHistoryFlags.fakeCurriculum = true
+        }
+        if (intent?.getBooleanExtra("nyeios_debug_seed_history", false) == true) {
+            lifecycleScope.launch(Dispatchers.IO) {
+                val added = ru.nya.nyeios.data.history.DebugHistorySeeder.seedIfEmpty(
+                    applicationContext
+                )
+                android.util.Log.i("NyEIOS-History", "debug seed hook added=$added")
+            }
+        }
         if (intent?.getBooleanExtra("nyeios_debug_autoupdate", false) != true) return
         lifecycleScope.launch(Dispatchers.IO) {
             val result = AutoUpdateRunner.run(applicationContext, withNotifications = true)

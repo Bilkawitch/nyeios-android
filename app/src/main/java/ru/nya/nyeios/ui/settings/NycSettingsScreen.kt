@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
@@ -40,6 +41,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -78,6 +80,10 @@ import ru.nya.nyeios.ui.theme.nycCard
 import ru.nya.nyeios.ui.theme.nycRaised
 import ru.nya.nyeios.ui.theme.nycWell
 import ru.nya.nyeios.ui.eios.eiosHealthAgeValue
+import ru.nya.nyeios.ui.history.TransferResult
+import ru.nya.nyeios.ui.history.isFailure
+import ru.nya.nyeios.ui.history.rememberScoreHistoryTransfer
+import ru.nya.nyeios.ui.history.transferResultText
 import ru.nya.nyeios.ui.update.UpdateViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -98,6 +104,8 @@ private val nycFaint = Color(0xFF5B6A7E)
 private val nycGreen = Color(0xFF46E08C)
 private val nycAmber = Color(0xFFF0B44C)
 private val nycRed = Color(0xFFF26D6D)
+// Статус экспорта/импорта истории: ошибка — красный, успех — nycGreen (см. settings-history контракт).
+private val nycHistoryError = Color(0xFFFF6B6B)
 
 @Composable
 fun NycSettingsScreen(
@@ -263,6 +271,10 @@ private fun NycGeneralContent(
     onReplayOnboarding: (() -> Unit)? = null
 ) {
     val scrollState = rememberScrollState()
+
+    // Экспорт/импорт истории баллов (SAF): общий helper, локальный статус для inline-строки.
+    var historyStatus by remember { mutableStateOf<TransferResult?>(null) }
+    val historyTransfer = rememberScoreHistoryTransfer { historyStatus = it }
 
     Column(
         modifier = Modifier
@@ -754,6 +766,53 @@ private fun NycGeneralContent(
                     letterSpacing = 1.sp,
                     color = NycCyan
                 )
+            }
+        }
+
+        // История баллов: экспорт/импорт JSON через SAF.
+        NycSecHdr(stringResource(R.string.settings_history_title))
+
+        NycSetCard {
+            Text(
+                text = stringResource(R.string.settings_history_desc),
+                fontFamily = NycSansFamily,
+                fontSize = 10.5.sp,
+                lineHeight = 14.sp,
+                color = nycMuted
+            )
+
+            Row(
+                modifier = Modifier.padding(top = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                NycMiniButton(
+                    text = stringResource(R.string.settings_history_export),
+                    icon = Icons.Default.Download,
+                    enabled = !historyTransfer.isBusy,
+                    onClick = historyTransfer.export
+                )
+                NycMiniButton(
+                    text = stringResource(R.string.settings_history_import),
+                    icon = Icons.Default.Upload,
+                    enabled = !historyTransfer.isBusy,
+                    onClick = historyTransfer.import
+                )
+            }
+
+            val statusResult = historyStatus
+            if (statusResult != null) {
+                val statusText = transferResultText(statusResult)
+                if (statusText != null) {
+                    Text(
+                        text = statusText,
+                        modifier = Modifier.padding(top = 8.dp),
+                        fontFamily = NycSansFamily,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 9.5.sp,
+                        lineHeight = 13.sp,
+                        color = if (statusResult.isFailure) nycHistoryError else nycGreen
+                    )
+                }
             }
         }
 
