@@ -18,9 +18,38 @@ object ChangelogHistory {
     val releases: List<ChangelogVersion>
         get() = listOf(
             ChangelogVersion(
+                version = "0.4.4",
+                releaseDate = "27.11.2026",
+                isLatest = true,
+                sections = listOf(
+                    ChangelogSection(
+                        title = AppLocale.pick("БРС", "GRADES"),
+                        items = listOf(
+                            AppLocale.pick(
+                                "Кнопка «История» в шапке БРС: общий график баллов по всем предметам и японские свечи по каждому предмету с датами.",
+                                "A “History” button in the BRS header: a shared score chart for all subjects and Japanese candlestick charts per subject with dates."
+                            ),
+                            AppLocale.pick(
+                                "История баллов записывается автоматически при каждом обновлении БРС; экспорт и импорт — в Настройках → «Общем».",
+                                "Grade history is recorded automatically on every grade refresh; export and import live in Settings → General."
+                            )
+                        )
+                    ),
+                    ChangelogSection(
+                        title = AppLocale.pick("ОБУЧЕНИЕ", "ONBOARDING"),
+                        items = listOf(
+                            AppLocale.pick(
+                                "Дополнил обучалку: шаг про историю баллов и шаг про повторное прохождение. Пройдите её снова: Настройки → Общее → внизу страницы «Повторить обучение».",
+                                "Extended the app tour with a score-history step and a step about replaying the tour. Replay it: Settings → General → “Replay app tour” at the bottom of the page."
+                            )
+                        )
+                    )
+                )
+            ),
+            ChangelogVersion(
                 version = "0.4.3",
                 releaseDate = "26.11.2026",
-                isLatest = true,
+                isLatest = false,
                 sections = listOf(
                     ChangelogSection(
                         title = AppLocale.pick("СОСТОЯНИЕ СЕРВИСА", "SERVICE STATUS"),
